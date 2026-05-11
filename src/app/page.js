@@ -46,7 +46,7 @@ export default function Home() {
 
           {/* Mode selector */}
           <div style={{ display: "flex", gap: "clamp(8px, 1.5vw, 15px)", flexWrap: "wrap", justifyContent: "center" }}>
-            {['squats', 'pushups', 'jacks'].map(mode => (
+            {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
               <button
                 key={mode}
                 className="glow-btn"
@@ -59,7 +59,7 @@ export default function Home() {
                   fontSize: "clamp(12px, 1.5vw, 16px)",
                 }}
               >
-                {mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}
+                {mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? '☝️ FINGER' : mode.toUpperCase()}
               </button>
             ))}
           </div>

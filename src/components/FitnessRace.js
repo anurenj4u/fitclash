@@ -41,7 +41,10 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         scene: { preload, create, update }
       };
 
-      let player, ai, playerBall, aiBall, scene;
+      let player, ai, ball, leaderArrow, scene;
+      // Sky layers for parallax
+      let skyBg, cloudLayer1, cloudLayer2, groundLayer, trackLine;
+      const clouds1 = [], clouds2 = [];
       const playerStartX = 200;
 
       // ── Responsive helpers ──────────────────────────
@@ -51,26 +54,101 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         if (w < 768) return 0.17;
         return 0.27;
       };
-      const getBallR  = () => window.innerWidth < 480 ? 5 : window.innerWidth < 768 ? 7 : 10;
-      const getPlayerY = h => h - Math.round(h * 0.18);
-      const getAiY     = h => h - Math.round(h * 0.42);
-      const getPitchY  = h => h - Math.round(h * 0.22);
-      const getCamOff  = () => window.innerWidth < 480 ? 140 : window.innerWidth < 768 ? 240 : 400;
+      const getBallScale = () => getScale() * 0.5;
+      // Both players on same track Y
+      const getTrackY  = h => h - Math.round(h * 0.22);
+      const getCamOff  = () => window.innerWidth < 480 ? 140 : window.innerWidth < 768 ? 240 : 420;
       // ───────────────────────────────────────────────
 
       function preload() {
-        this.load.image('background', '/race_bg.png');
         this.load.image('player', '/ronaldo.png');
         this.load.image('ai', '/neymar.png');
+        this.load.image('football', '/football.png');
       }
 
-      function drawPitchLine(W, H) {
-        this.pitchLines.clear();
-        this.pitchLines.lineStyle(3, 0xffffff, 0.35);
-        this.pitchLines.beginPath();
-        this.pitchLines.moveTo(0, getPitchY(H));
-        this.pitchLines.lineTo(W * 10, getPitchY(H));
-        this.pitchLines.strokePath();
+      // Draw the full sky scene procedurally
+      function buildSky(W, H) {
+        // Sky gradient rectangle
+        if (!skyBg) {
+          skyBg = scene.add.graphics();
+          skyBg.setScrollFactor(0);
+          skyBg.setDepth(0);
+        }
+        skyBg.clear();
+        // Sky gradient: deep blue top → lighter horizon
+        skyBg.fillGradientStyle(0x0a1628, 0x0a1628, 0x1a4a8a, 0x1a4a8a, 1);
+        skyBg.fillRect(0, 0, W, H * 0.72);
+        // Horizon glow
+        skyBg.fillGradientStyle(0xf5a623, 0xf5a623, 0x1a4a8a, 0x1a4a8a, 0.35);
+        skyBg.fillRect(0, H * 0.48, W, H * 0.24);
+
+        // Ground strip
+        if (!groundLayer) {
+          groundLayer = scene.add.graphics();
+          groundLayer.setScrollFactor(0);
+          groundLayer.setDepth(1);
+        }
+        groundLayer.clear();
+        // Grass
+        groundLayer.fillGradientStyle(0x2d7a27, 0x2d7a27, 0x1a5217, 0x1a5217, 1);
+        groundLayer.fillRect(0, H * 0.72, W, H * 0.28);
+        // Track strip — gray asphalt
+        groundLayer.fillGradientStyle(0x888888, 0x888888, 0x555555, 0x555555, 1);
+        groundLayer.fillRect(0, H * 0.69, W, H * 0.16);
+        // Track lane lines
+        groundLayer.lineStyle(2, 0xffffff, 0.45);
+        groundLayer.beginPath();
+        groundLayer.moveTo(0, H * 0.69);
+        groundLayer.lineTo(W, H * 0.69);
+        groundLayer.strokePath();
+        groundLayer.beginPath();
+        groundLayer.moveTo(0, H * 0.85);
+        groundLayer.lineTo(W, H * 0.85);
+        groundLayer.strokePath();
+        // Dashed centre line
+        groundLayer.lineStyle(2, 0xffffff, 0.3);
+        for (let x = 0; x < W; x += 60) {
+          groundLayer.beginPath();
+          groundLayer.moveTo(x, H * 0.77);
+          groundLayer.lineTo(x + 30, H * 0.77);
+          groundLayer.strokePath();
+        }
+      }
+
+      function spawnClouds(W, H) {
+        const numC1 = 6, numC2 = 4;
+        for (let i = 0; i < numC1; i++) {
+          const c = scene.add.graphics();
+          c.setScrollFactor(0);
+          c.setDepth(2);
+          const cx = Math.random() * W * 8;
+          const cy = H * (0.06 + Math.random() * 0.28);
+          drawCloud(c, cx, cy, 0.8 + Math.random() * 0.6);
+          c._x = cx; c._y = cy; c._speed = 0.18 + Math.random() * 0.14; c._W = W;
+          clouds1.push(c);
+        }
+        for (let i = 0; i < numC2; i++) {
+          const c = scene.add.graphics();
+          c.setScrollFactor(0);
+          c.setDepth(3);
+          const cx = Math.random() * W * 6;
+          const cy = H * (0.04 + Math.random() * 0.18);
+          drawCloud(c, cx, cy, 0.5 + Math.random() * 0.4, true);
+          c._x = cx; c._y = cy; c._speed = 0.08 + Math.random() * 0.08; c._W = W;
+          clouds2.push(c);
+        }
+      }
+
+      function drawCloud(g, cx, cy, scale = 1, small = false) {
+        g.clear();
+        g.fillStyle(0xffffff, small ? 0.55 : 0.82);
+        const r = small ? 22 : 35;
+        // Fluffy cluster
+        g.fillCircle(cx, cy, r * scale);
+        g.fillCircle(cx + r * 0.7 * scale, cy - r * 0.3 * scale, r * 0.75 * scale);
+        g.fillCircle(cx - r * 0.6 * scale, cy - r * 0.2 * scale, r * 0.65 * scale);
+        g.fillCircle(cx + r * 1.2 * scale, cy, r * 0.55 * scale);
+        g.fillCircle(cx - r * 1.15 * scale, cy, r * 0.5 * scale);
       }
 
       function create() {
@@ -78,52 +156,55 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         const W = this.scale.width;
         const H = this.scale.height;
         const spr = getScale();
-        const br  = getBallR();
 
-        // Background
-        this.background = this.add.tileSprite(0, 0, W, H, 'background').setOrigin(0, 0);
-        this.background.setScrollFactor(0);
-
-        // Pitch line
-        this.pitchLines = this.add.graphics();
-        drawPitchLine.call(this, W, H);
+        buildSky(W, H);
+        spawnClouds(W, H);
 
         this.scale.on('resize', onResize, this);
 
-        // Player (Ronaldo)
-        player = this.add.sprite(playerStartX, getPlayerY(H), 'player');
-        player.setScale(spr);
-        playerBall = this.add.circle(playerStartX + 28, getPlayerY(H) + 12, br, 0xffffff);
-        playerBall.setStrokeStyle(2, 0x222222);
+        // AI (Neymar) — slightly behind and smaller (depth trick)
+        ai = this.add.sprite(playerStartX, getTrackY(H), 'ai');
+        ai.setScale(spr * 0.92);
+        ai.setAlpha(0.88);
+        ai.setDepth(8);
 
-        // AI (Neymar) — runs on the lane above
-        ai = this.add.sprite(playerStartX, getAiY(H), 'ai');
-        ai.setScale(spr);
-        ai.setAlpha(0.85);
-        aiBall = this.add.circle(playerStartX + 28, getAiY(H) + 12, br, 0xffffff);
-        aiBall.setStrokeStyle(2, 0x222222);
+        // Player (Ronaldo) — in front
+        player = this.add.sprite(playerStartX, getTrackY(H), 'player');
+        player.setScale(spr);
+        player.setDepth(9);
+
+        // Single football — starts with player
+        ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 55, 'football');
+        ball.setScale(getBallScale());
+        ball.setDepth(10);
 
         // Finish line
         const goalFontSize = window.innerWidth < 480 ? '28px' : '56px';
         this.finishLine = this.add.rectangle(
-          finishLineDistance + playerStartX, H / 2, 50, H, 0xffffff, 0.5
+          finishLineDistance + playerStartX, H / 2, 50, H, 0xffffff, 0.55
         );
+        this.finishLine.setDepth(7);
         this.add.text(
-          finishLineDistance + playerStartX, H - Math.round(H * 0.12), 'GOAL!', {
+          finishLineDistance + playerStartX, getTrackY(H) - 60, 'GOAL!', {
             fontSize: goalFontSize, fontFamily: 'Arial Black, Arial',
             color: '#fff', backgroundColor: '#00cc00',
             padding: { x: 14, y: 7 }
           }
-        ).setOrigin(0.5);
+        ).setOrigin(0.5).setDepth(11);
+
+        // ── Leader arrow (green ▼ above leading player) ──
+        leaderArrow = this.add.graphics();
+        leaderArrow.setDepth(20);
+        drawLeaderArrow(leaderArrow);
 
         this.player = player;
         this.ai = ai;
 
         this.movePlayer = () => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
-          targetDistanceRef.current += 1000;
+          // Exactly 10 m (1000 units) per rep — no accumulation
+          playerDistanceRef.current += 1000;
           this.tweens.add({ targets: player, scale: spr * 1.15, duration: 100, yoyo: true, ease: 'Back.easeOut' });
-          this.tweens.add({ targets: playerBall, x: playerBall.x + 55, y: playerBall.y - 22, duration: 140, yoyo: true, ease: 'Sine.easeInOut' });
         };
 
         this.restart = () => {
@@ -138,17 +219,30 @@ const FitnessRace = ({ mode, isCameraReady }) => {
           setGameStateDisplay('ready');
           if (playerDistanceUITextRef.current) playerDistanceUITextRef.current.innerText = '0';
           if (aiDistanceUITextRef.current) aiDistanceUITextRef.current.innerText = '0';
+          if (leaderArrow) leaderArrow.setVisible(true);
         };
       }
 
       function onResize(gameSize) {
         const { width, height } = gameSize;
         this.cameras.main.setSize(width, height);
-        if (this.background) this.background.setSize(width, height);
-        if (this.pitchLines) drawPitchLine.call(this, width, height);
+        buildSky(width, height);
         if (this.finishLine) this.finishLine.y = height / 2;
-        if (player) player.setScale(getScale());
-        if (ai) ai.setScale(getScale());
+        if (player) { player.setScale(getScale()); player.y = getTrackY(height); }
+        if (ai)     { ai.setScale(getScale() * 0.92); ai.y = getTrackY(height); }
+      }
+
+      // Draw a downward-pointing arrow centred at (0, 0) in the graphics object
+      function drawLeaderArrow(g) {
+        g.clear();
+        // Outer glow
+        g.fillStyle(0x00ff44, 0.25);
+        g.fillTriangle(-18, -36, 18, -36, 0, 0);
+        // Main arrow body
+        g.fillStyle(0x00ff44, 1);
+        g.fillTriangle(-13, -32, 13, -32, 0, -4);
+        // Stem
+        g.fillRect(-5, -52, 10, 22);
       }
 
       let lastPDist = -1, lastADist = -1;
@@ -157,41 +251,73 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         if (gameStateRef.current !== 'playing' || winnerRef.current) return;
 
         const H = this.scale.height;
+        // AI drifts forward steadily
         aiDistanceRef.current += 0.35 * delta;
 
-        playerDistanceRef.current += (targetDistanceRef.current - playerDistanceRef.current) * 0.05;
-        if (targetDistanceRef.current > 0) {
+        // Player movement is now direct (no interpolation accumulation)
+        // Passive creep to keep momentum feel when ahead
+        if (playerDistanceRef.current > 0) {
           playerDistanceRef.current += 0.1 * delta;
-          targetDistanceRef.current += 0.1 * delta;
         }
 
         player.x = playerStartX + playerDistanceRef.current;
         ai.x     = playerStartX + aiDistanceRef.current;
 
-        const bobFreq = 0.01;
+        const trackY = getTrackY(H);
+        const bobFreq = 0.008;
         const bobAmt  = Math.max(4, Math.round(H * 0.012));
-        player.y = getPlayerY(H) + Math.sin(time * bobFreq) * bobAmt;
-        ai.y     = getAiY(H)    + Math.sin(time * bobFreq * 1.1) * bobAmt;
 
-        if (!this.tweens.isTweening(playerBall)) {
-          playerBall.x = player.x + 28;
-          playerBall.y = player.y + 12 + Math.abs(Math.sin(time * bobFreq * 2)) * 7;
-        }
-        aiBall.x = ai.x + 28;
-        aiBall.y = ai.y + 12 + Math.abs(Math.sin(time * bobFreq * 2.2)) * 7;
+        // Both on SAME track Y — bob independently
+        player.y = trackY + Math.sin(time * bobFreq) * bobAmt;
+        ai.y     = trackY + Math.sin(time * bobFreq * 1.15 + 1.2) * bobAmt;
 
-        player.angle = 4 + Math.sin(time * 0.02) * 2;
-        ai.angle     = 4 + Math.sin(time * 0.022) * 2;
+        // ── Leader logic: ball + arrow follow whoever is ahead ──
+        const playerIsLeading = playerDistanceRef.current >= aiDistanceRef.current;
+        const leader = playerIsLeading ? player : ai;
+        const leaderBobFreq = playerIsLeading ? bobFreq : bobFreq * 1.15;
+        const leaderBobOff  = playerIsLeading ? 0 : 1.2;
 
-        const camX = player.x - getCamOff();
+        // Ball at leader's feet
+        ball.x = leader.x + 52;
+        ball.y = trackY + Math.sin(time * leaderBobFreq + leaderBobOff) * bobAmt
+                 + 60 + Math.abs(Math.sin(time * 0.018)) * 8;
+        ball.angle += delta * 0.55;
+        ball.setScale(getBallScale());
+
+        // ── Green down-arrow: bounce above leader's head ──
+        const arrowBounce = Math.sin(time * 0.005) * 6; // gentle up-down float
+        const spriteHalfH = leader.displayHeight * 0.5;
+        leaderArrow.x = leader.x;
+        leaderArrow.y = leader.y - spriteHalfH - 18 + arrowBounce;
+
+        // Running lean
+        player.angle = 5 + Math.sin(time * 0.022) * 2.5;
+        ai.angle     = 5 + Math.sin(time * 0.024) * 2.5;
+
+        // ── Camera follows leading player ──
+        const leadX = Math.max(player.x, ai.x);
+        const camX = leadX - getCamOff();
         this.cameras.main.scrollX = camX;
-        if (this.background) this.background.tilePositionX = camX * 0.5;
 
+        // ── Cloud parallax (scroll with camera at different rates) ──
+        clouds1.forEach(c => {
+          c._x -= c._speed * delta * 0.015;
+          if (c._x < -300) c._x = c._W * 1.5;
+          c.x = c._x + camX * 0.04;
+        });
+        clouds2.forEach(c => {
+          c._x -= c._speed * delta * 0.01;
+          if (c._x < -200) c._x = c._W * 1.2;
+          c.x = c._x + camX * 0.015;
+        });
+
+        // ── HUD distance ──
         const pDist = Math.floor(playerDistanceRef.current / 100);
         const aDist = Math.floor(aiDistanceRef.current / 100);
         if (pDist !== lastPDist) { if (playerDistanceUITextRef.current) playerDistanceUITextRef.current.innerText = pDist; lastPDist = pDist; }
         if (aDist !== lastADist) { if (aiDistanceUITextRef.current) aiDistanceUITextRef.current.innerText = aDist; lastADist = aDist; }
 
+        // ── Win check ──
         if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
           winnerRef.current = 'PLAYER'; setWinnerState('PLAYER');
           gameStateRef.current = 'finished'; setGameStateDisplay('finished');
@@ -261,7 +387,8 @@ const FitnessRace = ({ mode, isCameraReady }) => {
     <div id="phaser-game" style={{
       width: '100vw', height: '100dvh',
       position: 'fixed', top: 0, left: 0,
-      zIndex: 1, overflow: 'hidden', background: '#050505'
+      zIndex: 1, overflow: 'hidden',
+      background: 'linear-gradient(180deg, #0a1628 0%, #1a4a8a 60%, #2d7a27 100%)'
     }}>
 
       {/* HUD */}
@@ -332,7 +459,11 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         pointerEvents: 'none', zIndex: 10
       }}>
         <div style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '3px' }}>HOW TO PLAY:</div>
-        <div>Each {mode === 'jacks' ? 'jack' : mode.slice(0, -1)} = SPEED BOOST</div>
+        <div>
+          {mode === 'fingers'
+            ? 'Show ☝️ 1 finger = SPEED BOOST'
+            : `Each ${mode === 'jacks' ? 'jack' : mode.slice(0, -1)} = SPEED BOOST`}
+        </div>
         <div>Reach the GOAL first!</div>
       </div>
     </div>
