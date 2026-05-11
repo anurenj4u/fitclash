@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import LandscapeGuard from "@/components/LandscapeGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Fitness Race Pro | AI Football Game",
-  description: "Score goals and win races by performing physical exercises in this AI-powered motion game.",
+  title: "FitClash | AI Fitness Game",
+  description: "Race to the finish line and score goals by performing physical exercises in this AI-powered motion game.",
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }) {
@@ -22,7 +31,9 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <PerformanceMonitor />
-        {children}
+        <LandscapeGuard>
+          {children}
+        </LandscapeGuard>
       </body>
     </html>
   );

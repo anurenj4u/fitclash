@@ -137,18 +137,30 @@ const MotionTracker = ({ mode, onReady }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '160px', height: '120px', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent)', zIndex: 200, background: '#000', boxShadow: '0 0 20px rgba(0,255,159,0.3)' }}>
+    <div style={{
+      position: 'fixed',
+      bottom: '12px',
+      right: '12px',
+      width: 'clamp(100px, 15vw, 160px)',
+      height: 'clamp(75px, 11vw, 120px)',
+      borderRadius: '10px',
+      overflow: 'hidden',
+      border: '2px solid var(--accent)',
+      zIndex: 200,
+      background: '#000',
+      boxShadow: '0 0 16px rgba(57,255,20,0.3)'
+    }}>
       <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} playsInline muted />
       {!isActive && !error && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', fontSize: '10px', color: 'var(--accent)', textAlign: 'center', padding: '10px' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', fontSize: '9px', color: 'var(--accent)', textAlign: 'center', padding: '8px' }}>
           <div className="loader" style={{ marginBottom: '5px' }}></div>
           INIT AI...
         </div>
       )}
       {error && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(20,0,0,0.95)', fontSize: '10px', color: '#fff', textAlign: 'center', padding: '10px' }}>
-          <div style={{ color: '#ff0055', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ ERROR</div>
-          <button onClick={handleRetry} style={{ background: 'var(--accent)', color: '#000', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '10px' }}>RETRY</button>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(20,0,0,0.95)', fontSize: '9px', color: '#fff', textAlign: 'center', padding: '8px' }}>
+          <div style={{ color: '#ff0055', fontWeight: 'bold', marginBottom: '4px' }}>⚠️</div>
+          <button onClick={handleRetry} style={{ background: 'var(--accent)', color: '#000', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '9px' }}>RETRY</button>
         </div>
       )}
     </div>
