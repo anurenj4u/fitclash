@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState, memo } from 'react';
 
-const FitnessRace = ({ mode, isCameraReady }) => {
+const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
   const gameRef = useRef(null);
   const [winnerState, setWinnerState] = useState(null);
   const [gameStateDisplay, setGameStateDisplay] = useState('waiting');
@@ -16,7 +16,8 @@ const FitnessRace = ({ mode, isCameraReady }) => {
   const targetDistanceRef = useRef(0);
   const aiDistanceRef = useRef(0);
   const previousRepsRef = useRef(0);
-  const finishLineDistance = 15000;
+  // 1km = 100,000 units (where 100 units = 1m)
+  const finishLineDistance = targetKm * 100000;
 
   useEffect(() => {
     if (gameRef.current) return;
@@ -202,8 +203,9 @@ const FitnessRace = ({ mode, isCameraReady }) => {
 
         this.movePlayer = () => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
-          // Exactly 10 m (1000 units) per rep — no accumulation
-          playerDistanceRef.current += 1000;
+          // Each rep adds distance: 10m (1000 units) default, 12m (1200 units) for fingers as requested (increase of 2m)
+          const distPerRep = mode === 'fingers' ? 1200 : 1000;
+          playerDistanceRef.current += distPerRep;
           this.tweens.add({ targets: player, scale: spr * 1.15, duration: 100, yoyo: true, ease: 'Back.easeOut' });
         };
 
@@ -251,13 +253,14 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         if (gameStateRef.current !== 'playing' || winnerRef.current) return;
 
         const H = this.scale.height;
-        // AI drifts forward steadily
-        aiDistanceRef.current += 0.35 * delta;
+        // AI drifts forward steadily - scaled with distance to maintain pace
+        const aiSpeedBase = targetKm === 1 ? 0.35 : targetKm === 2 ? 0.6 : 0.8;
+        aiDistanceRef.current += aiSpeedBase * delta;
 
         // Player movement is now direct (no interpolation accumulation)
-        // Passive creep to keep momentum feel when ahead
+        // Passive creep to keep momentum feel when ahead - also scaled
         if (playerDistanceRef.current > 0) {
-          playerDistanceRef.current += 0.1 * delta;
+          playerDistanceRef.current += (aiSpeedBase * 0.3) * delta;
         }
 
         player.x = playerStartX + playerDistanceRef.current;
@@ -400,10 +403,10 @@ const FitnessRace = ({ mode, isCameraReady }) => {
         padding: 'clamp(5px,1.2vw,12px) clamp(10px,2.5vw,24px)',
         borderRadius: '14px', border: '2px solid var(--accent)', whiteSpace: 'nowrap'
       }}>
-        <div className="arcade-text" style={{ color: 'var(--accent)', fontSize: 'clamp(9px,1.8vw,18px)' }}>RACE PROGRESS</div>
+        <div className="arcade-text" style={{ color: 'var(--accent)', fontSize: 'clamp(9px,1.8vw,18px)' }}>RACE PROGRESS ({targetKm}KM)</div>
         <div style={{ display: 'flex', gap: 'clamp(14px,3.5vw,36px)', fontSize: 'clamp(10px,1.6vw,16px)' }}>
-          <div style={{ color: '#fff' }}>YOU: <span ref={playerDistanceUITextRef}>0</span>m</div>
-          <div style={{ color: '#ff0055' }}>AI: <span ref={aiDistanceUITextRef}>0</span>m</div>
+          <div style={{ color: '#fff' }}>YOU: <span ref={playerDistanceUITextRef}>0</span>m / {targetKm * 1000}m</div>
+          <div style={{ color: '#ff0055' }}>AI: <span ref={aiDistanceUITextRef}>0</span>m / {targetKm * 1000}m</div>
         </div>
         <div style={{ fontSize: 'clamp(8px,1vw,12px)', opacity: 0.65 }}>MODE: {mode.toUpperCase()}</div>
       </div>

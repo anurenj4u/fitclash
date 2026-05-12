@@ -8,6 +8,8 @@ export default function Home() {
   const [exerciseMode, setExerciseMode] = useState('squats');
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [targetDistance, setTargetDistance] = useState(1); // in kilometers
+
 
   const handleCameraReady = useCallback(() => {
     setIsCameraReady(true);
@@ -30,7 +32,7 @@ export default function Home() {
         overflow: "hidden",
         zIndex: 2000 
       }}>
-        <FitnessRace mode={exerciseMode} isCameraReady={isCameraReady} />
+        <FitnessRace mode={exerciseMode} targetKm={targetDistance} isCameraReady={isCameraReady} />
         <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
       </div>
     );
@@ -68,9 +70,9 @@ export default function Home() {
           </p>
 
           {/* Integrated Mode Selector */}
-          <div style={{ marginBottom: '40px' }}>
-            <p style={{ fontSize: '14px', letterSpacing: '2px', color: 'var(--accent)', marginBottom: '20px', fontWeight: 800 }}>CHOOSE YOUR CHALLENGE:</p>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginBottom: '30px' }}>
+          <div style={{ marginBottom: '30px' }}>
+            <p style={{ fontSize: '14px', letterSpacing: '2px', color: 'var(--accent)', marginBottom: '15px', fontWeight: 800 }}>CHOOSE YOUR CHALLENGE:</p>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginBottom: '25px' }}>
               {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
                 <button
                   key={mode}
@@ -96,6 +98,31 @@ export default function Home() {
                 </button>
               ))}
             </div>
+            
+            {/* Distance Selector */}
+            <p style={{ fontSize: '14px', letterSpacing: '2px', color: 'var(--accent)', marginBottom: '15px', fontWeight: 800 }}>RACE DISTANCE:</p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: '20px' }}>
+              {[1, 2, 3].map(km => (
+                <button
+                  key={km}
+                  onClick={() => setTargetDistance(km)}
+                  style={{
+                    background: targetDistance === km ? 'var(--accent)' : 'transparent',
+                    color: targetDistance === km ? '#000' : 'var(--accent)',
+                    border: '2px solid var(--accent)',
+                    padding: "8px 20px",
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {km} KM
+                </button>
+              ))}
+            </div>
+            
             <style>{`
               .mode-select-btn:hover {
                 transform: translateY(-3px);
