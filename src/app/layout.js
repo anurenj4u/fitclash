@@ -60,18 +60,22 @@ export const viewport = {
 };
 
 
+import { AuthProvider } from "@/context/AuthContext";
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <PerformanceMonitor />
-        <Navbar />
-        <main style={{ flex: 1, paddingTop: '70px' }}>
-          <LandscapeGuard>
-            {children}
-          </LandscapeGuard>
-        </main>
-        <Footer />
+        <AuthProvider>
+          <PerformanceMonitor />
+          <Navbar />
+          <main style={{ flex: 1, paddingTop: '70px' }}>
+            <LandscapeGuard>
+              {children}
+            </LandscapeGuard>
+          </main>
+          <Footer />
+        </AuthProvider>
         <GoogleAnalytics gaId="G-91QEX080ZK" />
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`

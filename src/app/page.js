@@ -2,6 +2,8 @@
 import React, { useState, useCallback } from "react";
 import FitnessRace from "@/components/FitnessRace";
 import MotionTracker from "@/components/MotionTracker";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [gameStarted, setGameStarted] = useState(false);
@@ -9,13 +11,21 @@ export default function Home() {
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [targetDistance, setTargetDistance] = useState(1); // in kilometers
-
+  
+  const { user } = useAuth();
+  const router = useRouter();
 
   const handleCameraReady = useCallback(() => {
     setIsCameraReady(true);
   }, []);
 
-  const startOnboarding = () => setShowOnboarding(true);
+  const startOnboarding = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setShowOnboarding(true);
+  };
   const finishOnboarding = () => {
     setShowOnboarding(false);
     setGameStarted(true);
