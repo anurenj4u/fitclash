@@ -203,8 +203,8 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
 
         this.movePlayer = () => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
-          // Each rep adds distance: 10m (1000 units) default, 2m (200 units) for fingers specifically
-          const distPerRep = mode === 'fingers' ? 200 : 1000;
+          // Each rep adds distance: 10m (1000 units) default, 1m (100 units) for fingers specifically
+          const distPerRep = mode === 'fingers' ? 100 : 1000;
           playerDistanceRef.current += distPerRep;
           this.tweens.add({ targets: player, scale: spr * 1.15, duration: 100, yoyo: true, ease: 'Back.easeOut' });
         };
