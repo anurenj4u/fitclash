@@ -50,7 +50,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} style={{ textAlign: 'left' }}>
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', display: 'block', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL ADDRESS</1abel>
+            <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', display: 'block', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL ADDRESS</label>
             <input
               type="email"
               value={email}
