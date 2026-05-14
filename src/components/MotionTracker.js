@@ -126,7 +126,7 @@ const MotionTracker = ({ mode, onReady }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '280px', zIndex: 500 }}>
+    <div style={{ position: 'fixed', bottom: '10px', right: '10px', width: '280px', zIndex: 500 }}>
       {/* HUD Label */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span className="hud-text" style={{ fontSize: '10px' }}>LINK STATUS: <span style={{ color: isActive ? 'var(--accent)' : 'var(--danger)' }}>{isActive ? 'ACTIVE' : 'CONNECTING'}</span></span>

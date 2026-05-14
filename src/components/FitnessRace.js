@@ -228,7 +228,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
       {gameStateDisplay === 'finished' && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center' }}>
-            <h2 className="arcade-text" style={{ fontSize: '80px', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: '20px' }}>{winnerState === 'PLAYER' ? 'MISSION SUCCESS' : 'SYSTEM FAILURE'}</h2>
+            <h2 className="arcade-text" style={{ fontSize: '80px', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: '20px' }}>{winnerState === 'PLAYER' ? 'MISSION SUCCESS' : 'CHALLENGE FAILED'}</h2>
             <div className="glass-card" style={{ marginBottom: '40px', padding: '30px 60px' }}>
               <p className="hud-text" style={{ fontSize: '20px' }}>{winnerState === 'PLAYER' ? 'YOU OUT-PERFORMED THE AI' : 'AI SPEED EXCEEDED PLAYER CAPACITY'}</p>
               <div style={{ marginTop: '20px', display: 'flex', gap: '30px', justifyContent: 'center' }}>
@@ -236,7 +236,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
                 <div><p style={{ opacity: 0.5, fontSize: '12px' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--secondary)' }}>+450</p></div>
               </div>
             </div>
-            <button className="glow-btn" onClick={() => window.location.reload()} style={{ padding: '20px 60px' }}>RE-ENTER SIMULATION</button>
+            <button className="glow-btn" onClick={() => window.location.reload()} style={{ padding: '20px 60px' }}>TRY AGAIN</button>
           </motion.div>
         </div>
       )}
