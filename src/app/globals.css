@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
-
 :root {
   --background: #020205;
   --foreground: #ffffff;
@@ -13,8 +11,8 @@
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.1);
   --card-bg: rgba(10, 10, 15, 0.85);
-  --font-gaming: 'Orbitron', sans-serif;
-  --font-body: 'Rajdhani', sans-serif;
+  --font-gaming: var(--font-orbitron), sans-serif;
+  --font-body: var(--font-rajdhani), sans-serif;
   --neon-shadow: 0 0 15px var(--accent-glow);
 }
 

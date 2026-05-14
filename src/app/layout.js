@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Orbitron, Rajdhani } from "next/font/google";
 import "./globals.css";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import LandscapeGuard from "@/components/LandscapeGuard";
@@ -6,7 +6,6 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from 'next/script';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,6 +15,18 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const orbitron = Orbitron({
+  variable: "--font-orbitron",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+const rajdhani = Rajdhani({
+  variable: "--font-rajdhani",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -69,7 +80,7 @@ import { AuthProvider } from "@/context/AuthContext";
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${rajdhani.variable}`}>
       <body>
         <AuthProvider>
           <PerformanceMonitor />
@@ -82,7 +93,7 @@ export default function RootLayout({ children }) {
           <Footer />
         </AuthProvider>
         <GoogleAnalytics gaId="G-91QEX080ZK" />
-        <Script id="microsoft-clarity" strategy="afterInteractive">
+        <Script id="microsoft-clarity" strategy="lazyOnload">
           {`
             (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
