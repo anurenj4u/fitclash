@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { getFriendlyErrorMessage } from '@/lib/authErrors';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -20,7 +21,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/');
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }

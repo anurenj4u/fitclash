@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { getFriendlyErrorMessage } from '@/lib/authErrors';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -22,7 +23,7 @@ export default function RegisterPage() {
       await updateProfile(userCredential.user, { displayName });
       router.push('/');
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
