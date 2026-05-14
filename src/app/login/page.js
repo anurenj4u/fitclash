@@ -9,6 +9,7 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -72,10 +73,10 @@ export default function LoginPage() {
             />
           </div>
 
-          <div style={{ marginBottom: '30px' }}>
+          <div style={{ marginBottom: '30px', position: 'relative' }}>
             <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', display: 'block', marginBottom: '8px', letterSpacing: '1px' }}>PASSWORD</label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -83,6 +84,7 @@ export default function LoginPage() {
               style={{
                 width: '100%',
                 padding: '14px 20px',
+                paddingRight: '50px',
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid var(--glass-border)',
                 borderRadius: '12px',
@@ -91,6 +93,26 @@ export default function LoginPage() {
                 outline: 'none'
               }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '15px',
+                bottom: '12px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent)',
+                cursor: 'pointer',
+                fontSize: '18px',
+                opacity: 0.7,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
           </div>
 
           {error && <p style={{ color: 'var(--danger)', fontSize: '12px', marginBottom: '20px', textAlign: 'center' }}>{error}</p>}
