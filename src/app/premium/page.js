@@ -54,6 +54,12 @@ export default function PremiumPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: plan.price, planId: plan.id })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create order");
+      }
+
       const data = await response.json();
 
       const options = {
@@ -64,7 +70,9 @@ export default function PremiumPage() {
         description: `${plan.name} Subscription`,
         order_id: data.id,
         handler: function (response) {
-          router.push('/dashboard?status=success');
+          // In production, verify this on server!
+          alert("Payment Successful! Your account will be upgraded shortly.");
+          router.push('/?status=success');
         },
         prefill: {
           name: user.displayName || "",
@@ -73,16 +81,22 @@ export default function PremiumPage() {
         theme: {
           color: "#39ff14",
         },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+          }
+        }
       };
 
       if (window.Razorpay) {
         const rzp1 = new window.Razorpay(options);
         rzp1.open();
       } else {
-        alert("Payment gateway not loaded. Please refresh.");
+        alert("Razorpay SDK not loaded. Please check your internet connection and try again.");
       }
     } catch (error) {
-      console.error("Payment failed", error);
+      console.error("Payment initiation failed:", error);
+      alert(`Error: ${error.message}. Please ensure the environment variables (NEXT_PUBLIC_RAZORPAY_KEY_ID) are set in Vercel.`);
     } finally {
       setLoading(false);
     }
