@@ -118,20 +118,6 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           style={{ maxWidth: '1000px' }}
         >
-          <div style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '10px', 
-            background: 'rgba(57, 255, 20, 0.1)', 
-            padding: '8px 20px', 
-            borderRadius: '50px', 
-            marginBottom: '30px',
-            border: '1px solid rgba(57, 255, 20, 0.2)'
-          }}>
-            <Zap size={14} color="var(--accent)" fill="var(--accent)" />
-            <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '2px', color: 'var(--accent)' }}>THE FUTURE OF FITNESS</span>
-          </div>
-
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column', 
@@ -139,51 +125,52 @@ export default function Home() {
           textAlign: 'center',
           width: '100%',
           maxWidth: '1200px',
-          margin: '0 auto'
+          margin: '0 auto',
+          paddingTop: '0px'
         }}>
-          {/* Section: Badge */}
+          {/* Section: Badge - Single instance only */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="glass-card"
-            style={{ padding: '8px 20px', borderRadius: '50px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(57, 255, 20, 0.3)' }}
+            style={{ padding: '6px 16px', borderRadius: '50px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(57, 255, 20, 0.3)' }}
           >
-            <div style={{ width: '8px', height: '8px', background: 'var(--accent)', borderRadius: '50%', boxShadow: '0 0 10px var(--accent)' }}></div>
-            <span style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>THE FUTURE OF FITNESS</span>
+            <div style={{ width: '6px', height: '6px', background: 'var(--accent)', borderRadius: '50%', boxShadow: '0 0 10px var(--accent)' }}></div>
+            <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>THE FUTURE OF FITNESS</span>
           </motion.div>
 
-          {/* Section: Title */}
+          {/* Section: Title - Compact sizing */}
           <h1 className="arcade-text" style={{
-            fontSize: "clamp(32px, 8vw, 110px)",
+            fontSize: "clamp(28px, 6vw, 90px)",
             lineHeight: 1,
-            marginBottom: "20px",
+            marginBottom: "10px",
             background: 'linear-gradient(to bottom, #fff 50%, #666 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 30px rgba(57, 255, 20, 0.4))',
+            filter: 'drop-shadow(0 0 20px rgba(57, 255, 20, 0.4))',
             letterSpacing: '-2px'
           }}>
             CLASH<span style={{ color: "var(--accent)", WebkitTextFillColor: 'initial' }}>OFCARDIO</span>
           </h1>
           
           <p style={{
-            fontSize: "clamp(14px, 2vw, 20px)",
+            fontSize: "clamp(12px, 1.4vw, 15px)",
             fontFamily: 'var(--font-body)',
-            opacity: 0.6,
-            marginBottom: "60px",
-            maxWidth: "600px",
-            lineHeight: 1.6
+            opacity: 0.5,
+            marginBottom: "25px",
+            maxWidth: "500px",
+            lineHeight: 1.4
           }}>
             Control games using <span style={{ color: 'var(--accent)', fontWeight: 800 }}>REAL EXERCISE</span>. Your body is the controller.
           </p>
 
-          {/* New Row-based Selector Layout */}
-          <div style={{ width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+          {/* Compact Vertical Stack */}
+          <div style={{ width: '100%', maxWidth: '850px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
             
-            {/* ROW 1: TARGET DISTANCE */}
-            <div className="glass-card" style={{ padding: '30px', background: 'rgba(2, 2, 5, 0.4)' }}>
-              <p className="hud-text" style={{ marginBottom: '20px', color: 'var(--secondary)', letterSpacing: '3px', textAlign: 'center' }}>[01] SELECT TARGET DISTANCE</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+            {/* ROW 1: TARGET DISTANCE - More compact */}
+            <div className="glass-card" style={{ padding: '15px', background: 'rgba(2, 2, 5, 0.4)' }}>
+              <p className="hud-text" style={{ marginBottom: '12px', fontSize: '10px', color: 'var(--secondary)', letterSpacing: '3px', textAlign: 'center' }}>[01] SELECT TARGET DISTANCE</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 {[1, 2, 3].map(km => (
                   <motion.button
                     key={km}
@@ -194,31 +181,30 @@ export default function Home() {
                       background: targetDistance === km ? 'linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.03)',
                       color: targetDistance === km ? 'var(--secondary)' : '#fff',
                       border: `1px solid ${targetDistance === km ? 'var(--secondary)' : 'rgba(255,255,255,0.1)'}`,
-                      padding: "20px",
-                      borderRadius: '12px',
-                      fontSize: '14px',
+                      padding: "12px 10px",
+                      borderRadius: '10px',
+                      fontSize: '11px',
                       fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '5px',
+                      gap: '2px',
                       fontFamily: 'var(--font-gaming)',
-                      transition: 'all 0.3s ease',
-                      boxShadow: targetDistance === km ? '0 0 20px rgba(0, 242, 255, 0.2)' : 'none'
+                      transition: 'all 0.3s ease'
                     }}
                   >
-                    <span style={{ letterSpacing: '2px' }}>{km} KM RACE</span>
-                    <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 500 }}>{km * 10} MINS EST.</span>
+                    <span style={{ letterSpacing: '1px' }}>{km} KM RACE</span>
+                    <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 10} MINS EST.</span>
                   </motion.button>
                 ))}
               </div>
             </div>
 
-            {/* ROW 2: SELECT CHALLENGE */}
-            <div className="glass-card" style={{ padding: '30px', background: 'rgba(2, 2, 5, 0.4)' }}>
-              <p className="hud-text" style={{ marginBottom: '20px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT EXERCISE CHALLENGE</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+            {/* ROW 2: SELECT CHALLENGE - More compact */}
+            <div className="glass-card" style={{ padding: '15px', background: 'rgba(2, 2, 5, 0.4)' }}>
+              <p className="hud-text" style={{ marginBottom: '12px', fontSize: '10px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT EXERCISE CHALLENGE</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
                   <motion.button
                     key={mode}
@@ -229,43 +215,42 @@ export default function Home() {
                       background: exerciseMode === mode ? 'linear-gradient(135deg, rgba(57, 255, 20, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.03)',
                       color: exerciseMode === mode ? 'var(--accent)' : '#fff',
                       border: `1px solid ${exerciseMode === mode ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}`,
-                      padding: "20px",
-                      borderRadius: '12px',
-                      fontSize: '13px',
+                      padding: "12px 5px",
+                      borderRadius: '10px',
+                      fontSize: '10px',
                       fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '10px',
+                      gap: '5px',
                       fontFamily: 'var(--font-gaming)',
-                      transition: 'all 0.3s ease',
-                      boxShadow: exerciseMode === mode ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none'
+                      transition: 'all 0.3s ease'
                     }}
                   >
-                    {mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()}
-                    {exerciseMode === mode && <Zap size={14} fill="var(--accent)" />}
+                    <span style={{ whiteSpace: 'nowrap' }}>{mode === 'jacks' ? 'J. JACKS' : mode === 'fingers' ? 'F. SPRINT' : mode.toUpperCase()}</span>
+                    {exerciseMode === mode && <Zap size={10} fill="var(--accent)" />}
                   </motion.button>
                 ))}
               </div>
             </div>
             
-            {/* ROW 3: ACTION BUTTONS */}
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px' }}>
+            {/* ROW 3: ACTION BUTTONS - Compact sizing */}
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="glow-btn pulse-glow"
                 onClick={startOnboarding}
-                style={{ fontSize: '18px', padding: '20px 60px', display: 'flex', alignItems: 'center', gap: '12px' }}
+                style={{ fontSize: '14px', padding: '15px 40px', display: 'flex', alignItems: 'center', gap: '10px' }}
               >
-                <Play fill="currentColor" size={20} /> INITIALIZE GAME
+                <Play fill="currentColor" size={16} /> INITIALIZE GAME
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="glass-card"
-                style={{ padding: '20px 40px', borderRadius: '12px', fontSize: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ padding: '15px 30px', borderRadius: '10px', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}
               >
                 WATCH TRAILER
               </motion.button>
