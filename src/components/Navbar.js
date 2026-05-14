@@ -40,12 +40,12 @@ export default function Navbar() {
       
       {/* Desktop Menu */}
       <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }} className="desktop-menu">
-        {['ABOUT', 'CONTACT'].map((item) => (
+        {['ABOUT', 'CONTACT', 'PREMIUM'].map((item) => (
           <Link 
             key={item}
             href={`/${item.toLowerCase()}`} 
             style={{ 
-              color: '#fff', 
+              color: item === 'PREMIUM' ? 'var(--accent)' : '#fff', 
               textDecoration: 'none', 
               fontSize: '13px', 
               fontWeight: 700, 
@@ -54,7 +54,7 @@ export default function Navbar() {
               transition: 'all 0.3s ease'
             }}
             onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--accent)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = item === 'PREMIUM' ? 'var(--accent)' : '#fff'; }}
           >
             {item}
           </Link>

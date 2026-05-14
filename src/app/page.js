@@ -16,8 +16,13 @@ import {
   Layout,
   ChevronRight,
   TrendingUp,
-  Star
+  Star,
+  Crown,
+  AlertTriangle,
+  X
 } from "lucide-react";
+import { doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function Home() {
   const [gameStarted, setGameStarted] = useState(false);
@@ -27,7 +32,9 @@ export default function Home() {
   const [targetDistance, setTargetDistance] = useState(1);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
-  const { user } = useAuth();
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  
+  const { user, userData } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -47,11 +54,27 @@ export default function Home() {
       router.push('/login');
       return;
     }
+    
+    if (!userData?.isPremium && userData?.gamesToday >= 15) {
+      setShowLimitModal(true);
+      return;
+    }
     setShowOnboarding(true);
   };
-  const finishOnboarding = () => {
+
+  const finishOnboarding = async () => {
     setShowOnboarding(false);
     setGameStarted(true);
+
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      try {
+        await updateDoc(userDocRef, {
+          gamesToday: increment(1),
+          lastPlayed: serverTimestamp()
+        });
+      } catch (e) {}
+    }
   };
 
   if (gameStarted) {
@@ -417,6 +440,47 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Daily Limit Modal */}
+      <AnimatePresence>
+        {showLimitModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="glass-card"
+              style={{ maxWidth: '500px', width: '90%', padding: '40px', textAlign: 'center', border: '1px solid var(--accent)' }}
+            >
+              <div style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }} onClick={() => setShowLimitModal(false)}>
+                <X size={24} opacity={0.5} />
+              </div>
+              <AlertTriangle size={48} color="var(--accent)" style={{ marginBottom: '20px' }} />
+              <h2 className="arcade-text" style={{ fontSize: '24px', marginBottom: '15px' }}>DAILY LIMIT REACHED</h2>
+              <p style={{ opacity: 0.6, marginBottom: '30px', fontSize: '14px' }}>
+                You've reached your <span style={{ color: 'var(--accent)' }}>15 free games</span> for today. Upgrade to Premium for unlimited gaming and elite features.
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button className="glow-btn" onClick={() => router.push('/premium')} style={{ width: '100%' }}>
+                  GO PREMIUM NOW
+                </button>
+                <button 
+                  onClick={() => setShowLimitModal(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#fff', opacity: 0.5, fontSize: '12px', cursor: 'pointer' }}
+                >
+                  I'll play again tomorrow
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
 
       <style jsx>{`
         .particle {
