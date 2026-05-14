@@ -126,7 +126,7 @@ const MotionTracker = ({ mode, onReady }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '200px', zIndex: 500 }}>
+    <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '280px', zIndex: 500 }}>
       {/* HUD Label */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span className="hud-text" style={{ fontSize: '10px' }}>LINK STATUS: <span style={{ color: isActive ? 'var(--accent)' : 'var(--danger)' }}>{isActive ? 'ACTIVE' : 'CONNECTING'}</span></span>
@@ -134,23 +134,14 @@ const MotionTracker = ({ mode, onReady }) => {
       </div>
 
       {/* Camera Feed Container */}
-      <div style={{ position: 'relative', width: '100%', height: '150px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(57, 255, 20, 0.3)', background: '#000', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+      <div style={{ position: 'relative', width: '100%', height: '210px', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(57, 255, 20, 0.4)', background: '#000', boxShadow: '0 0 30px rgba(0,0,0,0.6)' }}>
         
-        {/* Scanning Line */}
-        {isActive && (
-          <motion.div 
-            animate={{ top: ['0%', '100%', '0%'] }} 
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-            style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'rgba(57, 255, 20, 0.5)', zIndex: 10, boxShadow: '0 0 10px var(--accent)' }}
-          />
-        )}
-
         {/* Boost Flash Overlay */}
         <AnimatePresence>
           {isBoosting && (
             <motion.div 
               initial={{ opacity: 0 }} 
-              animate={{ opacity: 0.4 }} 
+              animate={{ opacity: 0.3 }} 
               exit={{ opacity: 0 }} 
               style={{ position: 'absolute', inset: 0, background: 'var(--accent)', zIndex: 15 }}
             />
@@ -158,12 +149,12 @@ const MotionTracker = ({ mode, onReady }) => {
         </AnimatePresence>
 
         {/* Corner Brackets */}
-        <div style={{ position: 'absolute', top: 10, left: 10, width: 20, height: 20, borderLeft: '2px solid var(--accent)', borderTop: '2px solid var(--accent)', zIndex: 20 }} />
-        <div style={{ position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRight: '2px solid var(--accent)', borderTop: '2px solid var(--accent)', zIndex: 20 }} />
-        <div style={{ position: 'absolute', bottom: 10, left: 10, width: 20, height: 20, borderLeft: '2px solid var(--accent)', borderBottom: '2px solid var(--accent)', zIndex: 20 }} />
-        <div style={{ position: 'absolute', bottom: 10, right: 10, width: 20, height: 20, borderRight: '2px solid var(--accent)', borderBottom: '2px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', top: 10, left: 10, width: 20, height: 20, borderLeft: '3px solid var(--accent)', borderTop: '3px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRight: '3px solid var(--accent)', borderTop: '3px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', bottom: 10, left: 10, width: 20, height: 20, borderLeft: '3px solid var(--accent)', borderBottom: '3px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', bottom: 10, right: 10, width: 20, height: 20, borderRight: '3px solid var(--accent)', borderBottom: '3px solid var(--accent)', zIndex: 20 }} />
 
-        <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', opacity: 0.6 }} playsInline muted />
+        <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', opacity: 1 }} playsInline muted />
         
         {!isActive && !error && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', zIndex: 30 }}>
@@ -173,16 +164,19 @@ const MotionTracker = ({ mode, onReady }) => {
       </div>
 
       {/* Mode Status HUD */}
-      <div className="glass-card" style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <p className="hud-text" style={{ fontSize: '10px', opacity: 0.5 }}>EXERCISE DETECTOR</p>
-        <p className="arcade-text" style={{ fontSize: '14px', color: 'var(--accent)' }}>{mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}</p>
+      <div className="glass-card" style={{ marginTop: '10px', padding: '15px', borderRadius: '12px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.15)' }}>
+        <p className="hud-text" style={{ fontSize: '11px', opacity: 0.6, letterSpacing: '2px' }}>NEURAL TRACKER: ACTIVE</p>
+        <p className="arcade-text" style={{ fontSize: '16px', color: 'var(--accent)', marginTop: '5px' }}>{mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}</p>
         
         {mode === 'fingers' && (
-          <div style={{ marginTop: '10px', textAlign: 'center' }}>
-            <span style={{ fontSize: '24px' }}>{['✊', '☝️', '✌️', '🤟', '🖖', '🖐️'][Math.min(fingerCount || 0, 5)]}</span>
-            <p className="hud-text" style={{ fontSize: '10px', color: fingerCount === 1 ? 'var(--accent)' : '#fff' }}>
-              {fingerCount === 1 ? 'READY TO BOOST' : 'SHOW 1 FINGER'}
-            </p>
+          <div style={{ marginTop: '12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', background: 'rgba(57, 255, 20, 0.05)', padding: '10px', borderRadius: '8px' }}>
+            <span style={{ fontSize: '32px' }}>{['✊', '☝️', '✌️', '🤟', '🖖', '🖐️'][Math.min(fingerCount || 0, 5)]}</span>
+            <div style={{ textAlign: 'left' }}>
+              <p className="hud-text" style={{ fontSize: '12px', color: fingerCount === 1 ? 'var(--accent)' : '#fff', fontWeight: 800 }}>
+                {fingerCount === 1 ? 'LOCKED ON' : 'DETECTION REQ.'}
+              </p>
+              <p style={{ fontSize: '9px', opacity: 0.5 }}>{fingerCount === 1 ? 'READY FOR BOOST' : 'SHOW 1 FINGER'}</p>
+            </div>
           </div>
         )}
       </div>

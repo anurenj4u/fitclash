@@ -132,7 +132,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
           const distPerRep = mode === 'fingers' ? 100 : 1000;
           playerDistanceRef.current += distPerRep;
-          this.cameras.main.shake(100, 0.005);
+          // Removed camera shake for better clarity
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
           this.tweens.add({ targets: player, scale: spr * 1.1, duration: 80, yoyo: true });
         };
