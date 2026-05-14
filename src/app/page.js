@@ -133,104 +133,125 @@ export default function Home() {
           </div>
 
           <h1 className="arcade-text" style={{
-            fontSize: "clamp(40px, 12vw, 140px)",
+            fontSize: "clamp(40px, 10vw, 120px)",
             lineHeight: 0.9,
             marginBottom: "20px",
             background: 'linear-gradient(to bottom, #fff 40%, #888 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 30px rgba(57, 255, 20, 0.3))'
+            filter: 'drop-shadow(0 0 30px rgba(57, 255, 20, 0.3))',
+            textAlign: 'center',
+            width: '100%'
           }}>
             CLASH<span style={{ color: "var(--accent)", WebkitTextFillColor: 'initial' }}>OFCARDIO</span>
           </h1>
           
           <p style={{
-            fontSize: "clamp(18px, 3vw, 28px)",
+            fontSize: "clamp(16px, 2.5vw, 24px)",
             fontFamily: 'var(--font-body)',
-            opacity: 0.9,
+            opacity: 0.8,
             marginBottom: "50px",
             maxWidth: "800px",
             margin: "0 auto 50px",
-            lineHeight: 1.4
+            lineHeight: 1.4,
+            textAlign: 'center'
           }}>
             Control games using <span style={{ color: 'var(--accent)', fontWeight: 800, textShadow: '0 0 10px var(--accent-glow)' }}>REAL EXERCISE</span>.<br/>
             Your body is the controller.
           </p>
 
-          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
+          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '80px' }}>
             <button
               className="glow-btn pulse-glow"
               onClick={startOnboarding}
-              style={{ fontSize: '20px', padding: '20px 60px', display: 'flex', alignItems: 'center', gap: '15px' }}
+              style={{ fontSize: '18px', padding: '18px 50px', display: 'flex', alignItems: 'center', gap: '12px' }}
             >
-              <Play fill="currentColor" size={24} /> PLAY NOW
+              <Play fill="currentColor" size={20} /> PLAY NOW
             </button>
             <button
               className="glass-card"
-              style={{ padding: '20px 40px', borderRadius: '12px', fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}
+              style={{ padding: '18px 40px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}
             >
               WATCH GAMEPLAY
             </button>
           </div>
 
           {/* Integrated Mode Selector UI Upgrade */}
-          <div className="glass-card" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', background: 'rgba(255,255,255,0.02)' }}>
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+          <div className="glass-card" style={{ 
+            padding: '40px', 
+            maxWidth: '900px', 
+            margin: '0 auto', 
+            background: 'rgba(2, 2, 5, 0.6)',
+            border: '1px solid rgba(57, 255, 20, 0.15)',
+            boxShadow: '0 0 50px rgba(0,0,0,0.5)'
+          }}>
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
                 <div style={{ textAlign: 'left' }}>
-                  <p className="hud-text" style={{ marginBottom: '20px' }}>[01] SELECT CHALLENGE</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p className="hud-text" style={{ marginBottom: '25px', color: 'var(--accent)', letterSpacing: '3px' }}>[01] SELECT CHALLENGE</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
-                      <button
+                      <motion.button
                         key={mode}
+                        whileHover={{ x: 5, backgroundColor: 'rgba(57, 255, 20, 0.08)' }}
                         onClick={() => setExerciseMode(mode)}
                         style={{
-                          background: exerciseMode === mode ? 'rgba(57, 255, 20, 0.1)' : 'transparent',
+                          background: exerciseMode === mode ? 'linear-gradient(90deg, rgba(57, 255, 20, 0.15) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
                           color: exerciseMode === mode ? 'var(--accent)' : '#fff',
-                          border: `1px solid ${exerciseMode === mode ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}`,
-                          padding: "15px 20px",
+                          border: `1px solid ${exerciseMode === mode ? 'var(--accent)' : 'rgba(255,255,255,0.08)'}`,
+                          padding: "18px 25px",
                           borderRadius: '8px',
-                          fontSize: '14px',
+                          fontSize: '15px',
                           fontWeight: 700,
                           textAlign: 'left',
                           cursor: 'pointer',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          fontFamily: 'var(--font-gaming)'
+                          fontFamily: 'var(--font-gaming)',
+                          letterSpacing: '1px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: exerciseMode === mode ? 'inset 4px 0 0 var(--accent)' : 'none'
                         }}
                       >
                         {mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()}
-                        {exerciseMode === mode && <Zap size={14} fill="var(--accent)" />}
-                      </button>
+                        {exerciseMode === mode && <Zap size={16} fill="var(--accent)" />}
+                      </motion.button>
                     ))}
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'left' }}>
-                  <p className="hud-text" style={{ marginBottom: '20px' }}>[02] TARGET DISTANCE</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+                  <p className="hud-text" style={{ marginBottom: '25px', color: 'var(--secondary)', letterSpacing: '3px' }}>[02] TARGET DISTANCE</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                     {[1, 2, 3].map(km => (
-                      <button
+                      <motion.button
                         key={km}
+                        whileHover={{ x: 5, backgroundColor: 'rgba(0, 242, 255, 0.08)' }}
                         onClick={() => setTargetDistance(km)}
                         style={{
-                          background: targetDistance === km ? 'rgba(0, 242, 255, 0.1)' : 'transparent',
+                          background: targetDistance === km ? 'linear-gradient(90deg, rgba(0, 242, 255, 0.15) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
                           color: targetDistance === km ? 'var(--secondary)' : '#fff',
-                          border: `1px solid ${targetDistance === km ? 'var(--secondary)' : 'rgba(255,255,255,0.1)'}`,
-                          padding: "15px 20px",
+                          border: `1px solid ${targetDistance === km ? 'var(--secondary)' : 'rgba(255,255,255,0.08)'}`,
+                          padding: "18px 25px",
                           borderRadius: '8px',
-                          fontSize: '14px',
+                          fontSize: '15px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          fontFamily: 'var(--font-gaming)'
+                          fontFamily: 'var(--font-gaming)',
+                          letterSpacing: '1px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: targetDistance === km ? 'inset 4px 0 0 var(--secondary)' : 'none'
                         }}
                       >
-                        {km} KM RACE
-                        <span style={{ fontSize: '10px', opacity: 0.5 }}>{km * 10} MINS EST.</span>
-                      </button>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span>{km} KM RACE</span>
+                          <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 500, marginTop: '2px' }}>{km * 10} MINS ESTIMATED</span>
+                        </div>
+                        {targetDistance === km && <TrendingUp size={16} color="var(--secondary)" />}
+                      </motion.button>
                     ))}
                   </div>
                 </div>
