@@ -12,16 +12,29 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubscribeDoc = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        // Listen for real-time user data updates
         const userDocRef = doc(db, "users", user.uid);
-        const unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
+        
+        // Cleanup previous listener if any
+        if (unsubscribeDoc) unsubscribeDoc();
+
+        unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            // Reset gamesToday if it's a new day
-            const lastPlayed = data.lastPlayed?.toDate().toDateString();
+            
+            // Safe date conversion (Handles both Firebase Timestamp and JS Date)
+            let lastPlayedDate;
+            if (data.lastPlayed?.toDate) {
+              lastPlayedDate = data.lastPlayed.toDate();
+            } else if (data.lastPlayed instanceof Date) {
+              lastPlayedDate = data.lastPlayed;
+            }
+
+            const lastPlayed = lastPlayedDate?.toDateString();
             const today = new Date().toDateString();
             
             setUserData({
@@ -29,7 +42,6 @@ export const AuthProvider = ({ children }) => {
               gamesToday: lastPlayed === today ? data.gamesToday : 0
             });
           } else {
-            // Initialize new user doc
             setDoc(userDocRef, { 
               isPremium: false, 
               gamesToday: 0, 
@@ -37,16 +49,23 @@ export const AuthProvider = ({ children }) => {
               email: user.email 
             });
           }
+          setLoading(false);
         });
-        return () => unsubscribeDoc();
       } else {
         setUser(null);
         setUserData({ isPremium: false, gamesToday: 0 });
+        if (unsubscribeDoc) {
+          unsubscribeDoc();
+          unsubscribeDoc = null;
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubscribeDoc) unsubscribeDoc();
+    };
   }, []);
 
   const logout = async () => {
