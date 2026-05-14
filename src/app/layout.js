@@ -45,6 +45,11 @@ export const metadata = {
     description: "The future of fitness is here. Play to get fit.",
     images: ["/og-image.png"],
   },
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/apple-icon.png',
+  },
   robots: {
     index: true,
     follow: true,
