@@ -190,22 +190,28 @@ export default function Home() {
           {/* Compact Vertical Stack */}
           <div style={{ width: '100%', maxWidth: '850px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
             
-            {/* ROW 1: TARGET DISTANCE - More compact */}
-            <div className="glass-card" style={{ padding: '15px', background: 'rgba(2, 2, 5, 0.4)' }}>
-              <p className="hud-text" style={{ marginBottom: '12px', fontSize: '10px', color: 'var(--secondary)', letterSpacing: '3px', textAlign: 'center' }}>[01] SELECT TARGET DISTANCE</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {/* ROW 1: TARGET DISTANCE - Advanced UI with Custom Option */}
+            <div className="glass-card" style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(0, 242, 255, 0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <p className="hud-text" style={{ fontSize: '10px', color: 'var(--secondary)', letterSpacing: '3px' }}>[01] SELECT TARGET DISTANCE</p>
+                <div style={{ background: 'rgba(0, 242, 255, 0.1)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, color: 'var(--secondary)', border: '1px solid rgba(0, 242, 255, 0.2)' }}>
+                  {targetDistance >= 1 ? `${targetDistance} KM` : `${targetDistance * 1000} METERS`}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {[1, 2, 3].map(km => (
                   <motion.button
                     key={km}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(0, 242, 255, 0.05)' }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setTargetDistance(km)}
                     style={{
-                      background: targetDistance === km ? 'linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.03)',
+                      background: targetDistance === km ? 'linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
                       color: targetDistance === km ? 'var(--secondary)' : '#fff',
-                      border: `1px solid ${targetDistance === km ? 'var(--secondary)' : 'rgba(255,255,255,0.1)'}`,
+                      border: `1px solid ${targetDistance === km ? 'var(--secondary)' : 'rgba(255,255,255,0.05)'}`,
                       padding: "12px 10px",
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       fontSize: '11px',
                       fontWeight: 800,
                       cursor: 'pointer',
@@ -214,45 +220,88 @@ export default function Home() {
                       alignItems: 'center',
                       gap: '2px',
                       fontFamily: 'var(--font-gaming)',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: targetDistance === km ? 'inset 0 0 15px rgba(0, 242, 255, 0.1)' : 'none'
                     }}
                   >
-                    <span style={{ letterSpacing: '1px' }}>{km} KM RACE</span>
-                    <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 10} MINS EST.</span>
+                    <span style={{ letterSpacing: '1px' }}>{km} KM</span>
+                    <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 10} MINS</span>
                   </motion.button>
                 ))}
+                
+                {/* Custom Meters Input Box */}
+                <div style={{
+                  position: 'relative',
+                  background: ![1, 2, 3].includes(targetDistance) ? 'linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${![1, 2, 3].includes(targetDistance) ? 'var(--secondary)' : 'rgba(255,255,255,0.05)'}`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px',
+                  transition: 'all 0.3s ease'
+                }}>
+                  <input 
+                    type="number"
+                    placeholder="CUSTOM M"
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (val > 0) setTargetDistance(val / 1000);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      width: '100%',
+                      padding: '12px 0',
+                      outline: 'none',
+                      fontFamily: 'var(--font-gaming)',
+                      textAlign: 'center'
+                    }}
+                  />
+                  <div style={{ fontSize: '9px', opacity: 0.5, marginLeft: '4px' }}>M</div>
+                </div>
               </div>
             </div>
 
-            {/* ROW 2: SELECT CHALLENGE - More compact */}
-            <div className="glass-card" style={{ padding: '15px', background: 'rgba(2, 2, 5, 0.4)' }}>
-              <p className="hud-text" style={{ marginBottom: '12px', fontSize: '10px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT EXERCISE CHALLENGE</p>
+            {/* ROW 2: SELECT CHALLENGE - Modernized Grid */}
+            <div className="glass-card" style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(57, 255, 20, 0.2)' }}>
+              <p className="hud-text" style={{ marginBottom: '15px', fontSize: '10px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT EXERCISE CHALLENGE</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
                   <motion.button
                     key={mode}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(57, 255, 20, 0.05)' }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setExerciseMode(mode)}
                     style={{
-                      background: exerciseMode === mode ? 'linear-gradient(135deg, rgba(57, 255, 20, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.03)',
+                      background: exerciseMode === mode ? 'linear-gradient(135deg, rgba(57, 255, 20, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
                       color: exerciseMode === mode ? 'var(--accent)' : '#fff',
-                      border: `1px solid ${exerciseMode === mode ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}`,
-                      padding: "12px 5px",
-                      borderRadius: '10px',
+                      border: `1px solid ${exerciseMode === mode ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}`,
+                      padding: "15px 5px",
+                      borderRadius: '12px',
                       fontSize: '10px',
-                      fontWeight: 800,
+                      fontWeight: 900,
                       cursor: 'pointer',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '5px',
                       fontFamily: 'var(--font-gaming)',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: exerciseMode === mode ? 'inset 0 0 15px rgba(57, 255, 20, 0.1)' : 'none'
                     }}
                   >
-                    <span style={{ whiteSpace: 'nowrap' }}>{mode === 'jacks' ? 'J. JACKS' : mode === 'fingers' ? 'F. SPRINT' : mode.toUpperCase()}</span>
-                    {exerciseMode === mode && <Zap size={10} fill="var(--accent)" />}
+                    <span style={{ whiteSpace: 'nowrap', letterSpacing: '1px' }}>
+                      {mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()}
+                    </span>
+                    {exerciseMode === mode && (
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                        <Zap size={12} fill="var(--accent)" />
+                      </motion.div>
+                    )}
                   </motion.button>
                 ))}
               </div>
