@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const metadata = {
-  title: "Privacy Policy | FitClash AI Fitness",
-  description: "Transparency about how we handle your camera data and motion tracking at FitClash.",
+  title: "Privacy Policy | ClashofCardio AI Fitness",
+  description: "Transparency about how we handle your camera data and motion tracking at ClashofCardio.",
 };
 
 export default function PrivacyPage() {
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
       <section style={{ marginBottom: '40px' }}>
         <h2 style={{ color: 'var(--accent)', fontSize: '20px', marginBottom: '15px' }}>1. Camera Data & Motion Tracking</h2>
         <p>
-          FitClash uses your device's camera to enable motion tracking and exercise detection. 
+          ClashofCardio uses your device's camera to enable motion tracking and exercise detection. 
           <strong> Crucially, all video processing is performed locally on your device using TensorFlow.js.</strong> 
           No images or video streams are ever transmitted to our servers or stored permanently on your device. 
           The camera feed is used only in memory to calculate body keypoints.
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
       <section style={{ marginBottom: '40px' }}>
         <h2 style={{ color: 'var(--accent)', fontSize: '20px', marginBottom: '15px' }}>4. Contact Us</h2>
         <p>
-          If you have any questions about this Privacy Policy, please contact us at support@fitclash.ai.
+          If you have any questions about this Privacy Policy, please contact us at support@clashofcardio.fit.
         </p>
       </section>
     </div>

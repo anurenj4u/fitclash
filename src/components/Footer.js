@@ -47,7 +47,7 @@ export default function Footer() {
         opacity: 0.4,
         fontSize: '12px'
       }}>
-        © {new Date().getFullYear()} FitClash AI Fitness. All rights reserved.
+        © {new Date().getFullYear()} ClashofCardio AI Fitness. All rights reserved.
       </div>
     </footer>
   );

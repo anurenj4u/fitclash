@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const metadata = {
-  title: "Terms of Service | FitClash",
+  title: "Terms of Service | ClashofCardio",
 };
 
 export default function TermsPage() {
@@ -10,11 +10,11 @@ export default function TermsPage() {
       <h1 className="arcade-text" style={{ fontSize: '32px', marginBottom: '40px', textAlign: 'center' }}>
         TERMS OF <span style={{ color: 'var(--accent)' }}>SERVICE</span>
       </h1>
-      <p>By using FitClash, you agree to these terms...</p>
+      <p>By using ClashofCardio, you agree to these terms...</p>
       <section style={{ marginTop: '20px' }}>
         <h2 style={{ color: 'var(--accent)' }}>Medical Disclaimer</h2>
         <p>
-          Consult with a healthcare professional before starting any new exercise program. FitClash is for entertainment purposes and is used at your own risk.
+          Consult with a healthcare professional before starting any new exercise program. ClashofCardio is for entertainment purposes and is used at your own risk.
         </p>
       </section>
     </div>

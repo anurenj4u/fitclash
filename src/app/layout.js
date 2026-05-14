@@ -19,21 +19,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "FitClash | AI-Powered Motion Fitness Game",
+  title: "ClashofCardio | AI-Powered Motion Fitness Game",
   description: "Transform your workout into an arcade experience. Use your camera to race, score goals, and stay fit with AI motion tracking. No equipment needed.",
-  keywords: ["AI fitness", "motion game", "workout game", "FitClash", "computer vision fitness", "squat game"],
-  authors: [{ name: "FitClash Team" }],
+  keywords: ["AI fitness", "motion game", "workout game", "ClashofCardio", "computer vision fitness", "squat game"],
+  authors: [{ name: "ClashofCardio Team" }],
   openGraph: {
-    title: "FitClash | AI-Powered Motion Fitness Game",
+    title: "ClashofCardio | AI-Powered Motion Fitness Game",
     description: "Race to the finish line by performing real-world exercises. Your body is the controller.",
-    url: "https://fitclash.com",
-    siteName: "FitClash",
+    url: "https://clashofcardio.fit",
+    siteName: "ClashofCardio",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "FitClash Gameplay",
+        alt: "ClashofCardio Gameplay",
       },
     ],
     locale: "en_US",
@@ -41,7 +41,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FitClash | AI-Powered Motion Fitness Game",
+    title: "ClashofCardio | AI-Powered Motion Fitness Game",
     description: "The future of fitness is here. Play to get fit.",
     images: ["/og-image.png"],
   },

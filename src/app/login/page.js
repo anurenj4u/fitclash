@@ -55,7 +55,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="commander@fitclash.ai"
+              placeholder="commander@clashofcardio.fit"
               required
               style={{
                 width: '100%',
@@ -105,7 +105,7 @@ export default function LoginPage() {
         </form>
 
         <p style={{ marginTop: '30px', fontSize: '14px', opacity: 0.7 }}>
-          New to FitClash? <Link href="/register" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Register Here</Link>
+          New to ClashofCardio? <Link href="/register" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Register Here</Link>
         </p>
       </div>
     </div>

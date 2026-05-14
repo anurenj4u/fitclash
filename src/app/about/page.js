@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const metadata = {
-  title: "About FitClash | The Future of AI Fitness",
-  description: "Learn how FitClash uses computer vision and AI to gamify your fitness routine. No gym membership required, just your camera.",
+  title: "About ClashofCardio | The Future of AI Fitness",
+  description: "Learn how ClashofCardio uses computer vision and AI to gamify your fitness routine. No gym membership required, just your camera.",
 };
 
 export default function AboutPage() {
@@ -15,14 +15,14 @@ export default function AboutPage() {
       <section style={{ marginBottom: '60px' }}>
         <h2 style={{ color: 'var(--accent)', marginBottom: '20px' }}>Our Mission</h2>
         <p>
-          At FitClash, we believe that fitness should be fun, accessible, and engaging. Traditional workouts can often feel like a chore. We've combined cutting-edge AI motion tracking with arcade-style gameplay to create an experience that keeps you moving and coming back for more.
+          At ClashofCardio, we believe that fitness should be fun, accessible, and engaging. Traditional workouts can often feel like a chore. We've combined cutting-edge AI motion tracking with arcade-style gameplay to create an experience that keeps you moving and coming back for more.
         </p>
       </section>
 
       <section style={{ marginBottom: '60px', padding: '30px', background: 'var(--glass)', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
         <h2 style={{ color: 'var(--accent)', marginBottom: '20px' }}>How AI Tracking Works</h2>
         <p>
-          FitClash uses <strong>TensorFlow.js</strong> and advanced pose estimation models to track your movements in real-time through your device's camera. 
+          ClashofCardio uses <strong>TensorFlow.js</strong> and advanced pose estimation models to track your movements in real-time through your device's camera. 
           Our AI identifies key points on your body to verify each rep, ensuring perfect form and preventing "cheating." 
           <br /><br />
           <span style={{ opacity: 0.8, fontSize: '14px' }}>*No video data is ever sent to our servers. All processing happens locally on your device for total privacy.</span>

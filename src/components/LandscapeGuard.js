@@ -66,7 +66,7 @@ export default function LandscapeGuard({ children }) {
             lineHeight: '1.6',
             maxWidth: '260px'
           }}>
-            FitClash is best played in <strong style={{ color: '#fff' }}>Landscape Mode</strong>.<br/>
+            ClashofCardio is best played in <strong style={{ color: '#fff' }}>Landscape Mode</strong>.<br/>
             Please rotate your phone sideways to continue.
           </div>
         </div>

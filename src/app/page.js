@@ -63,11 +63,11 @@ export default function Home() {
       }}>
         <div className="animate-fade-in" style={{ maxWidth: '900px' }}>
           <h1 className="arcade-text" style={{
-            fontSize: "clamp(40px, 10vw, 120px)",
+            fontSize: "clamp(30px, 8vw, 100px)", // Adjusted size slightly for longer name
             lineHeight: 1,
             marginBottom: "20px"
           }}>
-            FIT<span style={{ color: "var(--accent)" }}>CLASH</span>
+            CLASH<span style={{ color: "var(--accent)" }}>OFCARDIO</span>
           </h1>
           <p style={{
             fontSize: "clamp(16px, 2.5vw, 24px)",

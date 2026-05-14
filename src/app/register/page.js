@@ -78,7 +78,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="pilot@fitclash.ai"
+              placeholder="pilot@clashofcardio.fit"
               required
               style={{
                 width: '100%',

@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = 'https://fitclash.com';
+  const baseUrl = 'https://clashofcardio.fit';
   
   return [
     {

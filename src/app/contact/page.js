@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const metadata = {
-  title: "Contact Us | FitClash",
-  description: "Get in touch with the FitClash team for support or feedback.",
+  title: "Contact Us | ClashofCardio",
+  description: "Get in touch with the ClashofCardio team for support or feedback.",
 };
 
 export default function ContactPage() {
@@ -24,8 +24,8 @@ export default function ContactPage() {
         minWidth: '300px'
       }}>
         <h3 style={{ color: 'var(--accent)', marginBottom: '10px' }}>Email Us</h3>
-        <a href="mailto:support@fitclash.ai" style={{ color: '#fff', fontSize: '24px', fontWeight: 700, textDecoration: 'none' }}>
-          support@fitclash.ai
+        <a href="mailto:support@clashofcardio.fit" style={{ color: '#fff', fontSize: '24px', fontWeight: 700, textDecoration: 'none' }}>
+          support@clashofcardio.fit
         </a>
       </div>
 

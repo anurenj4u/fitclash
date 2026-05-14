@@ -22,8 +22,8 @@ export default function Navbar() {
       zIndex: 100,
     }}>
       <Link href="/" style={{ textDecoration: 'none' }}>
-        <div className="arcade-text" style={{ fontSize: '24px', cursor: 'pointer' }}>
-          FIT<span style={{ color: 'var(--accent)' }}>CLASH</span>
+        <div className="arcade-text" style={{ fontSize: '20px', cursor: 'pointer' }}>
+          CLASH<span style={{ color: 'var(--accent)' }}>OFCARDIO</span>
         </div>
       </Link>
       
