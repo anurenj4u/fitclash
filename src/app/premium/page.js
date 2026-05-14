@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import Script from 'next/script';
 
 const plans = [
   {
@@ -47,7 +48,6 @@ export default function PremiumPage() {
     }
 
     setLoading(true);
-    // Logic to initiate Razorpay
     try {
       const response = await fetch('/api/razorpay', {
         method: 'POST',
@@ -64,7 +64,6 @@ export default function PremiumPage() {
         description: `${plan.name} Subscription`,
         order_id: data.id,
         handler: function (response) {
-          // Verify payment on server
           router.push('/dashboard?status=success');
         },
         prefill: {
@@ -76,8 +75,12 @@ export default function PremiumPage() {
         },
       };
 
-      const rzp1 = new window.Razorpay(options);
-      rzp1.open();
+      if (window.Razorpay) {
+        const rzp1 = new window.Razorpay(options);
+        rzp1.open();
+      } else {
+        alert("Payment gateway not loaded. Please refresh.");
+      }
     } catch (error) {
       console.error("Payment failed", error);
     } finally {
@@ -178,9 +181,7 @@ export default function PremiumPage() {
       </section>
 
       <Footer />
-      
-      {/* Script for Razorpay */}
-      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   );
 }
