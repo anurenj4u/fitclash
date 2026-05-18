@@ -6,7 +6,7 @@ export async function POST(req) {
     const { amount, planId } = await req.json();
 
     const instance = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_S1FS7OBodNnrsO',
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
