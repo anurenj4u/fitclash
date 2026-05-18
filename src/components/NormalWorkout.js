@@ -11,6 +11,7 @@ const NormalWorkout = ({ mode, isCameraReady }) => {
   const [isFinished, setIsFinished] = useState(false);
   const [gameState, setGameState] = useState('waiting'); // waiting, ready, countdown, playing
   const [countdown, setCountdown] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(60);
   const { user } = useAuth();
   
   const previousRepsRef = useRef(0);
@@ -49,6 +50,22 @@ const NormalWorkout = ({ mode, isCameraReady }) => {
     window.addEventListener('pose-update', handlePoseUpdate);
     return () => window.removeEventListener('pose-update', handlePoseUpdate);
   }, [gameState]);
+
+  useEffect(() => {
+    let timer;
+    if (gameState === 'playing' && !isFinished) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => Math.max(0, prev - 1));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [gameState, isFinished]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && gameState === 'playing' && !isFinished) {
+      handleEndWorkout();
+    }
+  }, [timeLeft, gameState, isFinished]);
 
   const handleEndWorkout = async () => {
     if (user && reps > highestReps) {
@@ -126,13 +143,9 @@ const NormalWorkout = ({ mode, isCameraReady }) => {
             </div>
           )}
           
-          <button 
-            className="glow-btn" 
-            onClick={handleEndWorkout} 
-            style={{ marginTop: '40px', padding: '15px 40px', fontSize: '18px', pointerEvents: 'auto' }}
-          >
-            END WORKOUT
-          </button>
+          <div style={{ marginTop: '40px', padding: '15px 40px', fontSize: '32px', color: timeLeft <= 10 ? 'var(--danger)' : '#fff', fontWeight: 'bold', fontFamily: 'var(--font-gaming)' }}>
+            TIMER: {timeLeft}s
+          </div>
         </div>
       )}
     </div>
