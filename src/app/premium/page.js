@@ -63,7 +63,7 @@ export default function PremiumPage() {
       const data = await response.json();
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_S1FS7OBodNnrsO',
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_SqmNNvCUkjt0pW',
         amount: data.amount,
         currency: "INR",
         name: "ClashofCardio",
