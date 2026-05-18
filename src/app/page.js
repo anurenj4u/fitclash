@@ -184,7 +184,7 @@ export default function Home() {
             maxWidth: "500px",
             lineHeight: 1.4
           }}>
-            Control games using <span style={{ color: 'var(--accent)', fontWeight: 800 }}>REAL EXERCISE</span>. Your body is the controller.
+            Achieve your fitness goals with interactive AI tracking. <span style={{ color: 'var(--accent)', fontWeight: 800 }}>Your body is the controller.</span>
           </p>
 
           {/* Compact Vertical Stack */}
@@ -267,7 +267,7 @@ export default function Home() {
 
             {/* ROW 2: SELECT CHALLENGE - Modernized Grid */}
             <div className="glass-card" style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(57, 255, 20, 0.2)' }}>
-              <p className="hud-text" style={{ marginBottom: '15px', fontSize: '10px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT EXERCISE CHALLENGE</p>
+              <p className="hud-text" style={{ marginBottom: '15px', fontSize: '10px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT WORKOUT TYPE</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
                   <motion.button
@@ -316,7 +316,7 @@ export default function Home() {
                 onClick={startOnboarding}
                 style={{ fontSize: '14px', padding: '15px 40px', display: 'flex', alignItems: 'center', gap: '10px' }}
               >
-                <Play fill="currentColor" size={16} /> INITIALIZE GAME
+                <Play fill="currentColor" size={16} /> START
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -359,7 +359,7 @@ export default function Home() {
       {/* Features Section Upgrade */}
       <section style={{ padding: '120px 5%', background: '#020205', position: 'relative', zIndex: 2 }}>
         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <h2 className="arcade-text" style={{ fontSize: 'clamp(32px, 5vw, 60px)', marginBottom: '20px' }}>WEAPONIZE YOUR <span style={{ color: 'var(--accent)' }}>WORKOUT</span></h2>
+          <h2 className="arcade-text" style={{ fontSize: 'clamp(32px, 5vw, 60px)', marginBottom: '20px' }}>ELEVATE YOUR <span style={{ color: 'var(--accent)' }}>WORKOUT</span></h2>
           <p style={{ opacity: 0.6, fontSize: '20px' }}>The world's most advanced AI fitness engine.</p>
         </div>
         
@@ -372,20 +372,20 @@ export default function Home() {
               color: 'var(--accent)' 
             },
             { 
-              title: "ARCADE RACING", 
-              desc: "Battle AI opponents in high-stakes races. Your speed depends on your rep intensity.", 
+              title: "INTERACTIVE CHALLENGES", 
+              desc: "Stay motivated with dynamic targets. Your speed depends on your rep intensity.", 
               icon: <Zap size={32} />,
               color: 'var(--secondary)' 
             },
             { 
-              title: "MULTIPLAYER LEAGUES", 
-              desc: "Challenge friends or climb global leaderboards. Become the ultimate cardio champion.", 
+              title: "COMMUNITY GOALS", 
+              desc: "Challenge friends or track your progress globally. Become the ultimate cardio champion.", 
               icon: <Trophy size={32} />,
               color: 'var(--tertiary)' 
             },
             { 
-              title: "STREAK BONUSES", 
-              desc: "Daily missions, XP gains, and unlockable runner skins keep you coming back.", 
+              title: "DAILY STREAKS", 
+              desc: "Daily missions, milestone tracking, and fitness insights keep you coming back.", 
               icon: <Star size={32} />,
               color: '#ffcc00' 
             }
@@ -467,7 +467,7 @@ export default function Home() {
               }}
             >
               <ShieldCheck size={64} color="var(--accent)" style={{ marginBottom: '30px' }} />
-              <h2 className="arcade-text" style={{ color: 'var(--accent)', marginBottom: '30px', fontSize: '32px' }}>INITIALIZING NEURAL LINK</h2>
+              <h2 className="arcade-text" style={{ color: 'var(--accent)', marginBottom: '30px', fontSize: '32px' }}>CALIBRATING TRACKER</h2>
               <div style={{ textAlign: 'left', marginBottom: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                   <div style={{ background: 'var(--accent)', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 900, fontSize: '12px' }}>1</div>
@@ -483,7 +483,7 @@ export default function Home() {
                 </div>
               </div>
               <button className="glow-btn pulse-glow" style={{ width: '100%', fontSize: '20px' }} onClick={finishOnboarding}>
-                ESTABLISH CONNECTION 🚀
+                START WORKOUT 🚀
               </button>
             </motion.div>
           </motion.div>

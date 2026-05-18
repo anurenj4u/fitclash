@@ -216,8 +216,8 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
       )}
       {gameStateDisplay === 'ready' && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)' }}>
-          <h2 className="arcade-text" style={{ fontSize: '40px', marginBottom: '30px' }}>SYSTEMS <span style={{ color: 'var(--accent)' }}>READY</span></h2>
-          <button className="glow-btn pulse-glow" onClick={() => { gameStateRef.current = 'countdown'; setGameStateDisplay('countdown'); let timer = 3; setCountdown(timer); const interval = setInterval(() => { timer -= 1; setCountdown(timer); if (timer === 0) { clearInterval(interval); gameStateRef.current = 'playing'; setGameStateDisplay('playing'); } }, 1000); }} style={{ padding: '25px 60px', fontSize: '24px' }}>INITIATE RACE ⚡</button>
+          <h2 className="arcade-text" style={{ fontSize: '40px', marginBottom: '30px' }}>TRACKER <span style={{ color: 'var(--accent)' }}>READY</span></h2>
+          <button className="glow-btn pulse-glow" onClick={() => { gameStateRef.current = 'countdown'; setGameStateDisplay('countdown'); let timer = 3; setCountdown(timer); const interval = setInterval(() => { timer -= 1; setCountdown(timer); if (timer === 0) { clearInterval(interval); gameStateRef.current = 'playing'; setGameStateDisplay('playing'); } }, 1000); }} style={{ padding: '25px 60px', fontSize: '24px' }}>START WORKOUT ⚡</button>
         </div>
       )}
       {gameStateDisplay === 'countdown' && (
@@ -228,9 +228,9 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
       {gameStateDisplay === 'finished' && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center' }}>
-            <h2 className="arcade-text" style={{ fontSize: '80px', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: '20px' }}>{winnerState === 'PLAYER' ? 'MISSION SUCCESS' : 'CHALLENGE FAILED'}</h2>
+            <h2 className="arcade-text" style={{ fontSize: '80px', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: '20px' }}>{winnerState === 'PLAYER' ? 'WORKOUT COMPLETE' : 'WORKOUT ENDED'}</h2>
             <div className="glass-card" style={{ marginBottom: '40px', padding: '30px 60px' }}>
-              <p className="hud-text" style={{ fontSize: '20px' }}>{winnerState === 'PLAYER' ? 'YOU OUT-PERFORMED THE AI' : 'AI SPEED EXCEEDED PLAYER CAPACITY'}</p>
+              <p className="hud-text" style={{ fontSize: '20px' }}>{winnerState === 'PLAYER' ? 'GREAT JOB KEEPING UP THE PACE!' : "KEEP PUSHING, YOU'LL GET IT NEXT TIME"}</p>
               <div style={{ marginTop: '20px', display: 'flex', gap: '30px', justifyContent: 'center' }}>
                 <div><p style={{ opacity: 0.5, fontSize: '12px' }}>CALORIES</p><p className="arcade-text" style={{ fontSize: '24px' }}>{Math.floor(Math.random() * 50 + 20)}</p></div>
                 <div><p style={{ opacity: 0.5, fontSize: '12px' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--secondary)' }}>+450</p></div>
