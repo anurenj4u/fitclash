@@ -81,6 +81,14 @@ const NormalWorkout = ({ mode, isCameraReady }) => {
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 90, pointerEvents: 'none' }}>
       
+      {gameState === 'waiting' && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)' }}>
+          <div className="loader" style={{ marginBottom: '20px' }}></div>
+          <h2 className="arcade-text" style={{ fontSize: '32px', color: 'var(--accent)' }}>INITIALIZING TRACKER</h2>
+          <p className="hud-text" style={{ marginTop: '10px', opacity: 0.7 }}>Please allow camera access...</p>
+        </div>
+      )}
+
       {gameState === 'ready' && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)', pointerEvents: 'auto' }}>
           <h2 className="arcade-text" style={{ fontSize: '40px', marginBottom: '30px' }}>TRACKER <span style={{ color: 'var(--accent)' }}>READY</span></h2>
