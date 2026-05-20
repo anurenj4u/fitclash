@@ -63,6 +63,11 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         this.load.image('ai', '/neymar.png');
         this.load.image('football', '/football.png');
         this.load.image('spark', 'https://labs.phaser.io/assets/particles/blue.png');
+        
+        // Load all 6 Neymar running frames from the public/naymer directory
+        for (let i = 1; i <= 6; i++) {
+          this.load.image(`neymarRun${i}`, `/naymer/neymar${i}.png`);
+        }
       }
 
       function buildStadium(W, H) {
@@ -161,9 +166,26 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         });
         trailParticles.setDepth(5);
 
-        ai = this.add.sprite(playerStartX, getTrackY(H), 'ai');
+        // Create the Neymar running animation from individual frames
+        this.anims.create({
+          key: 'neymar_run',
+          frames: [
+            { key: 'neymarRun1' },
+            { key: 'neymarRun2' },
+            { key: 'neymarRun3' },
+            { key: 'neymarRun4' },
+            { key: 'neymarRun5' },
+            { key: 'neymarRun6' }
+          ],
+          frameRate: 10,
+          repeat: -1
+        });
+
+        ai = this.add.sprite(playerStartX, getTrackY(H), 'neymarRun1');
         ai.setScale(spr * 0.9);
         ai.setDepth(8);
+        ai.play('neymar_run');
+        ai.anims.pause();
 
         player = this.add.sprite(playerStartX, getTrackY(H), 'player');
         player.setScale(spr);
@@ -193,6 +215,12 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           setWinnerState(null);
           gameStateRef.current = 'ready';
           setGameStateDisplay('ready');
+          
+          if (ai && ai.anims) {
+            ai.play('neymar_run');
+            ai.anims.pause();
+            ai.setTexture('neymarRun1');
+          }
         };
       }
 
@@ -219,6 +247,16 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           const isPlaying = gameStateRef.current === 'playing' && !winnerRef.current;
           const rollFactor = isPlaying ? 0.32 : 0.05;
           ball.angle += rollFactor * delta;
+        }
+
+        // 3. Control Neymar running animation playback based on game state
+        if (ai && ai.anims) {
+          const isRunning = gameStateRef.current === 'playing' && !winnerRef.current;
+          if (isRunning) {
+            if (ai.anims.isPaused) ai.anims.resume();
+          } else {
+            if (!ai.anims.isPaused) ai.anims.pause();
+          }
         }
 
         if (gameStateRef.current !== 'playing' || winnerRef.current) return;
