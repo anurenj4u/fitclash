@@ -286,8 +286,8 @@ const FitnessRace = ({
         player.play('player_run');
         player.anims.pause();
 
-        ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 55, 'football');
-        ball.setScale(spr * 0.15);
+        ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 72, 'football');
+        ball.setScale(spr * 0.26);
         ball.setDepth(10);
 
         leaderArrow = this.add.graphics().setDepth(20);
@@ -359,7 +359,7 @@ const FitnessRace = ({
         // 2. Smooth ball rolling rotation (spins continuously based on activity)
         if (ball) {
           const isPlaying = gameStateRef.current === 'playing' && !winnerRef.current;
-          const rollFactor = isPlaying ? 0.32 : 0.05;
+          const rollFactor = isPlaying ? 0.55 : 0.08;
           ball.angle += rollFactor * delta;
         }
 
@@ -399,7 +399,7 @@ const FitnessRace = ({
         
         const leader = playerDistanceRef.current >= aiDistanceRef.current ? player : ai;
         ball.x = leader.x + 40; 
-        ball.y = leader.y + 50;
+        ball.y = leader.y + 72;
         
         leaderArrow.x = leader.x; leaderArrow.y = leader.y - 80;
         this.cameras.main.scrollX = Math.max(player.x, ai.x) - (window.innerWidth / 3);
