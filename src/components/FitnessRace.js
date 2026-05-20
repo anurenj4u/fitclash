@@ -64,9 +64,9 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         this.load.image('football', '/football.png');
         this.load.image('spark', 'https://labs.phaser.io/assets/particles/blue.png');
         
-        // Load all 6 Neymar running frames from the public/naymer directory
-        for (let i = 1; i <= 6; i++) {
-          this.load.image(`neymarRun${i}`, `/naymer/neymar${i}.png`);
+        // Load all 9 Brazil running frames from the public/neymer directory
+        for (let i = 1; i <= 9; i++) {
+          this.load.image(`brazilRun${i}`, `/neymer/brazil${i}.png`);
         }
       }
 
@@ -166,22 +166,25 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         });
         trailParticles.setDepth(5);
 
-        // Create the Neymar running animation from individual frames
+        // Create the Brazil running animation from individual frames
         this.anims.create({
           key: 'neymar_run',
           frames: [
-            { key: 'neymarRun1' },
-            { key: 'neymarRun2' },
-            { key: 'neymarRun3' },
-            { key: 'neymarRun4' },
-            { key: 'neymarRun5' },
-            { key: 'neymarRun6' }
+            { key: 'brazilRun1' },
+            { key: 'brazilRun2' },
+            { key: 'brazilRun3' },
+            { key: 'brazilRun4' },
+            { key: 'brazilRun5' },
+            { key: 'brazilRun6' },
+            { key: 'brazilRun7' },
+            { key: 'brazilRun8' },
+            { key: 'brazilRun9' }
           ],
-          frameRate: 10,
+          frameRate: 14,
           repeat: -1
         });
 
-        ai = this.add.sprite(playerStartX, getTrackY(H), 'neymarRun1');
+        ai = this.add.sprite(playerStartX, getTrackY(H), 'brazilRun1');
         ai.setScale(spr * 0.9);
         ai.setDepth(8);
         ai.play('neymar_run');
@@ -219,7 +222,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           if (ai && ai.anims) {
             ai.play('neymar_run');
             ai.anims.pause();
-            ai.setTexture('neymarRun1');
+            ai.setTexture('brazilRun1');
           }
         };
       }
