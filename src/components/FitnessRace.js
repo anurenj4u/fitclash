@@ -64,14 +64,9 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         this.load.image('football', '/football.png');
         this.load.image('spark', 'https://labs.phaser.io/assets/particles/blue.png');
         
-        // Load all 9 Brazil running frames from the public/neymer directory
-        for (let i = 1; i <= 9; i++) {
-          this.load.image(`brazilRun${i}`, `/neymer/brazil${i}.png`);
-        }
-
-        // Load all 8 Ronaldo running frames from the public/ronaldo directory
-        for (let i = 1; i <= 8; i++) {
-          this.load.image(`ronaldoRun${i}`, `/ronaldo/ronaldo${i}.png`);
+        // Load all 6 Neymar running frames from the public/neymar directory
+        for (let i = 1; i <= 6; i++) {
+          this.load.image(`neymarRun${i}`, `/neymar/neymar${i}.png`);
         }
       }
 
@@ -196,11 +191,8 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         buildStadium(W, H);
 
         // Process all animation frames to strip solid black background shapes
-        for (let i = 1; i <= 9; i++) {
-          removeBlackBackground(this, `brazilRun${i}`);
-        }
-        for (let i = 1; i <= 8; i++) {
-          removeBlackBackground(this, `ronaldoRun${i}`);
+        for (let i = 1; i <= 6; i++) {
+          removeBlackBackground(this, `neymarRun${i}`);
         }
 
         trailParticles = this.add.particles(0, 0, 'spark', {
@@ -213,52 +205,30 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         });
         trailParticles.setDepth(5);
 
-        // Create the Brazil running animation from clean textures
+        // Create the Neymar running animation from clean textures
         this.anims.create({
           key: 'neymar_run',
           frames: [
-            { key: 'brazilRun1_clean' },
-            { key: 'brazilRun2_clean' },
-            { key: 'brazilRun3_clean' },
-            { key: 'brazilRun4_clean' },
-            { key: 'brazilRun5_clean' },
-            { key: 'brazilRun6_clean' },
-            { key: 'brazilRun7_clean' },
-            { key: 'brazilRun8_clean' },
-            { key: 'brazilRun9_clean' }
+            { key: 'neymarRun1_clean' },
+            { key: 'neymarRun2_clean' },
+            { key: 'neymarRun3_clean' },
+            { key: 'neymarRun4_clean' },
+            { key: 'neymarRun5_clean' },
+            { key: 'neymarRun6_clean' }
           ],
-          frameRate: 14,
+          frameRate: 10,
           repeat: -1
         });
 
-        // Create the Ronaldo running animation from clean textures
-        this.anims.create({
-          key: 'player_run',
-          frames: [
-            { key: 'ronaldoRun1_clean' },
-            { key: 'ronaldoRun2_clean' },
-            { key: 'ronaldoRun3_clean' },
-            { key: 'ronaldoRun4_clean' },
-            { key: 'ronaldoRun5_clean' },
-            { key: 'ronaldoRun6_clean' },
-            { key: 'ronaldoRun7_clean' },
-            { key: 'ronaldoRun8_clean' }
-          ],
-          frameRate: 12,
-          repeat: -1
-        });
-
-        ai = this.add.sprite(playerStartX, getTrackY(H), 'brazilRun1_clean');
+        ai = this.add.sprite(playerStartX, getTrackY(H), 'neymarRun1_clean');
         ai.setScale(spr * 1.35); // Increased scale
         ai.setDepth(8);
         ai.play('neymar_run');
         ai.anims.pause();
 
-        player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1_clean');
+        player = this.add.sprite(playerStartX, getTrackY(H), 'player');
         player.setScale(spr * 1.55); // Increased scale
         player.setDepth(9);
-        player.play('player_run');
-        player.anims.pause();
 
         ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 55, 'football');
         ball.setScale(spr * 0.15);
@@ -288,13 +258,11 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           if (ai && ai.anims) {
             ai.play('neymar_run');
             ai.anims.pause();
-            ai.setTexture('brazilRun1_clean');
+            ai.setTexture('neymarRun1_clean');
           }
 
-          if (player && player.anims) {
-            player.play('player_run');
-            player.anims.pause();
-            player.setTexture('ronaldoRun1_clean');
+          if (player) {
+            player.setTexture('player');
           }
         };
       }
@@ -334,15 +302,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           }
         }
 
-        // 4. Control Player running animation playback based on game state
-        if (player && player.anims) {
-          const isPlayerRunning = gameStateRef.current === 'playing' && !winnerRef.current && playerDistanceRef.current > 0;
-          if (isPlayerRunning) {
-            if (player.anims.isPaused) player.anims.resume();
-          } else {
-            if (!player.anims.isPaused) player.anims.pause();
-          }
-        }
+
 
         if (gameStateRef.current !== 'playing' || winnerRef.current) return;
 
