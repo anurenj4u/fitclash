@@ -159,7 +159,49 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         const H = this.scale.height;
         const spr = getScale();
 
+        // Helper to dynamically remove pure black background from PNG/JPG textures at runtime
+        function removeBlackBackground(sceneRef, textureKey) {
+          try {
+            const texture = sceneRef.textures.get(textureKey);
+            if (!texture) return;
+            const source = texture.getSourceImage();
+            if (!source) return;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = source.width;
+            canvas.height = source.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            
+            ctx.drawImage(source, 0, 0);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i+1];
+              const b = data[i+2];
+              // Chroma key: strip solid black background pixels completely
+              if (r < 10 && g < 10 && b < 10) {
+                data[i+3] = 0; // Alpha transparent
+              }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            sceneRef.textures.addCanvas(textureKey + '_clean', canvas);
+          } catch (e) {
+            console.error("Error transparency-keying texture:", e);
+          }
+        }
+
         buildStadium(W, H);
+
+        // Process all animation frames to strip solid black background shapes
+        for (let i = 1; i <= 9; i++) {
+          removeBlackBackground(this, `brazilRun${i}`);
+        }
+        for (let i = 1; i <= 8; i++) {
+          removeBlackBackground(this, `ronaldoRun${i}`);
+        }
 
         trailParticles = this.add.particles(0, 0, 'spark', {
           speed: 100,
@@ -171,49 +213,49 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         });
         trailParticles.setDepth(5);
 
-        // Create the Brazil running animation from individual frames
+        // Create the Brazil running animation from clean textures
         this.anims.create({
           key: 'neymar_run',
           frames: [
-            { key: 'brazilRun1' },
-            { key: 'brazilRun2' },
-            { key: 'brazilRun3' },
-            { key: 'brazilRun4' },
-            { key: 'brazilRun5' },
-            { key: 'brazilRun6' },
-            { key: 'brazilRun7' },
-            { key: 'brazilRun8' },
-            { key: 'brazilRun9' }
+            { key: 'brazilRun1_clean' },
+            { key: 'brazilRun2_clean' },
+            { key: 'brazilRun3_clean' },
+            { key: 'brazilRun4_clean' },
+            { key: 'brazilRun5_clean' },
+            { key: 'brazilRun6_clean' },
+            { key: 'brazilRun7_clean' },
+            { key: 'brazilRun8_clean' },
+            { key: 'brazilRun9_clean' }
           ],
           frameRate: 14,
           repeat: -1
         });
 
-        // Create the Ronaldo running animation from individual frames
+        // Create the Ronaldo running animation from clean textures
         this.anims.create({
           key: 'player_run',
           frames: [
-            { key: 'ronaldoRun1' },
-            { key: 'ronaldoRun2' },
-            { key: 'ronaldoRun3' },
-            { key: 'ronaldoRun4' },
-            { key: 'ronaldoRun5' },
-            { key: 'ronaldoRun6' },
-            { key: 'ronaldoRun7' },
-            { key: 'ronaldoRun8' }
+            { key: 'ronaldoRun1_clean' },
+            { key: 'ronaldoRun2_clean' },
+            { key: 'ronaldoRun3_clean' },
+            { key: 'ronaldoRun4_clean' },
+            { key: 'ronaldoRun5_clean' },
+            { key: 'ronaldoRun6_clean' },
+            { key: 'ronaldoRun7_clean' },
+            { key: 'ronaldoRun8_clean' }
           ],
           frameRate: 12,
           repeat: -1
         });
 
-        ai = this.add.sprite(playerStartX, getTrackY(H), 'brazilRun1');
-        ai.setScale(spr * 0.9);
+        ai = this.add.sprite(playerStartX, getTrackY(H), 'brazilRun1_clean');
+        ai.setScale(spr * 1.35); // Increased scale
         ai.setDepth(8);
         ai.play('neymar_run');
         ai.anims.pause();
 
-        player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1');
-        player.setScale(spr);
+        player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1_clean');
+        player.setScale(spr * 1.55); // Increased scale
         player.setDepth(9);
         player.play('player_run');
         player.anims.pause();
@@ -232,7 +274,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           playerDistanceRef.current += distPerRep;
           // Removed camera shake for better clarity
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
-          this.tweens.add({ targets: player, scale: spr * 1.1, duration: 80, yoyo: true });
+          this.tweens.add({ targets: player, scale: spr * 1.65, duration: 80, yoyo: true });
         };
 
         this.restart = () => {
@@ -246,13 +288,13 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           if (ai && ai.anims) {
             ai.play('neymar_run');
             ai.anims.pause();
-            ai.setTexture('brazilRun1');
+            ai.setTexture('brazilRun1_clean');
           }
 
           if (player && player.anims) {
             player.play('player_run');
             player.anims.pause();
-            player.setTexture('ronaldoRun1');
+            player.setTexture('ronaldoRun1_clean');
           }
         };
       }
