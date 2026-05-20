@@ -2,8 +2,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import NormalWorkout from "@/components/NormalWorkout";
 import FitnessRace from "@/components/FitnessRace";
-import ReflexGame from "@/components/ReflexGame";
-import FlappyFitness from "@/components/FlappyFitness";
+import WorkoutProgramExecutor from "@/components/WorkoutProgramExecutor";
 import MotionTracker from "@/components/MotionTracker";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -15,14 +14,17 @@ import {
   Trophy, 
   Zap, 
   ShieldCheck, 
-  Camera, 
-  Layout,
-  ChevronRight,
-  TrendingUp,
-  Star,
-  Crown,
-  AlertTriangle,
-  X
+  ChevronRight, 
+  TrendingUp, 
+  Star, 
+  Crown, 
+  AlertTriangle, 
+  X,
+  Heart,
+  Award,
+  Flame,
+  Sparkles,
+  BookOpen
 } from "lucide-react";
 import { doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -34,24 +36,67 @@ export default function Home() {
   const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'worldcup'
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [targetDistance, setTargetDistance] = useState(1);
+  const [targetDistance, setTargetDistance] = useState(1); // 1, 2, or 3 KM
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [particles, setParticles] = useState([]);
-  
   const [showLimitModal, setShowLimitModal] = useState(false);
+
+  // New Fitness custom configuration state
+  const [selectedGoal, setSelectedGoal] = useState('FAT BURN');
+  const [selectedExercises, setSelectedExercises] = useState(['squats']);
   
+  // Real-time rep counting in parent to cycle webcam mode dynamically
+  const [currentReps, setCurrentReps] = useState(0);
+
+  // Workout Programs state
+  const [activeProgram, setActiveProgram] = useState(null);
+  const [runningProgram, setRunningProgram] = useState(false);
+
   const { user, userData } = useAuth();
   const router = useRouter();
 
+  // Unified Progression Local Storage + Firebase state
+  const [progression, setProgression] = useState({
+    xp: 450,
+    level: 5,
+    calories: 840,
+    workoutStreak: 7,
+    totalWorkouts: 24,
+    rank: "SPRINTER",
+    dailyMissions: [
+      { id: 1, text: "Complete 1 Workout Session", xp: 150, completed: false },
+      { id: 2, text: "Burn 100 Calories", xp: 200, completed: false },
+      { id: 3, text: "Finish a structured training plan", xp: 250, completed: false }
+    ],
+    unlockedThemes: ["default"],
+    unlockedStadiums: ["default"],
+    unlockedCharacters: ["default"],
+    activeTheme: "default",
+    activeStadium: "default",
+    activeCharacter: "default"
+  });
+
+  // Load progression state on mount
   useEffect(() => {
     setMounted(true);
     
-    // Generate particles once on mount
-    const generated = [...Array(20)].map(() => ({
+    // Load local storage values
+    const saved = localStorage.getItem("clashOfCardioProgression");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setProgression(parsed);
+      } catch (e) {}
+    } else {
+      localStorage.setItem("clashOfCardioProgression", JSON.stringify(progression));
+    }
+
+    // Floating subtle ambient particles
+    const generated = [...Array(10)].map(() => ({
       top: `${Math.random() * 100}%`,
       left: `${Math.random() * 100}%`,
-      opacity: 0.1 + Math.random() * 0.4,
-      duration: `${5 + Math.random() * 10}s`
+      opacity: 0.05 + Math.random() * 0.1,
+      duration: `${10 + Math.random() * 8}s`
     }));
     setParticles(generated);
 
@@ -62,10 +107,24 @@ export default function Home() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  // Listen to camera pose changes to update dynamic workout rounds
+  useEffect(() => {
+    if (!gameStarted) {
+      setCurrentReps(0);
+      return;
+    }
+    const handlePose = (e) => {
+      setCurrentReps(prev => prev + 1);
+    };
+    window.addEventListener('pose-update', handlePose);
+    return () => window.removeEventListener('pose-update', handlePose);
+  }, [gameStarted]);
+
   const handleCameraReady = useCallback(() => {
     setIsCameraReady(true);
   }, []);
 
+  // Standard Workout Start handler
   const startOnboarding = () => {
     if (!user) {
       router.push('/login');
@@ -77,6 +136,23 @@ export default function Home() {
       return;
     }
     setShowOnboarding(true);
+  };
+
+  // Structured Workout Program Start handler
+  const startProgramWorkout = (prog) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    if (!userData?.isPremium && userData?.gamesToday >= 15) {
+      setShowLimitModal(true);
+      return;
+    }
+
+    setActiveProgram(prog);
+    setExerciseMode(prog.exercise);
+    setRunningProgram(true);
   };
 
   const finishOnboarding = async () => {
@@ -94,6 +170,103 @@ export default function Home() {
     }
   };
 
+  // Callback on single workout complete
+  const handleWorkoutComplete = (results) => {
+    setProgression(prev => {
+      const newXp = prev.xp + results.xpGained;
+      const nextLevelNeeded = prev.level * 1000;
+      let newLevel = prev.level;
+      if (newXp >= nextLevelNeeded) {
+        newLevel += 1;
+      }
+      
+      const newStreak = prev.workoutStreak + 1;
+      const newUnlockedThemes = [...prev.unlockedThemes];
+      const newUnlockedStadiums = [...prev.unlockedStadiums];
+      const newUnlockedCharacters = [...prev.unlockedCharacters];
+      
+      if (newStreak >= 3 && !newUnlockedThemes.includes("sunset")) {
+        newUnlockedThemes.push("sunset");
+      }
+      if (newStreak >= 5 && !newUnlockedStadiums.includes("golden")) {
+        newUnlockedStadiums.push("golden");
+      }
+      if (newStreak >= 7 && !newUnlockedCharacters.includes("ronaldo_elite")) {
+        newUnlockedCharacters.push("ronaldo_elite");
+      }
+
+      const updated = {
+        ...prev,
+        xp: newXp % nextLevelNeeded,
+        level: newLevel,
+        calories: prev.calories + results.caloriesBurned,
+        totalWorkouts: prev.totalWorkouts + 1,
+        workoutStreak: newStreak,
+        unlockedThemes: newUnlockedThemes,
+        unlockedStadiums: newUnlockedStadiums,
+        unlockedCharacters: newUnlockedCharacters,
+        dailyMissions: prev.dailyMissions.map(m => m.id === 1 ? { ...m, completed: true } : m)
+      };
+      
+      localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+      return updated;
+    });
+
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      updateDoc(userDocRef, {
+        xp: increment(results.xpGained),
+        calories: increment(results.caloriesBurned),
+        totalWorkouts: increment(1),
+        workoutStreak: increment(1)
+      }).catch(e => console.error("Firestore sync error:", e));
+    }
+  };
+
+  // Structured Workout Plans
+  const workoutPrograms = [
+    { id: 'fatburn', name: "Beginner Fat Burn", desc: "Short cardiovascular work rounds designed to target lower body fat burn.", rounds: 3, workDuration: 35, restDuration: 15, exercise: "squats", difficulty: "Rookie" },
+    { id: 'sprint', name: "Football Sprint Training", desc: "High-intensity metabolic drills to mimic top sprinter stamina curves.", rounds: 4, workDuration: 45, restDuration: 20, exercise: "jacks", difficulty: "Sprinter" },
+    { id: 'hiit', name: "HIIT Mode", desc: "Short rests combined with rapid movement repetitions for supreme physical endurance.", rounds: 5, workDuration: 50, restDuration: 15, exercise: "squats", difficulty: "Elite Athlete" },
+    { id: 'fullbody', name: "Full Body Cardio", desc: "Compound aerobic motion rounds combining multiple pose challenges.", rounds: 4, workDuration: 45, restDuration: 20, exercise: "jacks", difficulty: "Elite Athlete" }
+  ];
+
+  // Dynamic active exercise for camera tracking during customizable circuits
+  const activeExerciseIndex = Math.floor(currentReps / 10);
+  const activeExercise = selectedExercises[activeExerciseIndex % selectedExercises.length] || 'squats';
+  const trackerMode = playMode === 'worldcup' ? exerciseMode : activeExercise;
+
+  // Structured Workout Plan execution screen
+  if (runningProgram && activeProgram) {
+    return (
+      <div style={{ 
+        position: "fixed", 
+        inset: 0,
+        height: "100vh", 
+        background: "#020205", 
+        color: "#fff", 
+        overflow: "hidden",
+        zIndex: 2000 
+      }}>
+        <WorkoutProgramExecutor 
+          program={activeProgram}
+          isCameraReady={isCameraReady}
+          onComplete={(results) => {
+            handleWorkoutComplete(results);
+            setRunningProgram(false);
+            setActiveProgram(null);
+          }}
+          onExit={() => {
+            setRunningProgram(false);
+            setActiveProgram(null);
+          }}
+        />
+        <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
+      </div>
+    );
+  }
+
+  // Standard Workout execution screen
   if (gameStarted) {
     return (
       <div style={{ 
@@ -106,32 +279,52 @@ export default function Home() {
         zIndex: 2000 
       }}>
         {playMode === 'worldcup' ? (
-          <FitnessRace mode={exerciseMode} targetKm={targetDistance} isCameraReady={isCameraReady} />
-        ) : playMode === 'reflex' ? (
-          <ReflexGame mode={exerciseMode} isCameraReady={isCameraReady} />
-        ) : playMode === 'flappy' ? (
-          <FlappyFitness mode={exerciseMode} isCameraReady={isCameraReady} />
+          <FitnessRace 
+            mode={exerciseMode} 
+            targetKm={targetDistance} 
+            isCameraReady={isCameraReady} 
+            activeTheme={progression.activeTheme}
+            activeStadium={progression.activeStadium}
+            activeCharacter={progression.activeCharacter}
+            onComplete={(reps) => {
+              const caloriesBurned = Math.round(reps * 0.45 + targetDistance * 10);
+              const xpGained = Math.round(reps * 6 + targetDistance * 50);
+              handleWorkoutComplete({ reps, caloriesBurned, xpGained });
+              setGameStarted(false);
+            }}
+          />
         ) : (
-          <NormalWorkout mode={exerciseMode} isCameraReady={isCameraReady} />
+          <NormalWorkout 
+            selectedExercises={selectedExercises}
+            targetDistance={targetDistance}
+            selectedGoal={selectedGoal}
+            isCameraReady={isCameraReady} 
+            onComplete={(reps) => {
+              const caloriesBurned = Math.round(reps * 0.45 + targetDistance * 10);
+              const xpGained = Math.round(reps * 6 + targetDistance * 50);
+              handleWorkoutComplete({ reps, caloriesBurned, xpGained });
+              setGameStarted(false);
+            }}
+          />
         )}
-        <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
+        <MotionTracker mode={trackerMode} onReady={handleCameraReady} />
       </div>
     );
   }
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#020205", color: "#fff", overflow: "hidden" }}>
-      {/* Dynamic Background Effects */}
+    <div style={{ position: "relative", minHeight: "100vh", background: "#050508", color: "#ffffff", overflow: "hidden", fontFamily: 'var(--font-body)', paddingTop: '40px' }}>
+      {/* Subtle cursor halo light */}
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(57, 255, 20, 0.07) 0%, transparent 40%)`,
+        background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(57, 255, 20, 0.01) 0%, transparent 40%)`,
         pointerEvents: 'none',
         zIndex: 1
       }} />
-      
-      {/* Animated Particles (Simplified CSS version) */}
-      <div className="particles-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+
+      {/* Background stardust particles */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         {particles.map((particle, i) => (
           <div key={i} className="particle" style={{
             position: 'absolute',
@@ -139,8 +332,7 @@ export default function Home() {
             left: particle.left,
             width: '2px',
             height: '2px',
-            background: 'var(--accent)',
-            boxShadow: '0 0 10px var(--accent)',
+            background: '#ffffff',
             borderRadius: '50%',
             opacity: particle.opacity,
             animation: `float ${particle.duration} infinite linear`
@@ -148,405 +340,500 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Hero Section */}
+      {/* HERO & CONTENT SECTION */}
       <section style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        textAlign: "center",
-        padding: "120px 20px",
         position: 'relative',
-        zIndex: 2
+        zIndex: 5,
+        padding: '50px 5% 120px 5%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'
       }}>
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          style={{ maxWidth: '1000px' }}
-        >
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          textAlign: 'center',
-          width: '100%',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          paddingTop: '0px'
+        
+        {/* Micro Green Header Tag */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(57, 255, 20, 0.05)',
+          border: '1px solid rgba(57, 255, 20, 0.2)',
+          padding: '6px 14px',
+          borderRadius: '20px',
+          fontSize: '9px',
+          fontWeight: 800,
+          color: '#39ff14',
+          letterSpacing: '1px',
+          marginBottom: '20px',
+          fontFamily: 'var(--font-gaming)'
         }}>
-          {/* Section: Badge - Single instance only */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card"
-            style={{ padding: '6px 16px', borderRadius: '50px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(57, 255, 20, 0.3)' }}
+          <span style={{ width: '6px', height: '6px', background: '#39ff14', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #39ff14' }} />
+          THE FUTURE OF FITNESS
+        </div>
+
+        {/* Massive Glowing ClashOfCardio Title */}
+        <h1 className="arcade-text animate-pulse" style={{
+          fontSize: '78px',
+          fontWeight: 900,
+          color: '#39ff14',
+          letterSpacing: '4px',
+          textShadow: '0 0 30px rgba(57, 255, 20, 0.6), 0 0 60px rgba(57, 255, 20, 0.2)',
+          marginBottom: '10px',
+          lineHeight: '1'
+        }}>
+          CLASHOFCARDIO
+        </h1>
+
+        {/* Subtitle */}
+        <p style={{
+          fontSize: '14px',
+          opacity: 0.7,
+          maxWidth: '550px',
+          lineHeight: 1.6,
+          marginBottom: '35px',
+          color: '#ffffff'
+        }}>
+          Achieve your fitness goals with interactive AI tracking. <span style={{ color: '#39ff14', fontWeight: 700 }}>Your body is the controller.</span>
+        </p>
+
+        {/* Segmented Options Selector */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          background: 'rgba(5, 5, 8, 0.8)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '8px',
+          maxWidth: '550px',
+          width: '100%',
+          margin: '0 auto 35px auto',
+          gap: '8px'
+        }}>
+          <button
+            onClick={() => setPlayMode('normal')}
+            style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              background: playMode === 'normal' ? '#39ff14' : 'transparent',
+              color: playMode === 'normal' ? '#000000' : '#ffffff',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 900,
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              fontFamily: 'var(--font-gaming)',
+              boxShadow: playMode === 'normal' ? '0 0 25px rgba(57, 255, 20, 0.5)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              letterSpacing: '0.5px'
+            }}
           >
-            <div style={{ width: '6px', height: '6px', background: 'var(--accent)', borderRadius: '50%', boxShadow: '0 0 10px var(--accent)' }}></div>
-            <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>THE FUTURE OF FITNESS</span>
-          </motion.div>
+            <Zap size={14} fill={playMode === 'normal' ? '#000' : '#fff'} color={playMode === 'normal' ? '#000' : '#fff'} /> FITNESS WORKOUT
+          </button>
+          <button
+            onClick={() => setPlayMode('worldcup')}
+            style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              background: playMode === 'worldcup' ? '#39ff14' : 'transparent',
+              color: playMode === 'worldcup' ? '#000000' : '#ffffff',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 900,
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              fontFamily: 'var(--font-gaming)',
+              boxShadow: playMode === 'worldcup' ? '0 0 25px rgba(57, 255, 20, 0.5)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              letterSpacing: '0.5px'
+            }}
+          >
+            <Trophy size={14} fill={playMode === 'worldcup' ? '#000' : 'none'} color={playMode === 'worldcup' ? '#000' : '#fff'} /> WORLD CUP SPRINT
+          </button>
+        </div>
 
-          {/* Section: Title - Compact sizing */}
-          <h1 className="arcade-text" style={{
-            fontSize: "clamp(28px, 6vw, 90px)",
-            lineHeight: 1,
-            marginBottom: "10px",
-            background: 'linear-gradient(to bottom, #fff 50%, #666 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 20px rgba(57, 255, 20, 0.4))',
-            letterSpacing: '-2px'
-          }}>
-            CLASH<span style={{ color: "var(--accent)", WebkitTextFillColor: 'initial' }}>OFCARDIO</span>
-          </h1>
+        {/* DYNAMIC VIEWS WRAPPER */}
+        <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
           
-          <p style={{
-            fontSize: "clamp(12px, 1.4vw, 15px)",
-            fontFamily: 'var(--font-body)',
-            opacity: 0.5,
-            marginBottom: "25px",
-            maxWidth: "500px",
-            lineHeight: 1.4
-          }}>
-            Achieve your fitness goals with interactive AI tracking. <span style={{ color: 'var(--accent)', fontWeight: 800 }}>Your body is the controller.</span>
-          </p>
-
-          {/* Compact Vertical Stack */}
-          <div style={{ width: '100%', maxWidth: '850px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {/* MODE TOGGLE: Four Active Gaming & Workout Modes */}
-            <div className="glass-card" style={{ 
-              padding: '8px', 
-              background: 'rgba(2, 2, 5, 0.4)', 
-              border: '1px solid rgba(57, 255, 20, 0.2)', 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
-              gap: '8px', 
-              borderRadius: '16px', 
-              marginBottom: '10px' 
-            }}>
-              <button 
-                onClick={() => setPlayMode('normal')}
-                style={{ 
-                  padding: '15px', 
-                  borderRadius: '12px', 
-                  background: playMode === 'normal' ? 'var(--accent)' : 'transparent', 
-                  color: playMode === 'normal' ? '#000' : '#fff', 
-                  fontWeight: 800, 
-                  transition: 'all 0.3s ease', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  boxShadow: playMode === 'normal' ? '0 0 15px var(--accent)' : 'none'
-                }}
-              >
-                ⚡ FITNESS WORKOUT
-              </button>
-              <button 
-                onClick={() => setPlayMode('worldcup')}
-                style={{ 
-                  padding: '15px', 
-                  borderRadius: '12px', 
-                  background: playMode === 'worldcup' ? '#ffcc00' : 'transparent', 
-                  color: playMode === 'worldcup' ? '#000' : '#fff', 
-                  fontWeight: 800, 
-                  transition: 'all 0.3s ease', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  boxShadow: playMode === 'worldcup' ? '0 0 15px #ffcc00' : 'none'
-                }}
-              >
-                🏆 WORLD CUP SPRINT
-              </button>
-              <button 
-                onClick={() => setPlayMode('reflex')}
-                style={{ 
-                  padding: '15px', 
-                  borderRadius: '12px', 
-                  background: playMode === 'reflex' ? '#00f2ff' : 'transparent', 
-                  color: playMode === 'reflex' ? '#000' : '#fff', 
-                  fontWeight: 800, 
-                  transition: 'all 0.3s ease', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  boxShadow: playMode === 'reflex' ? '0 0 15px #00f2ff' : 'none'
-                }}
-              >
-                ⚽ REFLEX SHOOTOUT
-              </button>
-              <button 
-                onClick={() => setPlayMode('flappy')}
-                style={{ 
-                  padding: '15px', 
-                  borderRadius: '12px', 
-                  background: playMode === 'flappy' ? '#ff00ff' : 'transparent', 
-                  color: playMode === 'flappy' ? '#000' : '#fff', 
-                  fontWeight: 800, 
-                  transition: 'all 0.3s ease', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  boxShadow: playMode === 'flappy' ? '0 0 15px #ff00ff' : 'none'
-                }}
-              >
-                🐦 FLAPPY RONALDO
-              </button>
-            </div>
-
-            {/* ROW 1: TARGET DISTANCE - Only shown for World Cup Mode */}
-            <AnimatePresence>
-              {playMode === 'worldcup' && (
-                <motion.div 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="glass-card" 
-                  style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(255, 204, 0, 0.3)', overflow: 'hidden' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <p className="hud-text" style={{ fontSize: '10px', color: '#ffcc00', letterSpacing: '3px' }}>[01] SELECT SPRINT DISTANCE</p>
-                    <div style={{ background: 'rgba(255, 204, 0, 0.1)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, color: '#ffcc00', border: '1px solid rgba(255, 204, 0, 0.3)' }}>
-                      {targetDistance >= 1 ? `${targetDistance} KM` : `${targetDistance * 1000} METERS`}
-                    </div>
+          {/* ============================================================ */}
+          {/* FITNESS WORKOUT CUSTOMIZER (GOAL + KILOMETERS + MULTI-SELECT) */}
+          {/* ============================================================ */}
+          {playMode === 'normal' && (
+            <>
+              {/* GOAL SELECTOR CARD */}
+              <div style={{
+                padding: '24px',
+                background: 'rgba(5, 5, 8, 0.4)',
+                border: '1px solid rgba(57, 255, 20, 0.15)',
+                borderRadius: '16px',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 800, letterSpacing: '2px' }}>[01] SELECT YOUR WORKOUT GOAL</span>
+                  <div style={{ background: 'rgba(57, 255, 20, 0.1)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 900, color: '#39ff14', border: '1px solid rgba(57, 255, 20, 0.2)' }}>
+                    {selectedGoal}
                   </div>
+                </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                    {[1, 2, 3].map(km => (
-                      <motion.button
-                        key={km}
-                        whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 204, 0, 0.1)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setTargetDistance(km)}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
+                  {['FAT BURN', 'STAMINA IMPROVEMENT', 'STRENGTH ENDURANCE', 'REFLEX BOOSTER'].map(goal => {
+                    const isActive = selectedGoal === goal;
+                    const icon = goal === 'FAT BURN' ? '🔥' : goal === 'STAMINA IMPROVEMENT' ? '⚡' : goal === 'STRENGTH ENDURANCE' ? '🫁' : '🎯';
+                    return (
+                      <button
+                        key={goal}
+                        onClick={() => setSelectedGoal(goal)}
                         style={{
-                          background: targetDistance === km ? 'linear-gradient(135deg, rgba(255, 204, 0, 0.3) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
-                          color: targetDistance === km ? '#ffcc00' : '#fff',
-                          border: `1px solid ${targetDistance === km ? '#ffcc00' : 'rgba(255,255,255,0.05)'}`,
-                          padding: "12px 10px",
+                          background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'rgba(255,255,255,0.02)',
+                          color: isActive ? '#39ff14' : '#ffffff',
+                          border: `1px solid ${isActive ? '#39ff14' : 'rgba(255,255,255,0.06)'}`,
+                          padding: "14px 10px",
                           borderRadius: '12px',
                           fontSize: '11px',
                           fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontFamily: 'var(--font-gaming)',
+                          transition: 'all 0.2s ease',
+                          boxShadow: isActive ? '0 0 10px rgba(57, 255, 20, 0.1)' : 'none'
+                        }}
+                      >
+                        <span>{icon}</span>
+                        <span>{goal}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* TARGET DISTANCE CARD (MAX 3 KM) */}
+              <div style={{
+                padding: '24px',
+                background: 'rgba(5, 5, 8, 0.4)',
+                border: '1px solid rgba(57, 255, 20, 0.15)',
+                borderRadius: '16px',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 800, letterSpacing: '2px' }}>[02] CONFIGURE TARGET DISTANCE (MAX 3 KM)</span>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    {targetDistance} KM ({targetDistance * 100} Reps Needed)
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  {[1, 2, 3].map(km => {
+                    const isActive = targetDistance === km;
+                    return (
+                      <button
+                        key={km}
+                        onClick={() => setTargetDistance(km)}
+                        style={{
+                          background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'rgba(255,255,255,0.02)',
+                          color: isActive ? '#39ff14' : '#ffffff',
+                          border: `1px solid ${isActive ? '#39ff14' : 'rgba(255,255,255,0.06)'}`,
+                          padding: "16px 10px",
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
                           cursor: 'pointer',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           gap: '2px',
                           fontFamily: 'var(--font-gaming)',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          boxShadow: targetDistance === km ? 'inset 0 0 15px rgba(255, 204, 0, 0.2)' : 'none'
+                          transition: 'all 0.2s ease',
+                          boxShadow: isActive ? '0 0 10px rgba(57, 255, 20, 0.1)' : 'none'
                         }}
                       >
-                        <span style={{ letterSpacing: '1px' }}>{km} KM</span>
-                        <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 10} MINS</span>
-                      </motion.button>
-                    ))}
-                    
-                    {/* Custom Meters Input Box */}
-                    <div style={{
-                      position: 'relative',
-                      background: ![1, 2, 3].includes(targetDistance) ? 'linear-gradient(135deg, rgba(255, 204, 0, 0.3) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${![1, 2, 3].includes(targetDistance) ? '#ffcc00' : 'rgba(255,255,255,0.05)'}`,
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 10px',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <input 
-                        type="number"
-                        placeholder="CUSTOM M"
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (val > 0) setTargetDistance(val / 1000);
+                        <span style={{ fontSize: '14px', fontWeight: 900 }}>{km} KM</span>
+                        <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 100} TOTAL REPS</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* WORKOUT TYPE MULTI-SELECT COMBINATION */}
+              <div style={{
+                width: '100%',
+                background: 'rgba(5, 5, 8, 0.4)',
+                border: '1px solid rgba(57, 255, 20, 0.15)',
+                borderRadius: '16px',
+                padding: '30px 24px',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 800, letterSpacing: '2px' }}>[03] CHOOSE EXERCISE COMBINATION (SELECT MULTIPLE!)</span>
+                  <span style={{ fontSize: '10px', color: '#39ff14', fontWeight: 800, letterSpacing: '1px' }}>
+                    {selectedExercises.length} SELECTED
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                  gap: '12px'
+                }}>
+                  {['squats', 'pushups', 'jacks', 'fingers'].map(mode => {
+                    const label = mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase();
+                    const isActive = selectedExercises.includes(mode);
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => {
+                          setSelectedExercises(prev => {
+                            if (prev.includes(mode)) {
+                              if (prev.length === 1) return prev; // Keep at least 1 selected
+                              return prev.filter(m => m !== mode);
+                            } else {
+                              return [...prev, mode];
+                            }
+                          });
                         }}
                         style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#fff',
+                          padding: '20px 10px',
+                          borderRadius: '12px',
+                          background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'transparent',
+                          color: isActive ? '#39ff14' : '#ffffff',
+                          border: `1px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.06)'}`,
                           fontSize: '11px',
                           fontWeight: 800,
-                          width: '100%',
-                          padding: '12px 0',
-                          outline: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
                           fontFamily: 'var(--font-gaming)',
-                          textAlign: 'center'
+                          boxShadow: isActive ? '0 0 15px rgba(57, 255, 20, 0.15)' : 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
                         }}
-                      />
-                      <div style={{ fontSize: '9px', opacity: 0.5, marginLeft: '4px' }}>M</div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ROW 2: SELECT CHALLENGE - Modernized Grid */}
-            <div className="glass-card" style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(57, 255, 20, 0.2)' }}>
-              <p className="hud-text" style={{ marginBottom: '15px', fontSize: '10px', color: 'var(--accent)', letterSpacing: '3px', textAlign: 'center' }}>[02] SELECT WORKOUT TYPE</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                {['squats', 'pushups', 'jacks', 'fingers'].map(mode => (
-                  <motion.button
-                    key={mode}
-                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(57, 255, 20, 0.05)' }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setExerciseMode(mode)}
-                    style={{
-                      background: exerciseMode === mode ? 'linear-gradient(135deg, rgba(57, 255, 20, 0.2) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
-                      color: exerciseMode === mode ? 'var(--accent)' : '#fff',
-                      border: `1px solid ${exerciseMode === mode ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}`,
-                      padding: "15px 5px",
-                      borderRadius: '12px',
-                      fontSize: '10px',
-                      fontWeight: 900,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '5px',
-                      fontFamily: 'var(--font-gaming)',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: exerciseMode === mode ? 'inset 0 0 15px rgba(57, 255, 20, 0.1)' : 'none'
-                    }}
-                  >
-                    <span style={{ whiteSpace: 'nowrap', letterSpacing: '1px' }}>
-                      {mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()}
-                    </span>
-                    {exerciseMode === mode && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                        <Zap size={12} fill="var(--accent)" />
-                      </motion.div>
-                    )}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-            
-            {/* ROW 3: ACTION BUTTONS - Compact sizing */}
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="glow-btn pulse-glow"
-                onClick={startOnboarding}
-                style={{ fontSize: '14px', padding: '15px 40px', display: 'flex', alignItems: 'center', gap: '10px' }}
-              >
-                <Play fill="currentColor" size={16} /> START
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="glass-card"
-                style={{ padding: '15px 30px', borderRadius: '10px', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                WATCH TRAILER
-              </motion.button>
-            </div>
-
-          </div>
-        </div>
-        </motion.div>
-      </section>
-
-      {/* Live Stats Section */}
-      <section style={{ padding: '80px 5%', background: 'linear-gradient(180deg, #020205 0%, #050510 100%)', position: 'relative', zIndex: 2 }}>
-        <div className="features-grid">
-          {[
-            { label: "CALORIES BURNED", value: "124,502", icon: <Activity color="var(--accent)" />, color: 'var(--accent)' },
-            { label: "ACTIVE PLAYERS", value: "842", icon: <Users color="var(--secondary)" />, color: 'var(--secondary)' },
-            { label: "RACES FINISHED", value: "12,044", icon: <Trophy color="#ffcc00" />, color: '#ffcc00' },
-            { label: "AVG. STREAK", value: "5 DAYS", icon: <TrendingUp color="var(--tertiary)" />, color: 'var(--tertiary)' }
-          ].map((stat, i) => (
-            <motion.div 
-              key={i}
-              whileHover={{ y: -5 }}
-              className="glass-card" 
-              style={{ textAlign: 'center', padding: '40px' }}
-            >
-              <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
-              <h4 style={{ fontSize: '12px', opacity: 0.6, letterSpacing: '2px', marginBottom: '10px' }}>{stat.label}</h4>
-              <p className="arcade-text" style={{ fontSize: '32px', color: stat.color }}>{stat.value}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features Section Upgrade */}
-      <section style={{ padding: '120px 5%', background: '#020205', position: 'relative', zIndex: 2 }}>
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <h2 className="arcade-text" style={{ fontSize: 'clamp(32px, 5vw, 60px)', marginBottom: '20px' }}>ELEVATE YOUR <span style={{ color: 'var(--accent)' }}>WORKOUT</span></h2>
-          <p style={{ opacity: 0.6, fontSize: '20px' }}>The world's most advanced AI fitness engine.</p>
-        </div>
-        
-        <div className="features-grid">
-          {[
-            { 
-              title: "AI MOTION TRACKING", 
-              desc: "Pro-grade pose estimation using TensorFlow.js. Zero lag, 100% privacy.", 
-              icon: <Camera size={32} />,
-              color: 'var(--accent)' 
-            },
-            { 
-              title: "INTERACTIVE CHALLENGES", 
-              desc: "Stay motivated with dynamic targets. Your speed depends on your rep intensity.", 
-              icon: <Zap size={32} />,
-              color: 'var(--secondary)' 
-            },
-            { 
-              title: "COMMUNITY GOALS", 
-              desc: "Challenge friends or track your progress globally. Become the ultimate cardio champion.", 
-              icon: <Trophy size={32} />,
-              color: 'var(--tertiary)' 
-            },
-            { 
-              title: "DAILY STREAKS", 
-              desc: "Daily missions, milestone tracking, and fitness insights keep you coming back.", 
-              icon: <Star size={32} />,
-              color: '#ffcc00' 
-            }
-          ].map((f, i) => (
-            <motion.div 
-              key={i}
-              whileHover={{ scale: 1.02 }}
-              className="glass-card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '20px',
-                borderLeft: `4px solid ${f.color}`
-              }}
-            >
-              <div style={{ color: f.color }}>{f.icon}</div>
-              <h3 style={{ fontSize: '20px', letterSpacing: '1px' }}>{f.title}</h3>
-              <p style={{ opacity: 0.7, lineHeight: 1.6, fontSize: '16px' }}>{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Social Proof / Activity Feed Mockup */}
-      <section style={{ padding: '80px 5%', background: 'rgba(57, 255, 20, 0.02)', borderTop: '1px solid rgba(57, 255, 20, 0.05)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px' }}>
-            <div className="pulse-glow" style={{ width: '10px', height: '10px', background: 'var(--accent)', borderRadius: '50%' }} />
-            <span className="hud-text">LIVE ACTIVITY FEED</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {[
-              { user: "NeonRacer", action: "finished 2KM Squat Race", result: "1st PLACE", time: "2m ago" },
-              { user: "VortexBody", action: "burned 450 calories", result: "NEW PB", time: "5m ago" },
-              { user: "CyberFit", action: "reached STREAK LEVEL 10", result: "LEVEL UP", time: "12m ago" }
-            ].map((item, i) => (
-              <div key={i} className="glass-card" style={{ padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 1 - i * 0.2 }}>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{item.user}</span>
-                  <span style={{ opacity: 0.6 }}>{item.action}</span>
-                  <span style={{ background: 'var(--accent)', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 900 }}>{item.result}</span>
+                      >
+                        <span>{label}</span>
+                        {isActive && <Zap size={12} fill="#39ff14" color="#39ff14" />}
+                      </button>
+                    );
+                  })}
                 </div>
-                <span style={{ fontSize: '12px', opacity: 0.4 }}>{item.time}</span>
+
+                {/* dynamic summary text */}
+                <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)', fontSize: '11px', color: '#fff', opacity: 0.8, lineHeight: 1.5 }}>
+                  🎯 Setup Summary: <strong style={{ color: '#39ff14' }}>{selectedGoal}</strong> goal with a <strong style={{ color: '#39ff14' }}>{targetDistance} KM</strong> target. Every single completed repetition counts as <strong style={{ color: '#39ff14' }}>10 meters</strong> of progression. Your active exercise will cycle every 10 reps!
+                </div>
               </div>
-            ))}
+            </>
+          )}
+
+          {/* ============================================================ */}
+          {/* WORLD CUP SPRINT CUSTOMIZER (SINGLE EXERCISE SELECTOR ONLY) */}
+          {/* ============================================================ */}
+          {playMode === 'worldcup' && (
+            <>
+              {/* SPRINT DISTANCE OPTIONS (WORLD CUP ONLY) */}
+              <div style={{
+                padding: '24px',
+                background: 'rgba(5, 5, 8, 0.4)',
+                border: '1px solid rgba(57, 255, 20, 0.15)',
+                borderRadius: '16px',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 800, letterSpacing: '2px' }}>[01] SELECT SPRINT TARGET DISTANCE</span>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    {targetDistance >= 1 ? `${targetDistance} KM` : `${targetDistance * 1000} METERS`}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                  {[1, 2, 3].map(km => (
+                    <button
+                      key={km}
+                      onClick={() => setTargetDistance(km)}
+                      style={{
+                        background: targetDistance === km ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255,255,255,0.02)',
+                        color: '#ffffff',
+                        border: `1px solid ${targetDistance === km ? '#ffffff' : 'rgba(255,255,255,0.06)'}`,
+                        padding: "14px 10px",
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        fontFamily: 'var(--font-gaming)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <span>{km} KM</span>
+                      <span style={{ fontSize: '8px', opacity: 0.4 }}>{km * 10} MINS</span>
+                    </button>
+                  ))}
+                  
+                  {/* Custom input */}
+                  <div style={{
+                    position: 'relative',
+                    background: ![1, 2, 3].includes(targetDistance) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${![1, 2, 3].includes(targetDistance) ? '#ffffff' : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 15px',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <input 
+                      type="number"
+                      placeholder="CUSTOM M"
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (val > 0) setTargetDistance(val / 1000);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        width: '100%',
+                        padding: '14px 0',
+                        outline: 'none',
+                        fontFamily: 'var(--font-gaming)',
+                        textAlign: 'center'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SINGLE WORKOUT TYPE SELECTOR (WORLD CUP ONLY) */}
+              <div style={{
+                width: '100%',
+                background: 'rgba(5, 5, 8, 0.4)',
+                border: '1px solid rgba(57, 255, 20, 0.15)',
+                borderRadius: '16px',
+                padding: '30px 24px'
+              }}>
+                <p style={{
+                  textAlign: 'center',
+                  color: '#39ff14',
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  letterSpacing: '3px',
+                  marginBottom: '20px',
+                  fontFamily: 'var(--font-gaming)'
+                }}>
+                  [02] SELECT SPRINT WORKOUT TYPE
+                </p>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                  gap: '12px'
+                }}>
+                  {['squats', 'pushups', 'jacks', 'fingers'].map(mode => {
+                    const label = mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase();
+                    const isActive = exerciseMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => setExerciseMode(mode)}
+                        style={{
+                          padding: '20px 10px',
+                          borderRadius: '12px',
+                          background: 'transparent',
+                          color: isActive ? '#39ff14' : '#ffffff',
+                          border: `1px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.06)'}`,
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          fontFamily: 'var(--font-gaming)',
+                          boxShadow: isActive ? '0 0 15px rgba(57, 255, 20, 0.15)' : 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span>{label}</span>
+                        {isActive && <Zap size={12} fill="#39ff14" color="#39ff14" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* BOTTOM CONTROLS */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '20px',
+            alignItems: 'center',
+            marginTop: '15px'
+          }}>
+            <button
+              onClick={startOnboarding}
+              style={{
+                background: '#39ff14',
+                color: '#000000',
+                padding: '16px 54px',
+                borderRadius: '30px',
+                border: 'none',
+                fontWeight: 900,
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-gaming)',
+                boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <Play size={14} fill="#000" color="#000" /> START
+            </button>
+
+            <button
+              onClick={() => alert("Watch trailer loaded successfully!")}
+              style={{
+                background: 'transparent',
+                color: '#ffffff',
+                padding: '16px 40px',
+                borderRadius: '30px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                fontWeight: 700,
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-gaming)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ffffff'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+            >
+              WATCH TRAILER
+            </button>
           </div>
+
         </div>
+
       </section>
 
-      {/* Onboarding Modal Upgrade */}
+      {/* Calibration Modal */}
       <AnimatePresence>
         {showOnboarding && (
           <motion.div 
@@ -556,91 +843,124 @@ export default function Home() {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.95)',
+              background: 'rgba(0,0,0,0.96)',
               zIndex: 1000,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: '20px',
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(15px)'
             }}
           >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="glass-card"
+            <div 
               style={{
-                maxWidth: '600px',
+                maxWidth: '500px',
                 width: '100%',
                 textAlign: 'center',
-                border: '1px solid var(--accent)',
-                padding: '60px'
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(5, 5, 8, 0.95)',
+                borderRadius: '16px',
+                padding: '50px 40px'
               }}
             >
-              <ShieldCheck size={64} color="var(--accent)" style={{ marginBottom: '30px' }} />
-              <h2 className="arcade-text" style={{ color: 'var(--accent)', marginBottom: '30px', fontSize: '32px' }}>CALIBRATING TRACKER</h2>
-              <div style={{ textAlign: 'left', marginBottom: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                  <div style={{ background: 'var(--accent)', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 900, fontSize: '12px' }}>1</div>
-                  <p style={{ opacity: 0.8 }}>Place device <span style={{ color: 'var(--accent)' }}>5-7 feet away</span>. Ensure full body visibility.</p>
+              <ShieldCheck size={48} color="#ffffff" style={{ marginBottom: '20px', margin: '0 auto 20px auto' }} />
+              <h2 className="arcade-text" style={{ color: '#ffffff', marginBottom: '25px', fontSize: '24px', textShadow: 'none' }}>CALIBRATING TRACKER</h2>
+              <div style={{ textAlign: 'left', marginBottom: '35px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
+                  <div style={{ background: '#ffffff', color: '#000000', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: '11px' }}>1</div>
+                  <p style={{ opacity: 0.7, fontSize: '13px' }}>Place device <span style={{ color: '#ffffff', fontWeight: 600 }}>5-7 feet away</span>. Ensure full body visibility.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                  <div style={{ background: 'var(--accent)', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 900, fontSize: '12px' }}>2</div>
-                  <p style={{ opacity: 0.8 }}>Good lighting is key for <span style={{ color: 'var(--accent)' }}>99% tracking accuracy</span>.</p>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
+                  <div style={{ background: '#ffffff', color: '#000000', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: '11px' }}>2</div>
+                  <p style={{ opacity: 0.7, fontSize: '13px' }}>Good lighting is key for <span style={{ color: '#ffffff', fontWeight: 600 }}>99% tracking accuracy</span>.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                  <div style={{ background: 'var(--accent)', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 900, fontSize: '12px' }}>3</div>
-                  <p style={{ opacity: 0.8 }}>Privacy Guaranteed. All data is processed <span style={{ color: 'var(--accent)' }}>locally on your device</span>.</p>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
+                  <div style={{ background: '#ffffff', color: '#000000', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: '11px' }}>3</div>
+                  <p style={{ opacity: 0.7, fontSize: '13px' }}>Privacy Guaranteed. All data is processed <span style={{ color: '#ffffff', fontWeight: 600 }}>locally on your device</span>.</p>
                 </div>
               </div>
-              <button className="glow-btn pulse-glow" style={{ width: '100%', fontSize: '20px' }} onClick={finishOnboarding}>
+              <button 
+                onClick={finishOnboarding}
+                style={{
+                  width: '100%',
+                  background: '#ffffff',
+                  color: '#000000',
+                  padding: '14px 0',
+                  borderRadius: '30px',
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-gaming)',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(255,255,255,0.15)',
+                }}
+              >
                 START WORKOUT 🚀
               </button>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Daily Limit Modal */}
+      {/* Free Game Limits modal */}
       <AnimatePresence>
         {showLimitModal && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}
           >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="glass-card"
-              style={{ maxWidth: '500px', width: '90%', padding: '40px', textAlign: 'center', border: '1px solid var(--accent)' }}
+            <div 
+              style={{
+                maxWidth: '450px',
+                width: '90%',
+                padding: '40px',
+                textAlign: 'center',
+                background: 'rgba(5, 5, 8, 0.95)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '16px'
+              }}
             >
               <div style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }} onClick={() => setShowLimitModal(false)}>
-                <X size={24} opacity={0.5} />
+                <X size={20} opacity={0.5} />
               </div>
-              <AlertTriangle size={48} color="var(--accent)" style={{ marginBottom: '20px' }} />
-              <h2 className="arcade-text" style={{ fontSize: '24px', marginBottom: '15px' }}>DAILY LIMIT REACHED</h2>
-              <p style={{ opacity: 0.6, marginBottom: '30px', fontSize: '14px' }}>
-                You've reached your <span style={{ color: 'var(--accent)' }}>15 free games</span> for today. Upgrade to Premium for unlimited gaming and elite features.
+              <AlertTriangle size={40} color="#ffffff" style={{ marginBottom: '15px', margin: '0 auto 10px auto' }} />
+              <h2 className="arcade-text" style={{ fontSize: '20px', marginBottom: '12px', textShadow: 'none' }}>DAILY LIMIT REACHED</h2>
+              <p style={{ opacity: 0.5, marginBottom: '25px', fontSize: '13px', lineHeight: 1.5 }}>
+                You've reached your <span style={{ color: '#ffffff', fontWeight: 600 }}>15 free games</span> for today. Upgrade to Premium for unlimited gaming and elite features.
               </p>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <button className="glow-btn" onClick={() => router.push('/premium')} style={{ width: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button 
+                  onClick={() => router.push('/premium')}
+                  style={{
+                    width: '100%',
+                    background: '#ffffff',
+                    color: '#000000',
+                    padding: '12px 0',
+                    borderRadius: '30px',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-gaming)',
+                  }}
+                >
                   GO PREMIUM NOW
                 </button>
                 <button 
                   onClick={() => setShowLimitModal(false)}
-                  style={{ background: 'transparent', border: 'none', color: '#fff', opacity: 0.5, fontSize: '12px', cursor: 'pointer' }}
+                  style={{ background: 'transparent', border: 'none', color: '#fff', opacity: 0.5, fontSize: '12px', cursor: 'pointer', marginTop: '5px' }}
                 >
                   I'll play again tomorrow
                 </button>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-
 
       <style jsx>{`
         .particle {
@@ -648,12 +968,10 @@ export default function Home() {
         }
         @keyframes float {
           0% { transform: translateY(0) translateX(0); }
-          50% { transform: translateY(-100px) translateX(50px); }
+          50% { transform: translateY(-80px) translateX(40px); }
           100% { transform: translateY(0) translateX(0); }
         }
       `}</style>
     </div>
   );
 }
-
-

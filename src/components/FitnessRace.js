@@ -3,7 +3,15 @@ import React, { useEffect, useRef, useState, memo } from 'react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 
-const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
+const FitnessRace = ({ 
+  mode, 
+  targetKm = 1, 
+  isCameraReady, 
+  activeTheme = 'default', 
+  activeStadium = 'default', 
+  activeCharacter = 'default', 
+  onComplete 
+}) => {
   const gameRef = useRef(null);
   const [winnerState, setWinnerState] = useState(null);
   const [gameStateDisplay, setGameStateDisplay] = useState('waiting');
@@ -76,17 +84,29 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
       }
 
       function buildStadium(W, H) {
-        // 1. Beautiful Blue Sky with Gradient
+        // 1. Beautiful Sky with equipped Gradient theme
         if (!skyBg) {
           skyBg = scene.add.graphics();
           skyBg.setScrollFactor(0).setDepth(0);
         }
         skyBg.clear();
-        skyBg.fillGradientStyle(0x0088ff, 0x0088ff, 0x66ccff, 0x66ccff, 1);
+
+        let skyTop = 0x0088ff;
+        let skyBottom = 0x66ccff;
+        if (activeTheme === 'sunset') {
+          // Warm sunset reward gradient sky
+          skyTop = 0xff3300;
+          skyBottom = 0xff8800;
+        }
+        skyBg.fillGradientStyle(skyTop, skyTop, skyBottom, skyBottom, 1);
         skyBg.fillRect(0, 0, W, H * 0.75);
         
-        // 2. Horizon boundary green grass land
-        skyBg.fillStyle(0x38b000, 1);
+        // 2. Horizon boundary grass pasture / Golden arena
+        let grassColor = 0x38b000;
+        if (activeStadium === 'golden') {
+          grassColor = 0xffd700; // Radiant Golden Stadium
+        }
+        skyBg.fillStyle(grassColor, 1);
         skyBg.fillRect(0, H * 0.75, W, H * 0.25);
 
         // 3. Parallax Mountains in deep background
@@ -95,7 +115,12 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           mountains.setScrollFactor(0.05, 0).setDepth(1);
         }
         mountains.clear();
-        mountains.fillStyle(0x005f73, 0.45);
+        
+        let mtColor = 0x005f73;
+        if (activeStadium === 'golden') {
+          mtColor = 0xb59410;
+        }
+        mountains.fillStyle(mtColor, 0.45);
         
         mountains.beginPath();
         mountains.moveTo(0, H * 0.75);
@@ -140,10 +165,10 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         groundLayer.clear();
         
         const roadWidth = finishLineDistance + 3000;
-        groundLayer.fillStyle(0x24252a, 1);
+        groundLayer.fillStyle(activeStadium === 'golden' ? 0x4a3c00 : 0x24252a, 1);
         groundLayer.fillRect(0, H * 0.75, roadWidth, H * 0.25);
         
-        groundLayer.lineStyle(6, 0xffd000, 0.95);
+        groundLayer.lineStyle(6, activeStadium === 'golden' ? 0xffea00 : 0xffd000, 0.95);
         groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H * 0.75, roadWidth, H * 0.75));
         groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H - 15, roadWidth, H - 15));
         
@@ -250,7 +275,13 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         ai.anims.pause();
 
         player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1_clean');
-        player.setScale(spr * 2.7); // Increased scale to match Neymar visually!
+        
+        let baseScale = 2.7;
+        if (activeCharacter === 'ronaldo_elite') {
+          baseScale = 3.2; // Giant Elite Cristiano
+          player.setTint(0xffd700); // Golden aura
+        }
+        player.setScale(spr * baseScale);
         player.setDepth(9);
         player.play('player_run');
         player.anims.pause();
@@ -267,9 +298,13 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
           const distPerRep = mode === 'fingers' ? 100 : 1000;
           playerDistanceRef.current += distPerRep;
-          // Removed camera shake for better clarity
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
-          this.tweens.add({ targets: player, scale: spr * 2.85, duration: 80, yoyo: true });
+          
+          let yoyoScale = 2.85;
+          if (activeCharacter === 'ronaldo_elite') {
+            yoyoScale = 3.35;
+          }
+          this.tweens.add({ targets: player, scale: spr * yoyoScale, duration: 80, yoyo: true });
         };
 
         this.restart = () => {
@@ -290,6 +325,15 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
             player.play('player_run');
             player.anims.pause();
             player.setTexture('ronaldoRun1_clean');
+            
+            let bScale = 2.7;
+            if (activeCharacter === 'ronaldo_elite') {
+              bScale = 3.2;
+              player.setTint(0xffd700);
+            } else {
+              player.clearTint();
+            }
+            player.setScale(spr * bScale);
           }
         };
       }
@@ -339,10 +383,9 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           }
         }
 
-
-
         if (gameStateRef.current !== 'playing' || winnerRef.current) return;
 
+        // Custom speed curves: Neymar scales base running speed based on sprint target km!
         const aiSpeedBase = targetKm === 1 ? 0.4 : targetKm === 2 ? 0.7 : 0.9;
         aiDistanceRef.current += aiSpeedBase * delta;
         if (playerDistanceRef.current > 0) playerDistanceRef.current += (aiSpeedBase * 0.3) * delta;
@@ -363,6 +406,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         
         if (playerDistanceUITextRef.current) playerDistanceUITextRef.current.innerText = Math.floor(playerDistanceRef.current / 100);
         if (aiDistanceUITextRef.current) aiDistanceUITextRef.current.innerText = Math.floor(aiDistanceRef.current / 100);
+        
         if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
           winnerRef.current = 'PLAYER'; setWinnerState('PLAYER'); setGameStateDisplay('finished');
           confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#39ff14', '#ffffff', '#00f2ff'] });
@@ -431,11 +475,17 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
             <div className="glass-card" style={{ marginBottom: '40px', padding: '30px 60px' }}>
               <p className="hud-text" style={{ fontSize: '20px' }}>{winnerState === 'PLAYER' ? 'GREAT JOB KEEPING UP THE PACE!' : "KEEP PUSHING, YOU'LL GET IT NEXT TIME"}</p>
               <div style={{ marginTop: '20px', display: 'flex', gap: '30px', justifyContent: 'center' }}>
-                <div><p style={{ opacity: 0.5, fontSize: '12px' }}>CALORIES</p><p className="arcade-text" style={{ fontSize: '24px' }}>{Math.floor(Math.random() * 50 + 20)}</p></div>
-                <div><p style={{ opacity: 0.5, fontSize: '12px' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--secondary)' }}>+450</p></div>
+                <div><p style={{ opacity: 0.5, fontSize: '12px' }}>CALORIES</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--danger)' }}>{Math.round(previousRepsRef.current * 0.45 + targetKm * 10)}</p></div>
+                <div><p style={{ opacity: 0.5, fontSize: '12px' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--secondary)' }}>+{Math.round(previousRepsRef.current * 6 + targetKm * 50)}</p></div>
               </div>
             </div>
-            <button className="glow-btn" onClick={() => window.location.reload()} style={{ padding: '20px 60px' }}>TRY AGAIN</button>
+            <button className="glow-btn" onClick={() => {
+              if (onComplete) {
+                onComplete(previousRepsRef.current);
+              } else {
+                window.location.reload();
+              }
+            }} style={{ padding: '20px 60px' }}>DONE</button>
           </motion.div>
         </div>
       )}
@@ -444,4 +494,3 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
 };
 
 export default memo(FitnessRace);
-

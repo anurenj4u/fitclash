@@ -2,45 +2,72 @@ import React from 'react';
 
 export const metadata = {
   title: "About ClashofCardio | The Future of AI Fitness",
-  description: "Learn how ClashofCardio uses computer vision and AI to gamify your fitness routine. No gym membership required, just your camera.",
+  description: "Learn how ClashofCardio uses local browser-based computer vision and AI to gamify your cardio workouts. No expensive gym memberships required.",
 };
 
 export default function AboutPage() {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '80px 20px', lineHeight: '1.8' }}>
-      <h1 className="arcade-text" style={{ fontSize: 'clamp(32px, 5vw, 48px)', marginBottom: '40px', textAlign: 'center' }}>
-        REDEFINING <span style={{ color: 'var(--accent)' }}>FITNESS</span>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '80px 20px', lineHeight: '1.8', color: '#ffffff', fontFamily: 'var(--font-body)', background: '#050508' }}>
+      
+      {/* Title */}
+      <h1 className="arcade-text" style={{ fontSize: '32px', marginBottom: '15px', textAlign: 'center', color: '#39ff14', textShadow: '0 0 20px rgba(57, 255, 20, 0.4)' }}>
+        REDEFINING <span style={{ color: '#ffffff' }}>FITNESS</span>
       </h1>
       
-      <section style={{ marginBottom: '60px' }}>
-        <h2 style={{ color: 'var(--accent)', marginBottom: '20px' }}>Our Mission</h2>
-        <p>
-          At ClashofCardio, we believe that fitness should be fun, accessible, and engaging. Traditional workouts can often feel like a chore. We've combined cutting-edge AI motion tracking with arcade-style gameplay to create an experience that keeps you moving and coming back for more.
+      <p style={{ marginBottom: '45px', textAlign: 'center', opacity: 0.5, fontSize: '12px' }}>Alegitimate, high-fidelity AI wellness platform</p>
+
+      {/* Main Mission */}
+      <section style={{ marginBottom: '40px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '30px' }}>
+        <h2 style={{ color: '#39ff14', fontSize: '18px', marginBottom: '15px', fontWeight: 800 }}>1. What is ClashofCardio?</h2>
+        <p style={{ opacity: 0.8, fontSize: '14px', marginBottom: '15px' }}>
+          ClashofCardio is a premium, arcade-style fitness gaming platform designed to transform boring, routine home workouts into addictive gamified athletic challenges.
+        </p>
+        <p style={{ opacity: 0.8, fontSize: '14px' }}>
+          By merging next-generation AI computer-vision skeleton pose tracking with football runner mechanics (e.g., competing on running tracks, leveling characters, and building workout streaks), we make exercise feel as engaging and immersive as high-stakes console gaming.
         </p>
       </section>
 
-      <section style={{ marginBottom: '60px', padding: '30px', background: 'var(--glass)', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-        <h2 style={{ color: 'var(--accent)', marginBottom: '20px' }}>How AI Tracking Works</h2>
-        <p>
-          ClashofCardio uses <strong>TensorFlow.js</strong> and advanced pose estimation models to track your movements in real-time through your device's camera. 
-          Our AI identifies key points on your body to verify each rep, ensuring perfect form and preventing "cheating." 
-          <br /><br />
-          <span style={{ opacity: 0.8, fontSize: '14px' }}>*No video data is ever sent to our servers. All processing happens locally on your device for total privacy.</span>
+      {/* Why We Built It */}
+      <section style={{ marginBottom: '40px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '30px' }}>
+        <h2 style={{ color: '#39ff14', fontSize: '18px', marginBottom: '15px', fontWeight: 800 }}>2. Our Mission</h2>
+        <p style={{ opacity: 0.8, fontSize: '14px', marginBottom: '15px' }}>
+          Traditional home workouts are often lonely, lack instant gamified feedback, and suffer from high dropout rates. Gym equipment is expensive, bulky, and restrictive.
+        </p>
+        <p style={{ opacity: 0.8, fontSize: '14px' }}>
+          Our mission is to democratize highly accessible and rewarding fitness tracking globally. We wanted to build a program where **your body acts as the controller** itself—requiring zero hardware accessories, wearable sensors, or subscription lock-ins. All you need is a browser, a webcam, and a willingness to move.
         </p>
       </section>
 
-      <section style={{ marginBottom: '60px' }}>
-        <h2 style={{ color: 'var(--accent)', marginBottom: '20px' }}>Why Gamified Fitness?</h2>
-        <ul style={{ paddingLeft: '20px' }}>
-          <li><strong>Instant Feedback:</strong> See your progress in real-time with on-screen boosts.</li>
-          <li><strong>Engagement:</strong> Compete against yourself or the AI in high-energy races.</li>
-          <li><strong>Convenience:</strong> Work out anywhere — your living room, office, or park.</li>
-          <li><strong>Cost-Effective:</strong> No expensive sensors or equipment needed.</li>
-        </ul>
+      {/* Local AI Tech Details */}
+      <section style={{ marginBottom: '40px', background: 'rgba(57, 255, 20, 0.02)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '16px', padding: '30px' }}>
+        <h2 style={{ color: '#39ff14', fontSize: '18px', marginBottom: '15px', fontWeight: 800 }}>3. Real-Time Form Verification</h2>
+        <p style={{ opacity: 0.9, fontSize: '14px', marginBottom: '12px' }}>
+          We employ custom JavaScript multi-threaded Web Workers executing browser-optimized **TensorFlow.js** models in the background.
+        </p>
+        <p style={{ opacity: 0.9, fontSize: '14px', margin: 0 }}>
+          <strong>🔒 100% Privacy First:</strong> Unlike other vision products, we never stream, upload, or process visual frame logs on external servers. Not a single pixel ever leaves your device. All coordinates calculations happen locally in temporary RAM, safeguarding your home environment and family privacy completely.
+        </p>
       </section>
-      
-      <div style={{ textAlign: 'center', marginTop: '40px' }}>
-        <a href="/" className="glow-btn" style={{ textDecoration: 'none', display: 'inline-block' }}>BACK TO GAME</a>
+
+      <section style={{ marginBottom: '45px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '30px' }}>
+        <h2 style={{ color: '#39ff14', fontSize: '18px', marginBottom: '15px', fontWeight: 800 }}>4. Our Tech Stack Partners</h2>
+        <p style={{ opacity: 0.8, fontSize: '14px' }}>
+          We build with Next.js App Router for dynamic layouts, Google Firestore for encrypted profile progression, Razorpay for PCI-compliant gateway processing, and canvas particle engines for arcade visual effects.
+        </p>
+      </section>
+
+      <div style={{ textAlign: 'center', marginTop: '50px' }}>
+        <a href="/" style={{
+          textDecoration: 'none',
+          color: '#000',
+          background: '#39ff14',
+          padding: '12px 35px',
+          borderRadius: '30px',
+          fontWeight: 800,
+          fontFamily: 'var(--font-gaming)',
+          boxShadow: '0 0 15px rgba(57, 255, 20, 0.3)',
+          display: 'inline-block'
+        }}>BACK TO HOME</a>
       </div>
     </div>
   );

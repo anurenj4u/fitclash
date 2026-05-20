@@ -55,7 +55,7 @@ export default function Footer() {
           <div>
             <h4 className="hud-text" style={{ marginBottom: '25px', fontSize: '12px', letterSpacing: '2px' }}>LEGAL</h4>
             <ul style={{ listStyle: 'none', padding: 0 }}>
-              {['PRIVACY', 'TERMS', 'COOKIES', 'SECURITY'].map(item => (
+              {['PRIVACY', 'TERMS', 'REFUND'].map(item => (
                 <li key={item} style={{ marginBottom: '15px' }}>
                   <Link href={`/${item.toLowerCase()}`} style={{ color: '#fff', opacity: 0.6, textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>{item}</Link>
                 </li>
