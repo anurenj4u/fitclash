@@ -33,7 +33,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [exerciseMode, setExerciseMode] = useState('squats');
-  const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'worldcup'
+  const [playMode, setPlayMode] = useState('worldcup'); // 'normal' | 'worldcup'
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [targetDistance, setTargetDistance] = useState(1); // 1, 2, or 3 KM
@@ -107,6 +107,17 @@ export default function Home() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  // Set default playmode based on premium state
+  useEffect(() => {
+    if (userData) {
+      if (userData.isPremium) {
+        setPlayMode('normal');
+      } else {
+        setPlayMode('worldcup');
+      }
+    }
+  }, [userData]);
+
   // Listen to camera pose changes to update dynamic workout rounds
   useEffect(() => {
     if (!gameStarted) {
@@ -131,7 +142,7 @@ export default function Home() {
       return;
     }
     
-    if (!userData?.isPremium && userData?.gamesToday >= 15) {
+    if (!userData?.isPremium && userData?.gamesToday >= 5) {
       setShowLimitModal(true);
       return;
     }
@@ -145,7 +156,7 @@ export default function Home() {
       return;
     }
     
-    if (!userData?.isPremium && userData?.gamesToday >= 15) {
+    if (!userData?.isPremium && userData?.gamesToday >= 5) {
       setShowLimitModal(true);
       return;
     }
@@ -410,7 +421,13 @@ export default function Home() {
           gap: '8px'
         }}>
           <button
-            onClick={() => setPlayMode('normal')}
+            onClick={() => {
+              if (userData?.isPremium) {
+                setPlayMode('normal');
+              } else {
+                router.push('/premium?feature=fitness-workout');
+              }
+            }}
             style={{
               padding: '16px 20px',
               borderRadius: '12px',
@@ -430,7 +447,7 @@ export default function Home() {
               letterSpacing: '0.5px'
             }}
           >
-            <Zap size={14} fill={playMode === 'normal' ? '#000' : '#fff'} color={playMode === 'normal' ? '#000' : '#fff'} /> FITNESS WORKOUT
+            <Zap size={14} fill={playMode === 'normal' ? '#000' : '#fff'} color={playMode === 'normal' ? '#000' : '#fff'} /> FITNESS WORKOUT {!userData?.isPremium && '🔒'}
           </button>
           <button
             onClick={() => setPlayMode('worldcup')}
@@ -929,7 +946,7 @@ export default function Home() {
               <AlertTriangle size={40} color="#ffffff" style={{ marginBottom: '15px', margin: '0 auto 10px auto' }} />
               <h2 className="arcade-text" style={{ fontSize: '20px', marginBottom: '12px', textShadow: 'none' }}>DAILY LIMIT REACHED</h2>
               <p style={{ opacity: 0.5, marginBottom: '25px', fontSize: '13px', lineHeight: 1.5 }}>
-                You've reached your <span style={{ color: '#ffffff', fontWeight: 600 }}>15 free games</span> for today. Upgrade to Premium for unlimited gaming and elite features.
+                You've reached your <span style={{ color: '#ffffff', fontWeight: 600 }}>5 free games</span> for today. Upgrade to Premium for unlimited gaming and elite features.
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

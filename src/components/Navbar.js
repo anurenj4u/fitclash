@@ -6,7 +6,7 @@ import { User, LogOut, Menu, X, Flame } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [animatedCalories, setAnimatedCalories] = useState(0);
 
@@ -74,7 +74,7 @@ export default function Navbar() {
       
       {/* Desktop Menu */}
       <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }} className="desktop-menu">
-        {['ABOUT', 'CONTACT', 'PREMIUM'].map((item) => (
+        {(userData?.isPremium ? ['ABOUT', 'CONTACT'] : ['ABOUT', 'CONTACT', 'PREMIUM']).map((item) => (
           <Link 
             key={item}
             href={`/${item.toLowerCase()}`} 
