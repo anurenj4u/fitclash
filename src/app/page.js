@@ -1,6 +1,9 @@
 "use client";
 import React, { useState, useCallback, useEffect } from "react";
 import NormalWorkout from "@/components/NormalWorkout";
+import FitnessRace from "@/components/FitnessRace";
+import ReflexGame from "@/components/ReflexGame";
+import FlappyFitness from "@/components/FlappyFitness";
 import MotionTracker from "@/components/MotionTracker";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -25,12 +28,15 @@ import { doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [exerciseMode, setExerciseMode] = useState('squats');
+  const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'worldcup'
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [targetDistance, setTargetDistance] = useState(1);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [particles, setParticles] = useState([]);
   
   const [showLimitModal, setShowLimitModal] = useState(false);
   
@@ -38,6 +44,17 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
+    
+    // Generate particles once on mount
+    const generated = [...Array(20)].map(() => ({
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      opacity: 0.1 + Math.random() * 0.4,
+      duration: `${5 + Math.random() * 10}s`
+    }));
+    setParticles(generated);
+
     const handleMouseMove = (e) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
@@ -88,7 +105,15 @@ export default function Home() {
         overflow: "hidden",
         zIndex: 2000 
       }}>
-        <NormalWorkout mode={exerciseMode} isCameraReady={isCameraReady} />
+        {playMode === 'worldcup' ? (
+          <FitnessRace mode={exerciseMode} targetKm={targetDistance} isCameraReady={isCameraReady} />
+        ) : playMode === 'reflex' ? (
+          <ReflexGame mode={exerciseMode} isCameraReady={isCameraReady} />
+        ) : playMode === 'flappy' ? (
+          <FlappyFitness mode={exerciseMode} isCameraReady={isCameraReady} />
+        ) : (
+          <NormalWorkout mode={exerciseMode} isCameraReady={isCameraReady} />
+        )}
         <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
       </div>
     );
@@ -107,18 +132,18 @@ export default function Home() {
       
       {/* Animated Particles (Simplified CSS version) */}
       <div className="particles-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        {[...Array(20)].map((_, i) => (
+        {particles.map((particle, i) => (
           <div key={i} className="particle" style={{
             position: 'absolute',
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
+            top: particle.top,
+            left: particle.left,
             width: '2px',
             height: '2px',
             background: 'var(--accent)',
             boxShadow: '0 0 10px var(--accent)',
             borderRadius: '50%',
-            opacity: Math.random() * 0.5,
-            animation: `float ${5 + Math.random() * 10}s infinite linear`
+            opacity: particle.opacity,
+            animation: `float ${particle.duration} infinite linear`
           }} />
         ))}
       </div>
@@ -189,13 +214,167 @@ export default function Home() {
 
           {/* Compact Vertical Stack */}
           <div style={{ width: '100%', maxWidth: '850px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            
-            {/* ROW 1: TARGET DISTANCE - Advanced UI with Custom Option */}
-            {/* HIDDEN TARGET DISTANCE SECTION (For Game Mode)
-            <div className="glass-card" style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(0, 242, 255, 0.2)' }}>
-              ... target distance content ...
+            {/* MODE TOGGLE: Four Active Gaming & Workout Modes */}
+            <div className="glass-card" style={{ 
+              padding: '8px', 
+              background: 'rgba(2, 2, 5, 0.4)', 
+              border: '1px solid rgba(57, 255, 20, 0.2)', 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+              gap: '8px', 
+              borderRadius: '16px', 
+              marginBottom: '10px' 
+            }}>
+              <button 
+                onClick={() => setPlayMode('normal')}
+                style={{ 
+                  padding: '15px', 
+                  borderRadius: '12px', 
+                  background: playMode === 'normal' ? 'var(--accent)' : 'transparent', 
+                  color: playMode === 'normal' ? '#000' : '#fff', 
+                  fontWeight: 800, 
+                  transition: 'all 0.3s ease', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  boxShadow: playMode === 'normal' ? '0 0 15px var(--accent)' : 'none'
+                }}
+              >
+                ⚡ FITNESS WORKOUT
+              </button>
+              <button 
+                onClick={() => setPlayMode('worldcup')}
+                style={{ 
+                  padding: '15px', 
+                  borderRadius: '12px', 
+                  background: playMode === 'worldcup' ? '#ffcc00' : 'transparent', 
+                  color: playMode === 'worldcup' ? '#000' : '#fff', 
+                  fontWeight: 800, 
+                  transition: 'all 0.3s ease', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  boxShadow: playMode === 'worldcup' ? '0 0 15px #ffcc00' : 'none'
+                }}
+              >
+                🏆 WORLD CUP SPRINT
+              </button>
+              <button 
+                onClick={() => setPlayMode('reflex')}
+                style={{ 
+                  padding: '15px', 
+                  borderRadius: '12px', 
+                  background: playMode === 'reflex' ? '#00f2ff' : 'transparent', 
+                  color: playMode === 'reflex' ? '#000' : '#fff', 
+                  fontWeight: 800, 
+                  transition: 'all 0.3s ease', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  boxShadow: playMode === 'reflex' ? '0 0 15px #00f2ff' : 'none'
+                }}
+              >
+                ⚽ REFLEX SHOOTOUT
+              </button>
+              <button 
+                onClick={() => setPlayMode('flappy')}
+                style={{ 
+                  padding: '15px', 
+                  borderRadius: '12px', 
+                  background: playMode === 'flappy' ? '#ff00ff' : 'transparent', 
+                  color: playMode === 'flappy' ? '#000' : '#fff', 
+                  fontWeight: 800, 
+                  transition: 'all 0.3s ease', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  boxShadow: playMode === 'flappy' ? '0 0 15px #ff00ff' : 'none'
+                }}
+              >
+                🐦 FLAPPY RONALDO
+              </button>
             </div>
-            */}
+
+            {/* ROW 1: TARGET DISTANCE - Only shown for World Cup Mode */}
+            <AnimatePresence>
+              {playMode === 'worldcup' && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="glass-card" 
+                  style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(255, 204, 0, 0.3)', overflow: 'hidden' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <p className="hud-text" style={{ fontSize: '10px', color: '#ffcc00', letterSpacing: '3px' }}>[01] SELECT SPRINT DISTANCE</p>
+                    <div style={{ background: 'rgba(255, 204, 0, 0.1)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, color: '#ffcc00', border: '1px solid rgba(255, 204, 0, 0.3)' }}>
+                      {targetDistance >= 1 ? `${targetDistance} KM` : `${targetDistance * 1000} METERS`}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                    {[1, 2, 3].map(km => (
+                      <motion.button
+                        key={km}
+                        whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 204, 0, 0.1)' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setTargetDistance(km)}
+                        style={{
+                          background: targetDistance === km ? 'linear-gradient(135deg, rgba(255, 204, 0, 0.3) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
+                          color: targetDistance === km ? '#ffcc00' : '#fff',
+                          border: `1px solid ${targetDistance === km ? '#ffcc00' : 'rgba(255,255,255,0.05)'}`,
+                          padding: "12px 10px",
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '2px',
+                          fontFamily: 'var(--font-gaming)',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          boxShadow: targetDistance === km ? 'inset 0 0 15px rgba(255, 204, 0, 0.2)' : 'none'
+                        }}
+                      >
+                        <span style={{ letterSpacing: '1px' }}>{km} KM</span>
+                        <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 10} MINS</span>
+                      </motion.button>
+                    ))}
+                    
+                    {/* Custom Meters Input Box */}
+                    <div style={{
+                      position: 'relative',
+                      background: ![1, 2, 3].includes(targetDistance) ? 'linear-gradient(135deg, rgba(255, 204, 0, 0.3) 0%, transparent 100%)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${![1, 2, 3].includes(targetDistance) ? '#ffcc00' : 'rgba(255,255,255,0.05)'}`,
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 10px',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <input 
+                        type="number"
+                        placeholder="CUSTOM M"
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (val > 0) setTargetDistance(val / 1000);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          width: '100%',
+                          padding: '12px 0',
+                          outline: 'none',
+                          fontFamily: 'var(--font-gaming)',
+                          textAlign: 'center'
+                        }}
+                      />
+                      <div style={{ fontSize: '9px', opacity: 0.5, marginLeft: '4px' }}>M</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* ROW 2: SELECT CHALLENGE - Modernized Grid */}
             <div className="glass-card" style={{ padding: '20px', background: 'rgba(2, 2, 5, 0.4)', border: '1px solid rgba(57, 255, 20, 0.2)' }}>
