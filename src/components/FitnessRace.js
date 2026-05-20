@@ -250,7 +250,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
         ai.anims.pause();
 
         player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1_clean');
-        player.setScale(spr * 1.55); // Increased scale
+        player.setScale(spr * 2.7); // Increased scale to match Neymar visually!
         player.setDepth(9);
         player.play('player_run');
         player.anims.pause();
@@ -269,7 +269,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
           playerDistanceRef.current += distPerRep;
           // Removed camera shake for better clarity
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
-          this.tweens.add({ targets: player, scale: spr * 1.65, duration: 80, yoyo: true });
+          this.tweens.add({ targets: player, scale: spr * 2.85, duration: 80, yoyo: true });
         };
 
         this.restart = () => {
