@@ -46,6 +46,7 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
 
       let player, ai, ball, leaderArrow, scene;
       let skyBg, groundLayer, stadiumLights, trailParticles;
+      let mountains, clouds = [];
       const playerStartX = 200;
 
       const getScale = () => {
@@ -65,33 +66,81 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
       }
 
       function buildStadium(W, H) {
+        // 1. Beautiful Blue Sky with Gradient
         if (!skyBg) {
           skyBg = scene.add.graphics();
           skyBg.setScrollFactor(0).setDepth(0);
         }
         skyBg.clear();
-        skyBg.fillGradientStyle(0x020205, 0x020205, 0x0a0a20, 0x0a0a20, 1);
-        skyBg.fillRect(0, 0, W, H);
+        skyBg.fillGradientStyle(0x0088ff, 0x0088ff, 0x66ccff, 0x66ccff, 1);
+        skyBg.fillRect(0, 0, W, H * 0.75);
+        
+        // 2. Horizon boundary green grass land
+        skyBg.fillStyle(0x38b000, 1);
+        skyBg.fillRect(0, H * 0.75, W, H * 0.25);
 
-        if (!stadiumLights) {
-          stadiumLights = scene.add.graphics();
-          stadiumLights.setScrollFactor(0).setDepth(1);
+        // 3. Parallax Mountains in deep background
+        if (!mountains) {
+          mountains = scene.add.graphics();
+          mountains.setScrollFactor(0.05, 0).setDepth(1);
         }
-        stadiumLights.clear();
-        [W*0.2, W*0.8].forEach(x => {
-          stadiumLights.fillStyle(0x39ff14, 0.05);
-          stadiumLights.fillTriangle(x, 0, x-150, H, x+150, H);
-        });
+        mountains.clear();
+        mountains.fillStyle(0x005f73, 0.45);
+        
+        mountains.beginPath();
+        mountains.moveTo(0, H * 0.75);
+        mountains.lineTo(W * 0.15, H * 0.4);
+        mountains.lineTo(W * 0.35, H * 0.6);
+        mountains.lineTo(W * 0.55, H * 0.35);
+        mountains.lineTo(W * 0.75, H * 0.65);
+        mountains.lineTo(W * 0.9, H * 0.45);
+        mountains.lineTo(W * 1.2, H * 0.75);
+        mountains.closePath();
+        mountains.fillPath();
 
+        // 4. Create Parallax Clouds
+        clouds = [];
+        for (let i = 0; i < 8; i++) {
+          const cloud = scene.add.graphics();
+          const cx = Math.random() * W * 1.5;
+          const cy = 30 + Math.random() * (H * 0.35);
+          const scale = 0.4 + Math.random() * 0.8;
+          
+          cloud.fillStyle(0xffffff, 0.9);
+          cloud.fillCircle(0, 0, 25);
+          cloud.fillCircle(-20, 3, 16);
+          cloud.fillCircle(20, 3, 16);
+          cloud.fillRoundedRect(-35, 3, 70, 16, 8);
+          
+          cloud.x = cx;
+          cloud.y = cy;
+          cloud.setScale(scale);
+          cloud.setScrollFactor(0.12, 0);
+          cloud.setDepth(2);
+          
+          cloud.driftSpeed = 0.15 + Math.random() * 0.25;
+          clouds.push(cloud);
+        }
+
+        // 5. High-quality 2D Road in world coordinates
         if (!groundLayer) {
           groundLayer = scene.add.graphics();
-          groundLayer.setScrollFactor(0).setDepth(2);
+          groundLayer.setScrollFactor(1).setDepth(3);
         }
         groundLayer.clear();
-        groundLayer.fillStyle(0x111111, 1);
-        groundLayer.fillRect(0, H * 0.75, W, H * 0.25);
-        groundLayer.lineStyle(4, 0x39ff14, 0.5);
-        groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H * 0.75, W, H * 0.75));
+        
+        const roadWidth = finishLineDistance + 3000;
+        groundLayer.fillStyle(0x24252a, 1);
+        groundLayer.fillRect(0, H * 0.75, roadWidth, H * 0.25);
+        
+        groundLayer.lineStyle(6, 0xffd000, 0.95);
+        groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H * 0.75, roadWidth, H * 0.75));
+        groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H - 15, roadWidth, H - 15));
+        
+        groundLayer.lineStyle(4, 0xffffff, 0.7);
+        for (let rx = 0; rx < roadWidth; rx += 140) {
+          groundLayer.strokeLineShape(new Phaser.Geom.Line(rx, H * 0.86, rx + 70, H * 0.86));
+        }
       }
 
       function create() {
@@ -148,20 +197,50 @@ const FitnessRace = ({ mode, targetKm = 1, isCameraReady }) => {
       }
 
       function update(time, delta) {
-        if (gameStateRef.current !== 'playing' || winnerRef.current) return;
         const H = this.scale.height;
+        
+        // 1. Dynamic parallax drift for clouds (runs ambiently even when not playing)
+        const scrollX = this.cameras.main.scrollX;
+        const screenW = window.innerWidth;
+        if (clouds && clouds.length > 0) {
+          clouds.forEach(cloud => {
+            cloud.x -= cloud.driftSpeed;
+            const leftBound = scrollX * 0.12 - 120;
+            const rightBound = scrollX * 0.12 + screenW + 120;
+            if (cloud.x < leftBound) {
+              cloud.x = rightBound;
+              cloud.y = 30 + Math.random() * (H * 0.35);
+            }
+          });
+        }
+        
+        // 2. Smooth ball rolling rotation (spins continuously based on activity)
+        if (ball) {
+          const isPlaying = gameStateRef.current === 'playing' && !winnerRef.current;
+          const rollFactor = isPlaying ? 0.32 : 0.05;
+          ball.angle += rollFactor * delta;
+        }
+
+        if (gameStateRef.current !== 'playing' || winnerRef.current) return;
+
         const aiSpeedBase = targetKm === 1 ? 0.4 : targetKm === 2 ? 0.7 : 0.9;
         aiDistanceRef.current += aiSpeedBase * delta;
         if (playerDistanceRef.current > 0) playerDistanceRef.current += (aiSpeedBase * 0.3) * delta;
+        
         player.x = playerStartX + playerDistanceRef.current;
         ai.x = playerStartX + aiDistanceRef.current;
         const trackY = getTrackY(H);
+        
         player.y = trackY + Math.sin(time * 0.01) * 5;
         ai.y = trackY + Math.sin(time * 0.012 + 1) * 5;
+        
         const leader = playerDistanceRef.current >= aiDistanceRef.current ? player : ai;
-        ball.x = leader.x + 40; ball.y = leader.y + 50;
+        ball.x = leader.x + 40; 
+        ball.y = leader.y + 50;
+        
         leaderArrow.x = leader.x; leaderArrow.y = leader.y - 80;
         this.cameras.main.scrollX = Math.max(player.x, ai.x) - (window.innerWidth / 3);
+        
         if (playerDistanceUITextRef.current) playerDistanceUITextRef.current.innerText = Math.floor(playerDistanceRef.current / 100);
         if (aiDistanceUITextRef.current) aiDistanceUITextRef.current.innerText = Math.floor(aiDistanceRef.current / 100);
         if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
