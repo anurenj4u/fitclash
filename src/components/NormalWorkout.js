@@ -42,8 +42,9 @@ const NormalWorkout = ({
 }) => {
   const [reps, setReps] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
-  const [gameState, setGameState] = useState('waiting'); // waiting, ready, countdown, playing
+  const [gameState, setGameState] = useState('waiting'); // waiting, ready, countdown, playing, rest
   const [countdown, setCountdown] = useState(3);
+  const [restTimer, setRestTimer] = useState(0);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const { user } = useAuth();
   const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
@@ -69,6 +70,36 @@ const NormalWorkout = ({
     }
   }, [isCameraReady, gameState]);
 
+  const startCountdown = () => {
+    setGameState('countdown');
+    let timer = 3;
+    setCountdown(timer);
+    const interval = setInterval(() => {
+      timer -= 1;
+      setCountdown(timer);
+      if (timer === 0) {
+        clearInterval(interval);
+        setGameState('playing');
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    let interval;
+    if (gameState === 'rest') {
+      if (restTimer > 0) {
+        interval = setInterval(() => {
+          setRestTimer(t => t - 1);
+        }, 1000);
+      } else {
+        startCountdown();
+      }
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [gameState, restTimer]);
+
   useEffect(() => {
     return () => {
       exitFullscreen();
@@ -84,8 +115,12 @@ const NormalWorkout = ({
         setReps((prev) => {
           const nextReps = prev + 1;
 
-          // Cycle exercise modes every 10 reps if multiple exercises are selected
-          if (selectedExercises.length > 1 && nextReps % 10 === 0) {
+          if (difficulty === 'easy' && nextReps % 20 === 0 && nextReps < targetRepsNeeded) {
+            setGameState('rest');
+            setRestTimer(120); // 2 minutes
+            setCurrentExerciseIndex(prevIndex => prevIndex + 1);
+          } else if (difficulty !== 'easy' && selectedExercises.length > 1 && nextReps % 10 === 0) {
+            // Cycle exercise modes every 10 reps if multiple exercises are selected
             setCurrentExerciseIndex(prevIndex => prevIndex + 1);
           }
 
@@ -100,7 +135,7 @@ const NormalWorkout = ({
     };
     window.addEventListener('pose-update', handlePoseUpdate);
     return () => window.removeEventListener('pose-update', handlePoseUpdate);
-  }, [gameState, selectedExercises, targetRepsNeeded]);
+  }, [gameState, selectedExercises, targetRepsNeeded, difficulty]);
 
   const handleEndWorkout = () => {
     setIsFinished(true);
@@ -113,8 +148,9 @@ const NormalWorkout = ({
     return ex.toUpperCase();
   };
 
-  const currentDistanceMeters = reps * 10;
-  const totalTargetMeters = targetRepsNeeded * 10;
+  const distancePerRep = difficulty === 'easy' ? 20 : 10;
+  const currentDistanceMeters = reps * distancePerRep;
+  const totalTargetMeters = targetRepsNeeded * distancePerRep;
   const progressPercent = Math.min((currentDistanceMeters / totalTargetMeters) * 100, 100);
 
   if (isFinished) {
@@ -299,17 +335,7 @@ const NormalWorkout = ({
           <button
             onClick={() => {
               enterFullscreen();
-              setGameState('countdown');
-              let timer = 3;
-              setCountdown(timer);
-              const interval = setInterval(() => {
-                timer -= 1;
-                setCountdown(timer);
-                if (timer === 0) {
-                  clearInterval(interval);
-                  setGameState('playing');
-                }
-              }, 1000);
+              startCountdown();
             }}
             style={{
               background: '#39ff14',
@@ -332,6 +358,25 @@ const NormalWorkout = ({
       {gameState === 'countdown' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 96, background: 'rgba(2,2,5,0.9)' }}>
           <div className="arcade-text" style={{ fontSize: 'clamp(70px, 25vh, 180px)', color: '#39ff14', filter: 'drop-shadow(0 0 50px rgba(57, 255, 20, 0.5))' }}>{countdown}</div>
+        </div>
+      )}
+
+      {gameState === 'rest' && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(2, 2, 5, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(25px)', pointerEvents: 'auto', padding: '15px' }}>
+          <h2 className="arcade-text" style={{ fontSize: 'clamp(30px, 6vw, 50px)', color: '#00f2ff', marginBottom: '20px' }}>REST TIMER</h2>
+          <div className="arcade-text" style={{ fontSize: 'clamp(60px, 15vh, 120px)', color: '#ffffff', textShadow: '0 0 30px rgba(0, 242, 255, 0.5)' }}>
+            {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
+          </div>
+          <p style={{ marginTop: '20px', fontSize: '18px', opacity: 0.8, color: '#fff', textAlign: 'center' }}>
+            UP NEXT: <strong style={{ color: '#39ff14' }}>{getExerciseLabel(activeExercise)}</strong>
+          </p>
+          <button 
+            onClick={() => setRestTimer(0)} 
+            style={{ 
+              marginTop: '40px', background: 'transparent', border: '1px solid #00f2ff', color: '#00f2ff', padding: '10px 30px', borderRadius: '30px', cursor: 'pointer', fontFamily: 'var(--font-gaming)', fontWeight: 900
+            }}>
+            SKIP REST
+          </button>
         </div>
       )}
 
