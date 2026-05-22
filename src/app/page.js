@@ -617,11 +617,11 @@ export default function Home() {
                 <button
                   onClick={() => setShowSetupModal(true)}
                   style={{
-                    background: 'transparent',
-                    color: '#39ff14',
-                    padding: '12px 30px',
+                    background: '#39ff14',
+                    color: '#000000',
+                    padding: '14px 34px',
                     borderRadius: '30px',
-                    border: '1px solid #39ff14',
+                    border: 'none',
                     fontWeight: 900,
                     fontSize: '12px',
                     cursor: 'pointer',
@@ -629,15 +629,16 @@ export default function Home() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
+                    boxShadow: '0 0 15px rgba(57, 255, 20, 0.4)',
                     transition: 'all 0.3s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(57, 255, 20, 0.2)';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(57, 255, 20, 0.6)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(57, 255, 20, 0.4)';
                   }}
                 >
                   ⚙️ SETUP WORKOUT
