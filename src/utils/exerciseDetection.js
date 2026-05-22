@@ -3,61 +3,111 @@
 export function analyzePose(pose, mode, repStateRef, repCountRef) {
   if (!pose || !pose.keypoints) return null;
 
-  const nose = pose.keypoints.find(kp => kp.name === 'nose');
-  const leftShoulder = pose.keypoints.find(kp => kp.name === 'left_shoulder');
-  const rightShoulder = pose.keypoints.find(kp => kp.name === 'right_shoulder');
-  const leftWrist = pose.keypoints.find(kp => kp.name === 'left_wrist');
-  const rightWrist = pose.keypoints.find(kp => kp.name === 'right_wrist');
+  const getKP = (name) => pose.keypoints.find(kp => kp.name === name);
 
-  if (!nose || !leftShoulder || !rightShoulder || nose.score < 0.3 || leftShoulder.score < 0.3 || rightShoulder.score < 0.3) {
-    return null;
-  }
+  const nose = getKP('nose');
+  const leftShoulder = getKP('left_shoulder');
+  const rightShoulder = getKP('right_shoulder');
+  const leftHip = getKP('left_hip');
+  const rightHip = getKP('right_hip');
+  const leftKnee = getKP('left_knee');
+  const rightKnee = getKP('right_knee');
+  const leftWrist = getKP('left_wrist');
+  const rightWrist = getKP('right_wrist');
+  const leftAnkle = getKP('left_ankle');
+  const rightAnkle = getKP('right_ankle');
+  const leftElbow = getKP('left_elbow');
+  const rightElbow = getKP('right_elbow');
 
-  const avgShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-  const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+  const MIN_CONF = 0.25;
 
-  if (shoulderWidth < 5) return null;
+  const shoulderOk = leftShoulder?.score > MIN_CONF || rightShoulder?.score > MIN_CONF;
+  if (!shoulderOk) return null;
 
-  // Normalized distance based on body scale
-  const headToShoulderDist = (avgShoulderY - nose.y) / shoulderWidth;
+  const avgShoulderY = ((leftShoulder?.y ?? 0) + (rightShoulder?.y ?? 0)) / 2;
+  const shoulderWidth = Math.abs((leftShoulder?.x ?? 0) - (rightShoulder?.x ?? 0));
+  if (shoulderWidth < 10) return null;
 
-  let isDown = false;
-  let isHandsUp = false;
+  let isActive = false;
 
-  if (mode === 'squats' || mode === 'pushups') {
-    isDown = headToShoulderDist < 0.25; // 25% of shoulder width
+  if (mode === 'squats') {
+    // Squat: detect hip drop relative to shoulders using knee y-position
+    // Primary: if we have hips + knees, check hip-knee angle  
+    const hipY = ((leftHip?.y ?? 0) + (rightHip?.y ?? 0)) / 2;
+    const kneeY = ((leftKnee?.y ?? 0) + (rightKnee?.y ?? 0)) / 2;
+    const hipsOk = leftHip?.score > MIN_CONF || rightHip?.score > MIN_CONF;
+    const kneesOk = leftKnee?.score > MIN_CONF || rightKnee?.score > MIN_CONF;
+
+    if (hipsOk && kneesOk) {
+      // Squatting: knees are much further down than hips (> 80% of shoulder width gap)
+      const hipKneeDiff = kneeY - hipY;
+      const threshold = shoulderWidth * 0.55; // squat fires when hip-knee diff < threshold
+      isActive = hipKneeDiff < threshold;
+    } else if (nose?.score > MIN_CONF) {
+      // Fallback: nose drops closer to shoulders (simpler upper-body squat approximation)
+      const headToShoulderDist = (avgShoulderY - (nose?.y ?? 0)) / shoulderWidth;
+      isActive = headToShoulderDist < 0.35; // More lenient than old 0.25
+    }
+
+  } else if (mode === 'pushups') {
+    // Pushup: nose drops close to or below shoulder level
+    if (nose?.score > MIN_CONF) {
+      const headToShoulderDist = (avgShoulderY - nose.y) / shoulderWidth;
+      isActive = headToShoulderDist < 0.3;
+    }
+
   } else if (mode === 'jacks') {
-    const leftUp = leftWrist && leftWrist.score > 0.4 && leftWrist.y < nose.y;
-    const rightUp = rightWrist && rightWrist.score > 0.4 && rightWrist.y < nose.y;
-    isHandsUp = leftUp || rightUp;
+    // Jumping Jack: either hands raised above nose OR wrists above shoulders
+    const leftUp = leftWrist?.score > MIN_CONF && leftWrist.y < avgShoulderY;
+    const rightUp = rightWrist?.score > MIN_CONF && rightWrist.y < avgShoulderY;
+    isActive = leftUp || rightUp;
+
+  } else if (mode === 'highknees') {
+    // High Knees: knee rises above hip level
+    const leftKneeHigh = leftKnee?.score > MIN_CONF && leftHip?.score > MIN_CONF && leftKnee.y < leftHip.y;
+    const rightKneeHigh = rightKnee?.score > MIN_CONF && rightHip?.score > MIN_CONF && rightKnee.y < rightHip.y;
+    isActive = leftKneeHigh || rightKneeHigh;
   }
 
   let action = 'neutral';
 
-  if (isDown || isHandsUp) {
+  if (isActive) {
     if (repStateRef.current === 'up') {
       repStateRef.current = 'down';
     }
     action = 'active';
   } else {
-    // Threshold to register returning to neutral state
-    const isStandingTall = headToShoulderDist > 0.4;
-    const isHandsDown = (!leftWrist || leftWrist.y > avgShoulderY) && (!rightWrist || rightWrist.y > avgShoulderY);
-
     if (repStateRef.current === 'down') {
-      if ((mode !== 'jacks' && isStandingTall) || (mode === 'jacks' && isHandsDown)) {
+      // For squats: must stand back upright (knees > hips again or head rises)
+      let returnedToStart = true;
+      if (mode === 'squats') {
+        const hipsOk = leftHip?.score > MIN_CONF || rightHip?.score > MIN_CONF;
+        const kneesOk = leftKnee?.score > MIN_CONF || rightKnee?.score > MIN_CONF;
+        if (hipsOk && kneesOk) {
+          const hipY = ((leftHip?.y ?? 0) + (rightHip?.y ?? 0)) / 2;
+          const kneeY = ((leftKnee?.y ?? 0) + (rightKnee?.y ?? 0)) / 2;
+          returnedToStart = (kneeY - hipY) > shoulderWidth * 0.75;
+        }
+      } else if (mode === 'jacks') {
+        const leftDown = !leftWrist || leftWrist.score < MIN_CONF || leftWrist.y > avgShoulderY + 10;
+        const rightDown = !rightWrist || rightWrist.score < MIN_CONF || rightWrist.y > avgShoulderY + 10;
+        returnedToStart = leftDown && rightDown;
+      }
+
+      if (returnedToStart) {
         repCountRef.current += 1;
         repStateRef.current = 'up';
+        action = 'rep_counted';
       }
     }
-    action = 'neutral';
+    action = action === 'rep_counted' ? action : 'neutral';
   }
 
   return {
     action,
     reps: repCountRef.current,
-    noseX: nose.x,
-    noseY: nose.y
+    noseX: nose?.x ?? 0,
+    noseY: nose?.y ?? 0
   };
 }
 

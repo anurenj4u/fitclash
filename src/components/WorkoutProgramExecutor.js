@@ -29,7 +29,7 @@ const exitFullscreen = () => {
   }
 };
 
-const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) => {
+const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit, userData }) => {
   const [currentRound, setCurrentRound] = useState(1);
   const [phase, setPhase] = useState('waiting'); // waiting, countdown, work, rest, complete
   const [countdown, setCountdown] = useState(3);
@@ -150,7 +150,8 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
   const handleProgramFinished = (finalRounds) => {
     setPhase('complete');
     const totalReps = finalRounds.reduce((a, b) => a + b, 0);
-    const caloriesBurned = Math.round(totalReps * 0.45 + (program.rounds * program.workDuration * 0.05));
+    const weight = userData?.weight || 70;
+    const caloriesBurned = Math.round((totalReps * 0.45 + (program.rounds * program.workDuration * 0.05)) * (weight / 70));
     const xpGained = Math.round(totalReps * 5 + (program.rounds * program.workDuration * 0.2) * (accuracy / 100));
 
     if (onComplete) {
@@ -521,7 +522,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
                 <Flame size={14} color="#ffffff" style={{ margin: '0 auto 6px auto', opacity: 0.6 }} />
                 <p style={{ fontSize: 'clamp(7px, 1.2vw, 9px)', opacity: 0.4, marginBottom: '4px', fontWeight: 600 }}>CALORIES</p>
                 <p className="arcade-text" style={{ fontSize: 'clamp(12px, 2.5vw, 18px)', color: '#ffffff', textShadow: 'none', margin: 0 }}>
-                  {Math.round(totalRepsAcrossRounds * 0.45 + (program.rounds * program.workDuration * 0.05))}
+                  {Math.round((totalRepsAcrossRounds * 0.45 + (program.rounds * program.workDuration * 0.05)) * ((userData?.weight || 70) / 70))}
                 </p>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: 'clamp(10px, 2vh, 16px) clamp(6px, 1vw, 12px)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>

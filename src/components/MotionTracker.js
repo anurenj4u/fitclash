@@ -12,6 +12,7 @@ const MotionTracker = ({ mode, onReady }) => {
   const [isActive, setIsActive] = useState(false);
   const [error, setError] = useState(null);
   const [fingerCount, setFingerCount] = useState(null);
+  const [positionWarning, setPositionWarning] = useState(null);
   const [isBoosting, setIsBoosting] = useState(false);
   const workerRef = useRef(null);
   const repStateRef = useRef('up');
@@ -118,7 +119,28 @@ const MotionTracker = ({ mode, onReady }) => {
   };
 
   const handlePose = (pose) => {
-    if (!pose) return;
+    if (!pose) {
+      setPositionWarning('NO BODY DETECTED');
+      return;
+    } else {
+      if (pose.keypoints) {
+        const getPt = (name) => pose.keypoints.find(k => k.name === name);
+        const thresh = 0.3;
+        const ankles = (getPt('left_ankle')?.score > thresh || getPt('right_ankle')?.score > thresh);
+        const shoulders = (getPt('left_shoulder')?.score > thresh || getPt('right_shoulder')?.score > thresh);
+        const hips = (getPt('left_hip')?.score > thresh || getPt('right_hip')?.score > thresh);
+        
+        if (!shoulders && !hips && !ankles) setPositionWarning('NO BODY DETECTED');
+        else if (!shoulders) setPositionWarning('UPPER BODY MISSING');
+        else if (!hips) setPositionWarning('HIPS MISSING - STEP BACK');
+        else if (!ankles) setPositionWarning('FEET MISSING - STEP BACK');
+        else setPositionWarning(null);
+      } else {
+        setPositionWarning(null);
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('raw-pose', { detail: pose }));
     const result = analyzePose(pose, modeRef.current, repStateRef, repCountRef);
     if (result) {
       triggerBoostUI();
@@ -227,6 +249,35 @@ const MotionTracker = ({ mode, onReady }) => {
               exit={{ opacity: 0 }} 
               style={{ position: 'absolute', inset: 0, background: 'var(--accent)', zIndex: 15 }}
             />
+          )}
+        </AnimatePresence>
+
+        {/* Position Warning Overlay */}
+        <AnimatePresence>
+          {positionWarning && isActive && mode !== 'fingers' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              style={{
+                position: 'absolute',
+                bottom: '10px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(255, 0, 0, 0.9)',
+                color: '#fff',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '10px',
+                fontWeight: 900,
+                zIndex: 45,
+                whiteSpace: 'nowrap',
+                border: '1px solid #ffaa00',
+                boxShadow: '0 0 15px rgba(255,0,0,0.8)'
+              }}
+            >
+              ⚠️ {positionWarning}
+            </motion.div>
           )}
         </AnimatePresence>
 

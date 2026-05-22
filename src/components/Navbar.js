@@ -10,17 +10,21 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [animatedCalories, setAnimatedCalories] = useState(0);
 
-  // Load and animate calories from localStorage
+  // Load and animate calories from localStorage or Firebase
   useEffect(() => {
-    const saved = localStorage.getItem("clashOfCardioProgression");
-    let cal = 840;
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.calories !== undefined) {
-          cal = parsed.calories;
-        }
-      } catch (e) {}
+    let cal = 0;
+    if (userData && userData.calories !== undefined) {
+      cal = userData.calories;
+    } else {
+      const saved = localStorage.getItem("clashOfCardioProgression");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.calories !== undefined) {
+            cal = parsed.calories;
+          }
+        } catch (e) {}
+      }
     }
 
     if (cal > 0) {
@@ -41,7 +45,7 @@ export default function Navbar() {
       };
       requestAnimationFrame(animate);
     }
-  }, []);
+  }, [userData]);
 
   return (
     <nav style={{

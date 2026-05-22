@@ -4,6 +4,8 @@ import NormalWorkout from "@/components/NormalWorkout";
 import FitnessRace from "@/components/FitnessRace";
 import WorkoutProgramExecutor from "@/components/WorkoutProgramExecutor";
 import MotionTracker from "@/components/MotionTracker";
+import StaminaMode from "@/components/StaminaMode";
+import StrengthEndurance from "@/components/StrengthEndurance";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,8 +49,8 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
   const [showSetupModal, setShowSetupModal] = useState(false);
   
-  // Real-time rep counting in parent to cycle webcam mode dynamically
-  const [currentReps, setCurrentReps] = useState(0);
+  // Tracks which exercise is currently active inside NormalWorkout for the MotionTracker mode
+  const [activeWorkoutExerciseIndex, setActiveWorkoutExerciseIndex] = useState(0);
 
   // Workout Programs state
   const [activeProgram, setActiveProgram] = useState(null);
@@ -61,7 +63,7 @@ export default function Home() {
   const [progression, setProgression] = useState({
     xp: 450,
     level: 5,
-    calories: 840,
+    calories: 0,
     workoutStreak: 7,
     totalWorkouts: 24,
     rank: "SPRINTER",
@@ -75,7 +77,21 @@ export default function Home() {
     unlockedCharacters: ["default"],
     activeTheme: "default",
     activeStadium: "default",
-    activeCharacter: "default"
+    activeCharacter: "default",
+    fatBurnCalendar: Array.from({ length: 30 }).map((_, i) => ({
+      day: i + 1,
+      status: i === 0 ? 'current' : 'locked', // 'locked', 'current', 'completed', 'missed'
+      reps: 0,
+      calories: 0,
+      accuracy: 0,
+      duration: 0
+    })),
+    staminaData: {
+      isCalibrated: false,
+      baseline: {},
+      currentTargets: {},
+      history: []
+    }
   });
 
   // Load progression state on mount
@@ -108,6 +124,18 @@ export default function Home() {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  // Sync calories from Firebase to local progression state when available
+  useEffect(() => {
+    if (userData && userData.calories !== undefined) {
+      setProgression(prev => {
+        if (prev.calories === userData.calories) return prev;
+        const updated = { ...prev, calories: userData.calories };
+        localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [userData]);
 
 
 
@@ -204,6 +232,24 @@ export default function Home() {
         newUnlockedCharacters.push("ronaldo_elite");
       }
 
+      const newFatBurnCalendar = [...(prev.fatBurnCalendar || [])];
+      if (results.isFatBurn) {
+        const currentDayIndex = newFatBurnCalendar.findIndex(d => d.status === 'current');
+        if (currentDayIndex !== -1) {
+          newFatBurnCalendar[currentDayIndex] = {
+            ...newFatBurnCalendar[currentDayIndex],
+            status: 'completed',
+            reps: results.reps || 0,
+            calories: results.caloriesBurned || 0,
+            accuracy: results.accuracy || 0,
+            duration: results.duration || 0
+          };
+          if (currentDayIndex + 1 < newFatBurnCalendar.length) {
+            newFatBurnCalendar[currentDayIndex + 1] = { ...newFatBurnCalendar[currentDayIndex + 1], status: 'current' };
+          }
+        }
+      }
+
       const updated = {
         ...prev,
         xp: newXp % nextLevelNeeded,
@@ -214,6 +260,7 @@ export default function Home() {
         unlockedThemes: newUnlockedThemes,
         unlockedStadiums: newUnlockedStadiums,
         unlockedCharacters: newUnlockedCharacters,
+        ...(results.isFatBurn ? { fatBurnCalendar: newFatBurnCalendar } : {}),
         dailyMissions: prev.dailyMissions.map(m => m.id === 1 ? { ...m, completed: true } : m)
       };
       
@@ -240,9 +287,8 @@ export default function Home() {
     { id: 'fullbody', name: "Full Body Cardio", desc: "Compound aerobic motion rounds combining multiple pose challenges.", rounds: 4, workDuration: 45, restDuration: 20, exercise: "jacks", difficulty: "Elite Athlete" }
   ];
 
-  // Dynamic active exercise for camera tracking during customizable circuits
-  const activeExerciseIndex = Math.floor(currentReps / 10);
-  const activeExercise = selectedExercises[activeExerciseIndex % selectedExercises.length] || 'squats';
+  // Dynamic active exercise for camera tracking - driven by NormalWorkout via onExerciseChange
+  const activeExercise = selectedExercises[activeWorkoutExerciseIndex % selectedExercises.length] || 'squats';
   const trackerMode = playMode === 'worldcup' ? exerciseMode : activeExercise;
 
   // Structured Workout Plan execution screen
@@ -280,6 +326,7 @@ export default function Home() {
         <WorkoutProgramExecutor 
           program={activeProgram}
           isCameraReady={isCameraReady}
+          userData={userData}
           onComplete={(results) => {
             handleWorkoutComplete(results);
             setRunningProgram(false);
@@ -338,11 +385,62 @@ export default function Home() {
             activeStadium={progression.activeStadium}
             activeCharacter={progression.activeCharacter}
             onComplete={(reps) => {
-              const caloriesBurned = Math.round(reps * 0.45 + targetDistance * 10);
+              const userWeight = userData?.weight || 70;
+              const caloriesBurned = Math.round((reps * 0.45 + targetDistance * 10) * (userWeight / 70));
               const xpGained = Math.round(reps * 6 + targetDistance * 50);
               handleWorkoutComplete({ reps, caloriesBurned, xpGained });
               setGameStarted(false);
               setIsCameraReady(false); // Reset camera ready state on completion
+            }}
+          />
+        ) : selectedGoal === 'STAMINA IMPROVEMENT' ? (
+          <StaminaMode 
+            selectedExercises={selectedExercises}
+            isCameraReady={isCameraReady}
+            staminaData={progression.staminaData}
+            onSaveStaminaData={(newStaminaData) => {
+              setProgression(prev => {
+                const updated = { ...prev, staminaData: newStaminaData };
+                localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+                return updated;
+              });
+            }}
+            onComplete={(stats) => {
+              const userWeight = userData?.weight || 70;
+              const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
+              
+              handleWorkoutComplete({ 
+                reps: stats.reps, 
+                caloriesBurned: scaledCalories, 
+                xpGained: stats.xp,
+                accuracy: stats.accuracy,
+                duration: stats.duration,
+                rank: stats.rank,
+                isFatBurn: false
+              });
+              setGameStarted(false);
+              setIsCameraReady(false);
+            }}
+          />
+        ) : selectedGoal === 'STRENGTH ENDURANCE' ? (
+          <StrengthEndurance 
+            selectedExercises={selectedExercises}
+            isCameraReady={isCameraReady}
+            onComplete={(stats) => {
+              const userWeight = userData?.weight || 70;
+              const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
+              
+              handleWorkoutComplete({ 
+                reps: stats.reps, 
+                caloriesBurned: scaledCalories, 
+                xpGained: stats.xp,
+                accuracy: stats.accuracy,
+                duration: stats.duration,
+                rank: stats.rank,
+                isFatBurn: false
+              });
+              setGameStarted(false);
+              setIsCameraReady(false);
             }}
           />
         ) : (
@@ -350,17 +448,22 @@ export default function Home() {
             selectedExercises={selectedExercises}
             difficulty={difficulty}
             selectedGoal={selectedGoal}
-            isCameraReady={isCameraReady} 
-            onComplete={(reps) => {
-              const baseCalories = reps * 0.45;
-              const bonusCal = difficulty === 'hard' ? 30 : difficulty === 'medium' ? 15 : 5;
-              const caloriesBurned = Math.round(baseCalories + bonusCal);
+            isCameraReady={isCameraReady}
+            onExerciseChange={(idx) => setActiveWorkoutExerciseIndex(idx)}
+            onComplete={(stats) => {
+              setActiveWorkoutExerciseIndex(0); // reset on complete
+              const userWeight = userData?.weight || 70;
+              const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
               
-              const baseXP = reps * 6;
-              const bonusXP = difficulty === 'hard' ? 150 : difficulty === 'medium' ? 75 : 25;
-              const xpGained = Math.round(baseXP + bonusXP);
-
-              handleWorkoutComplete({ reps, caloriesBurned, xpGained });
+              handleWorkoutComplete({ 
+                reps: stats.reps, 
+                caloriesBurned: scaledCalories, 
+                xpGained: stats.xp,
+                accuracy: stats.accuracy,
+                duration: stats.duration,
+                rank: stats.rank,
+                isFatBurn: selectedGoal === 'FAT BURN'
+              });
               setGameStarted(false);
               setIsCameraReady(false); // Reset camera ready state on completion
             }}
@@ -614,6 +717,68 @@ export default function Home() {
                   {selectedExercises.map(mode => mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()).join(', ')}
                 </div>
 
+                {selectedGoal === 'FAT BURN' && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(40px, 1fr))',
+                    gap: '6px',
+                    marginTop: '20px',
+                    width: '100%',
+                    background: 'rgba(2,2,5,0.6)',
+                    padding: '15px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.05)'
+                  }}>
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>30-DAY FAT BURN CHALLENGE</span>
+                      <span style={{ display: 'block', fontSize: '9px', opacity: 0.5 }}>COMPLETION TRACKER & STREAK SYSTEM</span>
+                    </div>
+                    {progression.fatBurnCalendar?.map((dayObj) => {
+                      let bg = 'rgba(255,255,255,0.05)';
+                      let border = '1px solid rgba(255,255,255,0.1)';
+                      let color = '#fff';
+                      let opacity = 1;
+                      
+                      if (dayObj.status === 'completed') {
+                        bg = 'rgba(57, 255, 20, 0.15)';
+                        border = '1px solid #39ff14';
+                        color = '#39ff14';
+                      } else if (dayObj.status === 'current') {
+                        bg = 'rgba(0, 242, 255, 0.15)';
+                        border = '1px solid #00f2ff';
+                        color = '#00f2ff';
+                      } else if (dayObj.status === 'missed') {
+                        bg = 'rgba(255, 68, 68, 0.1)';
+                        border = '1px solid rgba(255, 68, 68, 0.3)';
+                        color = '#ff4444';
+                        opacity = 0.5;
+                      } else {
+                        opacity = 0.3;
+                      }
+
+                      return (
+                        <div key={dayObj.day} style={{
+                          background: bg,
+                          border: border,
+                          borderRadius: '6px',
+                          padding: '8px 4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: opacity,
+                          position: 'relative'
+                        }}>
+                          <span style={{ fontSize: '8px', opacity: 0.6, fontWeight: 700 }}>DAY</span>
+                          <span style={{ fontSize: '12px', fontWeight: 900, color: color }}>{dayObj.day}</span>
+                          {dayObj.status === 'completed' && <div style={{ position: 'absolute', top: -4, right: -4, background: '#39ff14', borderRadius: '50%', width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={6} color="#000" /></div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                )}
+
                 <button
                   onClick={() => setShowSetupModal(true)}
                   style={{
@@ -630,7 +795,8 @@ export default function Home() {
                     alignItems: 'center',
                     gap: '8px',
                     boxShadow: '0 0 15px rgba(57, 255, 20, 0.4)',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    marginTop: '20px'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'scale(1.05)';
