@@ -11,8 +11,8 @@
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.1);
   --card-bg: rgba(10, 10, 15, 0.85);
-  --font-gaming: var(--font-orbitron), sans-serif;
-  --font-body: var(--font-rajdhani), sans-serif;
+  --font-gaming: var(--font-inter), "Söhne", "SF Pro", "Neue Haas Grotesk", "Roboto", sans-serif;
+  --font-body: var(--font-inter), "Söhne", "SF Pro", "Neue Haas Grotesk", "Roboto", sans-serif;
   --neon-shadow: 0 0 15px var(--accent-glow);
 }
 
