@@ -34,8 +34,8 @@ const exitFullscreen = () => {
 };
 
 const NormalWorkout = ({
-  selectedExercises = ['squats'],
-  targetDistance = 1,
+  selectedExercises = ['squats', 'pushups', 'jacks'],
+  difficulty = 'easy',
   selectedGoal = 'FAT BURN',
   isCameraReady,
   onComplete
@@ -49,7 +49,8 @@ const NormalWorkout = ({
   const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
 
   const previousRepsRef = useRef(0);
-  const targetRepsNeeded = Math.round((targetDistance * 1000) / 10); // 1 rep = 10 meters
+  
+  const targetRepsNeeded = difficulty === 'hard' ? 300 : difficulty === 'medium' ? 150 : 60;
 
   useEffect(() => {
     const handleProgress = (e) => {
@@ -113,7 +114,7 @@ const NormalWorkout = ({
   };
 
   const currentDistanceMeters = reps * 10;
-  const totalTargetMeters = targetDistance * 1000;
+  const totalTargetMeters = targetRepsNeeded * 10;
   const progressPercent = Math.min((currentDistanceMeters / totalTargetMeters) * 100, 100);
 
   if (isFinished) {
@@ -124,7 +125,7 @@ const NormalWorkout = ({
             <Award size={24} color="#39ff14" />
           </div>
           <h2 className="arcade-text" style={{ fontSize: 'clamp(18px, 4vw, 32px)', color: '#39ff14', marginBottom: 'clamp(6px, 1.5vh, 10px)', textShadow: '0 0 15px rgba(57, 255, 20, 0.4)' }}>GOAL ACCOMPLISHED!</h2>
-          <p style={{ opacity: 0.6, fontSize: 'clamp(11px, 2vw, 13px)', marginBottom: 'clamp(10px, 2.5vh, 25px)' }}>You successfully traveled your customized {targetDistance} KM distance target!</p>
+          <p style={{ opacity: 0.6, fontSize: 'clamp(11px, 2vw, 13px)', marginBottom: 'clamp(10px, 2.5vh, 25px)' }}>You successfully conquered the {difficulty.toUpperCase()} difficulty target!</p>
 
           <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: 'clamp(12px, 3vh, 25px)', marginBottom: 'clamp(15px, 3.5vh, 35px)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'clamp(8px, 2vw, 15px)' }}>
@@ -134,7 +135,7 @@ const NormalWorkout = ({
               </div>
               <div>
                 <p style={{ opacity: 0.4, fontSize: 'clamp(8px, 1.5vw, 9px)', marginBottom: '4px', fontWeight: 700 }}>DISTANCE</p>
-                <p className="arcade-text" style={{ fontSize: 'clamp(14px, 3vw, 18px)', color: '#39ff14' }}>{targetDistance} KM</p>
+                <p className="arcade-text" style={{ fontSize: 'clamp(14px, 3vw, 18px)', color: '#39ff14' }}>{difficulty.toUpperCase()}</p>
               </div>
               <div>
                 <p style={{ opacity: 0.4, fontSize: 'clamp(8px, 1.5vw, 9px)', marginBottom: '4px', fontWeight: 700 }}>CALORIES</p>
@@ -292,7 +293,7 @@ const NormalWorkout = ({
           <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 28px)', marginBottom: 'clamp(10px, 2vh, 15px)' }}>TRACKER <span style={{ color: '#39ff14' }}>READY</span></h2>
           <p style={{ opacity: 0.5, fontSize: 'clamp(11px, 2.5vw, 14px)', marginBottom: 'clamp(15px, 4vh, 35px)', maxWidth: '400px', textAlign: 'center', lineHeight: 1.4 }}>
             Goal: <strong style={{ color: '#fff' }}>{selectedGoal}</strong><br />
-            Target Distance: <strong style={{ color: '#fff' }}>{targetDistance} KM ({totalTargetMeters}M)</strong><br />
+            Target Difficulty: <strong style={{ color: '#fff' }}>{difficulty.toUpperCase()} ({targetRepsNeeded} REPS)</strong><br />
             Exercises: <strong style={{ color: '#fff' }}>{selectedExercises.map(getExerciseLabel).join(', ')}</strong>
           </p>
           <button

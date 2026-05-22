@@ -43,7 +43,9 @@ export default function Home() {
 
   // New Fitness custom configuration state
   const [selectedGoal, setSelectedGoal] = useState('FAT BURN');
-  const [selectedExercises, setSelectedExercises] = useState(['squats']);
+  const [selectedExercises, setSelectedExercises] = useState(['squats', 'pushups', 'jacks']);
+  const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
+  const [showSetupModal, setShowSetupModal] = useState(false);
   
   // Real-time rep counting in parent to cycle webcam mode dynamically
   const [currentReps, setCurrentReps] = useState(0);
@@ -346,12 +348,18 @@ export default function Home() {
         ) : (
           <NormalWorkout 
             selectedExercises={selectedExercises}
-            targetDistance={targetDistance}
+            difficulty={difficulty}
             selectedGoal={selectedGoal}
             isCameraReady={isCameraReady} 
             onComplete={(reps) => {
-              const caloriesBurned = Math.round(reps * 0.45 + targetDistance * 10);
-              const xpGained = Math.round(reps * 6 + targetDistance * 50);
+              const baseCalories = reps * 0.45;
+              const bonusCal = difficulty === 'hard' ? 30 : difficulty === 'medium' ? 15 : 5;
+              const caloriesBurned = Math.round(baseCalories + bonusCal);
+              
+              const baseXP = reps * 6;
+              const bonusXP = difficulty === 'hard' ? 150 : difficulty === 'medium' ? 75 : 25;
+              const xpGained = Math.round(baseXP + bonusXP);
+
               handleWorkoutComplete({ reps, caloriesBurned, xpGained });
               setGameStarted(false);
               setIsCameraReady(false); // Reset camera ready state on completion
@@ -581,121 +589,59 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TARGET DISTANCE CARD (MAX 3 KM) */}
-              <div style={{
-                padding: 'clamp(14px, 3vw, 24px)',
-                background: 'rgba(5, 5, 8, 0.4)',
-                border: '1px solid rgba(57, 255, 20, 0.15)',
-                borderRadius: '16px',
-                textAlign: 'left'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 800, letterSpacing: '2px' }}>[02] CONFIGURE TARGET DISTANCE (MAX 3 KM)</span>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    {targetDistance} KM ({targetDistance * 100} Reps Needed)
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                  {[1, 2, 3].map(km => {
-                    const isActive = targetDistance === km;
-                    return (
-                      <button
-                        key={km}
-                        onClick={() => setTargetDistance(km)}
-                        style={{
-                          background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'rgba(255,255,255,0.02)',
-                          color: isActive ? '#39ff14' : '#ffffff',
-                          border: `1px solid ${isActive ? '#39ff14' : 'rgba(255,255,255,0.06)'}`,
-                          padding: "16px 10px",
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '2px',
-                          fontFamily: 'var(--font-gaming)',
-                          transition: 'all 0.2s ease',
-                          boxShadow: isActive ? '0 0 10px rgba(57, 255, 20, 0.1)' : 'none'
-                        }}
-                      >
-                        <span style={{ fontSize: '14px', fontWeight: 900 }}>{km} KM</span>
-                        <span style={{ fontSize: '8px', opacity: 0.5 }}>{km * 100} TOTAL REPS</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* WORKOUT TYPE MULTI-SELECT COMBINATION */}
+              {/* SETUP BUTTON REPLACING INLINE CONFIG */}
               <div style={{
                 width: '100%',
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
-                padding: 'clamp(16px, 4vw, 30px) clamp(14px, 3vw, 24px)',
-                textAlign: 'left'
+                padding: 'clamp(20px, 5vw, 40px)',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '15px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 800, letterSpacing: '2px' }}>[03] CHOOSE EXERCISE COMBINATION (SELECT MULTIPLE!)</span>
-                  <span style={{ fontSize: '10px', color: '#39ff14', fontWeight: 800, letterSpacing: '1px' }}>
-                    {selectedExercises.length} SELECTED
-                  </span>
+                <div style={{ fontSize: '11px', color: '#fff', opacity: 0.6, letterSpacing: '1px', fontWeight: 700 }}>
+                  DIFFICULTY & EXERCISES
+                </div>
+                
+                <div style={{ fontSize: '14px', color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
+                  {difficulty.toUpperCase()} MODE: 3 EXERCISES ({difficulty === 'easy' ? 60 : difficulty === 'medium' ? 150 : 300} TOTAL REPS)
                 </div>
 
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                  gap: '12px'
-                }}>
-                  {['squats', 'pushups', 'jacks', 'fingers'].map(mode => {
-                    const label = mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase();
-                    const isActive = selectedExercises.includes(mode);
-                    return (
-                      <button
-                        key={mode}
-                        onClick={() => {
-                          setSelectedExercises(prev => {
-                            if (prev.includes(mode)) {
-                              if (prev.length === 1) return prev; // Keep at least 1 selected
-                              return prev.filter(m => m !== mode);
-                            } else {
-                              return [...prev, mode];
-                            }
-                          });
-                        }}
-                        style={{
-                          padding: '20px 10px',
-                          borderRadius: '12px',
-                          background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'transparent',
-                          color: isActive ? '#39ff14' : '#ffffff',
-                          border: `1px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.06)'}`,
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          fontFamily: 'var(--font-gaming)',
-                          boxShadow: isActive ? '0 0 15px rgba(57, 255, 20, 0.15)' : 'none',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px'
-                        }}
-                      >
-                        <span>{label}</span>
-                        {isActive && <Zap size={12} fill="#39ff14" color="#39ff14" />}
-                      </button>
-                    );
-                  })}
+                <div style={{ fontSize: '12px', color: '#ffffff', opacity: 0.8, marginBottom: '10px' }}>
+                  {selectedExercises.map(mode => mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()).join(', ')}
                 </div>
 
-                {/* dynamic summary text */}
-                <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)', fontSize: '11px', color: '#fff', opacity: 0.8, lineHeight: 1.5 }}>
-                  🎯 Setup Summary: <strong style={{ color: '#39ff14' }}>{selectedGoal}</strong> goal with a <strong style={{ color: '#39ff14' }}>{targetDistance} KM</strong> target. Every single completed repetition counts as <strong style={{ color: '#39ff14' }}>10 meters</strong> of progression. Your active exercise will cycle every 10 reps!
-                </div>
+                <button
+                  onClick={() => setShowSetupModal(true)}
+                  style={{
+                    background: 'transparent',
+                    color: '#39ff14',
+                    padding: '12px 30px',
+                    borderRadius: '30px',
+                    border: '1px solid #39ff14',
+                    fontWeight: 900,
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-gaming)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(57, 255, 20, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  ⚙️ SETUP WORKOUT
+                </button>
               </div>
             </>
           )}
@@ -899,6 +845,107 @@ export default function Home() {
         </div>
 
       </section>
+
+      {/* Setup Modal */}
+      {showSetupModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px', backdropFilter: 'blur(10px)'
+        }}>
+          <div className="glass-card" style={{
+            background: 'rgba(5, 5, 8, 0.95)', border: '1px solid rgba(57, 255, 20, 0.3)', borderRadius: '20px', padding: 'clamp(20px, 5vw, 40px)', width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', gap: '25px', boxShadow: '0 0 40px rgba(57, 255, 20, 0.1)'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 4vw, 28px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>WORKOUT SETUP</h2>
+              <p style={{ opacity: 0.6, fontSize: '12px', marginTop: '8px' }}>Configure your personalized routine</p>
+            </div>
+
+            {/* Difficulty */}
+            <div>
+              <div style={{ fontSize: '11px', color: '#fff', opacity: 0.6, letterSpacing: '1px', fontWeight: 700, marginBottom: '12px' }}>[01] DIFFICULTY</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                {[
+                  { id: 'easy', label: 'EASY', reps: '3 EXERCISES × 20 (60 TOTAL)' },
+                  { id: 'medium', label: 'MEDIUM', reps: '3 EXERCISES × 50 (150 TOTAL)' },
+                  { id: 'hard', label: 'HARD', reps: '3 EXERCISES × 100 (300 TOTAL)' }
+                ].map(diff => (
+                  <button
+                    key={diff.id}
+                    onClick={() => setDifficulty(diff.id)}
+                    style={{
+                      padding: '12px', borderRadius: '12px', textAlign: 'left',
+                      background: difficulty === diff.id ? 'rgba(57, 255, 20, 0.1)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${difficulty === diff.id ? '#39ff14' : 'rgba(255,255,255,0.06)'}`,
+                      color: difficulty === diff.id ? '#39ff14' : '#fff',
+                      cursor: 'pointer', fontFamily: 'var(--font-gaming)', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 900 }}>{diff.label}</span>
+                    <span style={{ fontSize: '10px', opacity: 0.8 }}>{diff.reps}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Exercises */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', color: '#fff', opacity: 0.6, letterSpacing: '1px', fontWeight: 700 }}>[02] CHOOSE 3 EXERCISES</div>
+                <div style={{ fontSize: '11px', color: selectedExercises.length === 3 ? '#39ff14' : '#ff3333', fontWeight: 900 }}>{selectedExercises.length}/3 SELECTED</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {['squats', 'pushups', 'jacks', 'fingers'].map(mode => {
+                  const label = mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase();
+                  const isActive = selectedExercises.includes(mode);
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        setSelectedExercises(prev => {
+                          if (prev.includes(mode)) {
+                            // Don't let it go below 1, though we want exactly 3 at the end
+                            if (prev.length === 1) return prev;
+                            return prev.filter(m => m !== mode);
+                          } else {
+                            if (prev.length >= 3) return prev; // Max 3
+                            return [...prev, mode];
+                          }
+                        });
+                      }}
+                      style={{
+                        padding: '12px', borderRadius: '12px',
+                        background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'transparent',
+                        color: isActive ? '#39ff14' : '#ffffff',
+                        border: `1px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.06)'}`,
+                        fontSize: '11px', fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s ease', fontFamily: 'var(--font-gaming)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                      }}
+                    >
+                      <span>{label}</span>
+                      {isActive && <Zap size={12} fill="#39ff14" color="#39ff14" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (selectedExercises.length === 3) {
+                  setShowSetupModal(false);
+                } else {
+                  alert("Please select exactly 3 exercises.");
+                }
+              }}
+              style={{
+                background: selectedExercises.length === 3 ? '#39ff14' : 'rgba(255,255,255,0.1)',
+                color: selectedExercises.length === 3 ? '#000' : 'rgba(255,255,255,0.5)',
+                border: 'none', padding: '16px', borderRadius: '30px', fontWeight: 900, fontSize: '14px', cursor: selectedExercises.length === 3 ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-gaming)', marginTop: '10px'
+              }}
+            >
+              CONFIRM SETUP
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Calibration Modal */}
       <AnimatePresence>
