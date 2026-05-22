@@ -103,7 +103,20 @@ export default function Home() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setProgression(parsed);
+        setProgression(prev => {
+          const merged = {
+            ...prev,
+            ...parsed,
+            dailyMissions: parsed.dailyMissions || prev.dailyMissions,
+            fatBurnCalendar: parsed.fatBurnCalendar || prev.fatBurnCalendar,
+            staminaData: {
+              ...prev.staminaData,
+              ...(parsed.staminaData || {})
+            }
+          };
+          localStorage.setItem("clashOfCardioProgression", JSON.stringify(merged));
+          return merged;
+        });
       } catch (e) {}
     } else {
       localStorage.setItem("clashOfCardioProgression", JSON.stringify(progression));
