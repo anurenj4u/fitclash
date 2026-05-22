@@ -20,6 +20,7 @@ self.onmessage = async (e) => {
     isInitializing = true;
 
     try {
+      self.postMessage({ type: 'INIT_PROGRESS', step: 'spawning_worker', percent: 15, message: 'Loading AI Core Libraries...' });
       importScripts(
         "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.22.0/dist/tf-core.min.js",
         "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@4.22.0/dist/tf-backend-cpu.min.js",
@@ -29,6 +30,7 @@ self.onmessage = async (e) => {
         "https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1/dist/hand-pose-detection.min.js"
       );
 
+      self.postMessage({ type: 'INIT_PROGRESS', step: 'initializing_backend', percent: 50, message: 'Activating GPU acceleration...' });
       try {
         await tf.setBackend('webgl');
       } catch (e) {
@@ -37,6 +39,7 @@ self.onmessage = async (e) => {
       }
       await tf.ready();
 
+      self.postMessage({ type: 'INIT_PROGRESS', step: 'compiling_movenet', percent: 70, message: 'Compiling neural pose models...' });
       // Always init pose detector
       const model = poseDetection.SupportedModels.MoveNet;
       poseDetector = await poseDetection.createDetector(model, {
@@ -44,8 +47,11 @@ self.onmessage = async (e) => {
         modelType: 'SinglePose.Lightning'
       });
 
+      self.postMessage({ type: 'INIT_PROGRESS', step: 'compiling_mediapipe', percent: 85, message: 'Warming up MediaPipe hand layers...' });
       // Init hand detector (lightweight MediaPipe Hands via TF.js)
       await initHandDetector();
+
+      self.postMessage({ type: 'INIT_PROGRESS', step: 'finalizing_warmup', percent: 95, message: 'Calibrating camera tracking...' });
 
       isReady = true;
       isInitializing = false;

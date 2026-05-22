@@ -2,6 +2,33 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
+import { Activity } from 'lucide-react';
+
+const enterFullscreen = () => {
+  const element = document.documentElement;
+  if (element.requestFullscreen) {
+    element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+  } else if (element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen();
+  } else if (element.mozRequestFullScreen) {
+    element.mozRequestFullScreen();
+  } else if (element.msRequestFullscreen) {
+    element.msRequestFullscreen();
+  }
+};
+
+const exitFullscreen = () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) return;
+  if (document.exitFullscreen) {
+    document.exitFullscreen().catch((err) => console.log("Exit fullscreen error:", err));
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  } else if (document.mozCancelFullScreen) {
+    document.mozCancelFullScreen();
+  } else if (document.msExitFullscreen) {
+    document.msExitFullscreen();
+  }
+};
 
 const FitnessRace = ({ 
   mode, 
@@ -28,6 +55,16 @@ const FitnessRace = ({
   const aiDistanceRef = useRef(0);
   const previousRepsRef = useRef(0);
   const finishLineDistance = targetKm * 100000;
+  const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
+
+  useEffect(() => {
+    const handleProgress = (e) => {
+      const { percent, message } = e.detail;
+      setTrackerProgress({ percent, message });
+    };
+    window.addEventListener('tracker-init-status', handleProgress);
+    return () => window.removeEventListener('tracker-init-status', handleProgress);
+  }, []);
 
   useEffect(() => {
     if (gameRef.current) return;
@@ -439,53 +476,181 @@ const FitnessRace = ({
     return () => window.removeEventListener('pose-update', handlePoseUpdate);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      exitFullscreen();
+    };
+  }, []);
+
   return (
     <div id="phaser-game" style={{ width: '100vw', height: '100dvh', position: 'fixed', inset: 0, zIndex: 1, background: '#020205' }}>
-      <div style={{ position: 'absolute', top: '30px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '40px', zIndex: 10, padding: '20px 40px', background: 'rgba(0,0,0,0.8)', borderRadius: '20px', border: '1px solid var(--accent)', backdropFilter: 'blur(10px)' }}>
+      <div style={{ 
+        position: 'absolute', 
+        top: 'clamp(8px, 3.5vh, 30px)', 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        display: 'flex', 
+        gap: 'clamp(15px, 4vw, 40px)', 
+        zIndex: 10, 
+        padding: 'clamp(8px, 2vh, 16px) clamp(16px, 4vw, 40px)', 
+        background: 'rgba(0,0,0,0.8)', 
+        borderRadius: '16px', 
+        border: '1px solid var(--accent)', 
+        backdropFilter: 'blur(10px)' 
+      }}>
         <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: '10px' }}>PLAYER DISTANCE</p>
-          <div className="arcade-text" style={{ fontSize: '24px', color: 'var(--accent)' }}><span ref={playerDistanceUITextRef}>0</span><span style={{ fontSize: '14px' }}>M</span></div>
+          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>PLAYER DISTANCE</p>
+          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--accent)' }}><span ref={playerDistanceUITextRef}>0</span><span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span></div>
         </div>
         <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
         <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: '10px' }}>AI DISTANCE</p>
-          <div className="arcade-text" style={{ fontSize: '24px', color: 'var(--danger)' }}><span ref={aiDistanceUITextRef}>0</span><span style={{ fontSize: '14px' }}>M</span></div>
+          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>AI DISTANCE</p>
+          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}><span ref={aiDistanceUITextRef}>0</span><span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span></div>
         </div>
       </div>
       {combo > 1 && (
-        <div style={{ position: 'absolute', top: '150px', left: '50%', transform: 'translateX(-50%)', zIndex: 11, textAlign: 'center', pointerEvents: 'none' }}>
-          <div className="arcade-text" style={{ fontSize: '40px', color: 'var(--accent)', textShadow: '0 0 20px var(--accent)' }}>{combo}X COMBO</div>
+        <div style={{ position: 'absolute', top: 'clamp(65px, 18vh, 150px)', left: '50%', transform: 'translateX(-50%)', zIndex: 11, textAlign: 'center', pointerEvents: 'none' }}>
+          <div className="arcade-text" style={{ fontSize: 'clamp(18px, 4vw, 40px)', color: 'var(--accent)', textShadow: '0 0 20px var(--accent)' }}>{combo}X COMBO</div>
+        </div>
+      )}
+      {gameStateDisplay === 'waiting' && (
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          background: 'rgba(2, 2, 5, 0.96)', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 95, 
+          backdropFilter: 'blur(20px)',
+          padding: '20px'
+        }}>
+          {/* Neon grid scan background */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px)',
+            backgroundSize: '30px 30px',
+            pointerEvents: 'none',
+            zIndex: 1
+          }} />
+
+          {/* Central Glassmorphic Dashboard Card */}
+          <div className="glass-card" style={{
+            position: 'relative',
+            zIndex: 2,
+            maxWidth: '450px',
+            width: '100%',
+            padding: '40px 30px',
+            background: 'rgba(5, 5, 8, 0.85)',
+            border: '1px solid rgba(57, 255, 20, 0.3)',
+            borderRadius: '20px',
+            boxShadow: '0 0 40px rgba(57, 255, 20, 0.15)',
+            textAlign: 'center'
+          }}>
+            {/* Spinning Neon Core Badge */}
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: 'rgba(57, 255, 20, 0.08)',
+              border: '2px solid rgba(57, 255, 20, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px auto',
+              boxShadow: '0 0 20px rgba(57, 255, 20, 0.1)',
+              position: 'relative'
+            }}>
+              <div className="loader" style={{
+                position: 'absolute',
+                inset: '-4px',
+                borderRadius: '50%',
+                border: '3px solid transparent',
+                borderTopColor: '#39ff14',
+                animation: 'spin 1.5s infinite linear'
+              }} />
+              <Activity size={24} color="#39ff14" style={{ filter: 'drop-shadow(0 0 5px #39ff14)' }} />
+            </div>
+
+            <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
+            <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
+              INITIALIZING ENGINE
+            </h2>
+
+            {/* Glowing Percentage */}
+            <div className="arcade-text" style={{ fontSize: '48px', color: '#ffffff', margin: '20px 0 10px 0', fontWeight: 900 }}>
+              {trackerProgress.percent}<span style={{ color: '#39ff14', fontSize: '24px' }}>%</span>
+            </div>
+
+            {/* Neon Progress Bar */}
+            <div style={{ 
+              height: '6px', 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              borderRadius: '3px', 
+              overflow: 'hidden', 
+              marginBottom: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <motion.div 
+                animate={{ width: `${trackerProgress.percent}%` }}
+                transition={{ duration: 0.3 }}
+                style={{ 
+                  height: '100%', 
+                  background: '#39ff14', 
+                  boxShadow: '0 0 12px #39ff14',
+                  borderRadius: '3px'
+                }}
+              />
+            </div>
+
+            {/* Dynamic Step Text */}
+            <p className="hud-text" style={{ 
+              fontSize: '12px', 
+              color: '#fff', 
+              opacity: 0.8,
+              margin: 0,
+              fontWeight: 700,
+              minHeight: '18px',
+              letterSpacing: '0.5px'
+            }}>
+              {trackerProgress.message}
+            </p>
+          </div>
         </div>
       )}
       {gameStateDisplay === 'ready' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)' }}>
-          <h2 className="arcade-text" style={{ fontSize: '40px', marginBottom: '30px' }}>TRACKER <span style={{ color: 'var(--accent)' }}>READY</span></h2>
-          <button className="glow-btn pulse-glow" onClick={() => { gameStateRef.current = 'countdown'; setGameStateDisplay('countdown'); let timer = 3; setCountdown(timer); const interval = setInterval(() => { timer -= 1; setCountdown(timer); if (timer === 0) { clearInterval(interval); gameStateRef.current = 'playing'; setGameStateDisplay('playing'); } }, 1000); }} style={{ padding: '25px 60px', fontSize: '24px' }}>START WORKOUT ⚡</button>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)', padding: '20px' }}>
+          <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 40px)', marginBottom: 'clamp(15px, 4vh, 30px)', textAlign: 'center' }}>TRACKER <span style={{ color: 'var(--accent)' }}>READY</span></h2>
+          <button className="glow-btn pulse-glow" onClick={() => { enterFullscreen(); gameStateRef.current = 'countdown'; setGameStateDisplay('countdown'); let timer = 3; setCountdown(timer); const interval = setInterval(() => { timer -= 1; setCountdown(timer); if (timer === 0) { clearInterval(interval); gameStateRef.current = 'playing'; setGameStateDisplay('playing'); } }, 1000); }} style={{ padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(16px, 4vw, 24px)' }}>START WORKOUT ⚡</button>
         </div>
       )}
+
       {gameStateDisplay === 'countdown' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 96 }}>
-          <div className="arcade-text" style={{ fontSize: '180px', color: 'var(--accent)', filter: 'drop-shadow(0 0 50px var(--accent))' }}>{countdown}</div>
+          <div className="arcade-text" style={{ fontSize: 'clamp(70px, 25vh, 180px)', color: 'var(--accent)', filter: 'drop-shadow(0 0 50px var(--accent))' }}>{countdown}</div>
         </div>
       )}
       {gameStateDisplay === 'finished' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center' }}>
-            <h2 className="arcade-text" style={{ fontSize: '80px', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: '20px' }}>{winnerState === 'PLAYER' ? 'WORKOUT COMPLETE' : 'WORKOUT ENDED'}</h2>
-            <div className="glass-card" style={{ marginBottom: '40px', padding: '30px 60px' }}>
-              <p className="hud-text" style={{ fontSize: '20px' }}>{winnerState === 'PLAYER' ? 'GREAT JOB KEEPING UP THE PACE!' : "KEEP PUSHING, YOU'LL GET IT NEXT TIME"}</p>
-              <div style={{ marginTop: '20px', display: 'flex', gap: '30px', justifyContent: 'center' }}>
-                <div><p style={{ opacity: 0.5, fontSize: '12px' }}>CALORIES</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--danger)' }}>{Math.round(previousRepsRef.current * 0.45 + targetKm * 10)}</p></div>
-                <div><p style={{ opacity: 0.5, fontSize: '12px' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: '24px', color: 'var(--secondary)' }}>+{Math.round(previousRepsRef.current * 6 + targetKm * 50)}</p></div>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center', maxWidth: '90%' }}>
+            <h2 className="arcade-text" style={{ fontSize: 'clamp(24px, 5vw, 64px)', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: 'clamp(10px, 2.5vh, 20px)' }}>{winnerState === 'PLAYER' ? 'WORKOUT COMPLETE' : 'WORKOUT ENDED'}</h2>
+            <div className="glass-card" style={{ marginBottom: 'clamp(15px, 4vh, 40px)', padding: 'clamp(15px, 3.5vh, 30px) clamp(20px, 6vw, 60px)' }}>
+              <p className="hud-text" style={{ fontSize: 'clamp(12px, 2.5vw, 18px)' }}>{winnerState === 'PLAYER' ? 'GREAT JOB KEEPING UP THE PACE!' : "KEEP PUSHING, YOU'LL GET IT NEXT TIME"}</p>
+              <div style={{ marginTop: 'clamp(10px, 2.5vh, 20px)', display: 'flex', gap: 'clamp(15px, 4vw, 30px)', justifyContent: 'center' }}>
+                <div><p style={{ opacity: 0.5, fontSize: 'clamp(9px, 1.5vw, 12px)' }}>CALORIES</p><p className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}>{Math.round(previousRepsRef.current * 0.45 + targetKm * 10)}</p></div>
+                <div><p style={{ opacity: 0.5, fontSize: 'clamp(9px, 1.5vw, 12px)' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--secondary)' }}>+{Math.round(previousRepsRef.current * 6 + targetKm * 50)}</p></div>
               </div>
             </div>
             <button className="glow-btn" onClick={() => {
+              exitFullscreen();
               if (onComplete) {
                 onComplete(previousRepsRef.current);
               } else {
                 window.location.reload();
               }
-            }} style={{ padding: '20px 60px' }}>DONE</button>
+            }} style={{ padding: 'clamp(10px, 2.5vh, 20px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(14px, 2.5vw, 18px)' }}>DONE</button>
           </motion.div>
         </div>
       )}

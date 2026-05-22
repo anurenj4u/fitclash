@@ -1,10 +1,38 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Activity } from 'lucide-react';
+
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import confetti from 'canvas-confetti';
+
+const enterFullscreen = () => {
+  const element = document.documentElement;
+  if (element.requestFullscreen) {
+    element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+  } else if (element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen();
+  } else if (element.mozRequestFullScreen) {
+    element.mozRequestFullScreen();
+  } else if (element.msRequestFullscreen) {
+    element.msRequestFullscreen();
+  }
+};
+
+const exitFullscreen = () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) return;
+  if (document.exitFullscreen) {
+    document.exitFullscreen().catch((err) => console.log("Exit fullscreen error:", err));
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  } else if (document.mozCancelFullScreen) {
+    document.mozCancelFullScreen();
+  } else if (document.msExitFullscreen) {
+    document.msExitFullscreen();
+  }
+};
 
 const ReflexGame = ({ mode, isCameraReady }) => {
   const gameRef = useRef(null);
@@ -20,6 +48,17 @@ const ReflexGame = ({ mode, isCameraReady }) => {
   const previousRepsRef = useRef(0);
   const scoreRef = useRef(0);
   const repsRef = useRef(0);
+  const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
+
+  useEffect(() => {
+    const handleProgress = (e) => {
+      const { percent, message } = e.detail;
+      setTrackerProgress({ percent, message });
+    };
+    window.addEventListener('tracker-init-status', handleProgress);
+    return () => window.removeEventListener('tracker-init-status', handleProgress);
+  }, []);
+
 
   // Sync state to refs for Phaser
   useEffect(() => {
@@ -269,6 +308,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
     initPhaser();
 
     return () => {
+      exitFullscreen();
       if (gameRef.current && typeof gameRef.current === 'object' && gameRef.current.destroy) {
         gameRef.current.destroy(true);
       }
@@ -314,7 +354,15 @@ const ReflexGame = ({ mode, isCameraReady }) => {
   };
 
   return (
-    <div id="phaser-game" style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0, overflow: 'hidden' }}>
+    <div 
+      id="phaser-game" 
+      onClick={() => {
+        if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+          enterFullscreen();
+        }
+      }}
+      style={{ width: '100vw', height: '100dvh', position: 'absolute', top: 0, left: 0, overflow: 'hidden', cursor: 'pointer' }}
+    >
       
       {/* Top HUD Display */}
       <div className="score-panel arcade-text" style={{ 
@@ -343,10 +391,110 @@ const ReflexGame = ({ mode, isCameraReady }) => {
 
       {/* Camera Waiting Overlay */}
       {gameStateDisplay === 'waiting' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(2, 2, 5, 0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 90, backdropFilter: 'blur(12px)' }}>
-          <div className="loader" style={{ marginBottom: '20px' }}></div>
-          <div className="arcade-text" style={{ color: 'var(--accent)', fontSize: '24px', textShadow: '0 0 10px var(--accent)' }}>INITIALIZING CAMERA...</div>
-          <p className="hud-text" style={{ marginTop: '10px', opacity: 0.7 }}>Align your full body in the camera frame</p>
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          background: 'rgba(2, 2, 5, 0.96)', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 95, 
+          backdropFilter: 'blur(20px)',
+          padding: '20px'
+        }}>
+          {/* Neon grid scan background */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px)',
+            backgroundSize: '30px 30px',
+            pointerEvents: 'none',
+            zIndex: 1
+          }} />
+
+          {/* Central Glassmorphic Dashboard Card */}
+          <div className="glass-card" style={{
+            position: 'relative',
+            zIndex: 2,
+            maxWidth: '450px',
+            width: '100%',
+            padding: '40px 30px',
+            background: 'rgba(5, 5, 8, 0.85)',
+            border: '1px solid rgba(57, 255, 20, 0.3)',
+            borderRadius: '20px',
+            boxShadow: '0 0 40px rgba(57, 255, 20, 0.15)',
+            textAlign: 'center'
+          }}>
+            {/* Spinning Neon Core Badge */}
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: 'rgba(57, 255, 20, 0.08)',
+              border: '2px solid rgba(57, 255, 20, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px auto',
+              boxShadow: '0 0 20px rgba(57, 255, 20, 0.1)',
+              position: 'relative'
+            }}>
+              <div className="loader" style={{
+                position: 'absolute',
+                inset: '-4px',
+                borderRadius: '50%',
+                border: '3px solid transparent',
+                borderTopColor: '#39ff14',
+                animation: 'spin 1.5s infinite linear'
+              }} />
+              <Activity size={24} color="#39ff14" style={{ filter: 'drop-shadow(0 0 5px #39ff14)' }} />
+            </div>
+
+            <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
+            <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
+              INITIALIZING ENGINE
+            </h2>
+
+            {/* Glowing Percentage */}
+            <div className="arcade-text" style={{ fontSize: '48px', color: '#ffffff', margin: '20px 0 10px 0', fontWeight: 900 }}>
+              {trackerProgress.percent}<span style={{ color: '#39ff14', fontSize: '24px' }}>%</span>
+            </div>
+
+            {/* Neon Progress Bar */}
+            <div style={{ 
+              height: '6px', 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              borderRadius: '3px', 
+              overflow: 'hidden', 
+              marginBottom: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <motion.div 
+                animate={{ width: `${trackerProgress.percent}%` }}
+                transition={{ duration: 0.3 }}
+                style={{ 
+                  height: '100%', 
+                  background: '#39ff14', 
+                  boxShadow: '0 0 12px #39ff14',
+                  borderRadius: '3px'
+                }}
+              />
+            </div>
+
+            {/* Dynamic Step Text */}
+            <p className="hud-text" style={{ 
+              fontSize: '12px', 
+              color: '#fff', 
+              opacity: 0.8,
+              margin: 0,
+              fontWeight: 700,
+              minHeight: '18px',
+              letterSpacing: '0.5px'
+            }}>
+              {trackerProgress.message}
+            </p>
+          </div>
         </div>
       )}
 
@@ -356,7 +504,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
           <h2 className="arcade-text" style={{ fontSize: '38px', marginBottom: '25px', textShadow: '0 0 20px rgba(57, 255, 20, 0.4)' }}>
             SHOOTOUT <span style={{ color: 'var(--accent)' }}>READY</span>
           </h2>
-          <button className="glow-btn pulse-glow" onClick={startCountdown} style={{ padding: '20px 50px', fontSize: '26px' }}>
+          <button className="glow-btn pulse-glow" onClick={() => { enterFullscreen(); startCountdown(); }} style={{ padding: '20px 50px', fontSize: '26px' }}>
             START WORKOUT ⚽
           </button>
           <p className="hud-text" style={{ marginTop: '20px', color: '#fff', opacity: 0.6 }}>Every complete rep kicks the ball past Neymar!</p>
@@ -416,7 +564,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
               )}
             </div>
 
-            <button className="glow-btn" onClick={() => window.location.reload()} style={{ padding: '18px 50px', fontSize: '18px' }}>PLAY AGAIN</button>
+            <button className="glow-btn" onClick={() => { exitFullscreen(); window.location.reload(); }} style={{ padding: '18px 50px', fontSize: '18px' }}>PLAY AGAIN</button>
           </motion.div>
         </div>
       )}

@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
 import { analyzePose, analyzeFingers } from '@/utils/exerciseDetection';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Minimize2, Maximize2 } from 'lucide-react';
 
 const TARGET_FPS = 15;
 const FRAME_MS = 1000 / TARGET_FPS;
@@ -20,6 +21,17 @@ const MotionTracker = ({ mode, onReady }) => {
   const requestRef = useRef(null);
   const streamRef = useRef(null);
   const modeRef = useRef(mode);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -39,12 +51,16 @@ const MotionTracker = ({ mode, onReady }) => {
       try {
         workerRef.current = new Worker(new URL('../workers/poseWorker.js', import.meta.url));
         workerRef.current.onmessage = (e) => {
-          const { type, pose, fingerCount: fc, workerError } = e.data;
-          if (type === 'INIT_SUCCESS') {
+          const { type, pose, fingerCount: fc, workerError, step, percent, message } = e.data;
+          if (type === 'INIT_PROGRESS') {
+            window.dispatchEvent(new CustomEvent('tracker-init-status', { 
+              detail: { step, percent, message } 
+            }));
+          } else if (type === 'INIT_SUCCESS') {
             workerRef.current.postMessage({ type: 'SET_MODE', payload: { mode: modeRef.current } });
             startCamera();
           } else if (type === 'INIT_ERROR') {
-            handleError(new Error(workerError));
+            handleError(new Error(workerError || e.data.error || "Initialization failed"));
           } else if (type === 'POSE_DETECTED') {
             handlePose(pose);
           } else if (type === 'HAND_DETECTED') {
@@ -57,6 +73,9 @@ const MotionTracker = ({ mode, onReady }) => {
 
     const startCamera = async () => {
       try {
+        window.dispatchEvent(new CustomEvent('tracker-init-status', { 
+          detail: { step: 'starting_camera', percent: 98, message: 'Requesting camera hardware access...' } 
+        }));
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 320, height: 240, frameRate: { ideal: 30 } }
         });
@@ -66,6 +85,9 @@ const MotionTracker = ({ mode, onReady }) => {
           await videoRef.current.play();
           setIsActive(true);
           isInitializingRef.current = false;
+          window.dispatchEvent(new CustomEvent('tracker-init-status', { 
+            detail: { step: 'ready', percent: 100, message: 'Neural Engine Ready!' } 
+          }));
           if (onReady) onReady();
           requestRef.current = requestAnimationFrame(detectLoop);
         }
@@ -83,7 +105,11 @@ const MotionTracker = ({ mode, onReady }) => {
   const handleError = (err) => {
     console.error(err);
     isInitializingRef.current = false;
-    setError(err.name === 'NotAllowedError' ? "PERMISSION DENIED" : "HARDWARE ERROR");
+    const errorMsg = err.name === 'NotAllowedError' ? "PERMISSION DENIED" : "HARDWARE ERROR";
+    setError(errorMsg);
+    window.dispatchEvent(new CustomEvent('tracker-init-status', { 
+      detail: { step: 'error', percent: 0, message: `Error: ${errorMsg}` } 
+    }));
   };
 
   const triggerBoostUI = () => {
@@ -125,16 +151,72 @@ const MotionTracker = ({ mode, onReady }) => {
     requestRef.current = requestAnimationFrame(detectLoop);
   };
 
-  return (
-    <div style={{ position: 'fixed', bottom: '10px', right: '10px', width: '280px', zIndex: 500 }}>
-      {/* HUD Label */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span className="hud-text" style={{ fontSize: '10px' }}>LINK STATUS: <span style={{ color: isActive ? 'var(--accent)' : 'var(--danger)' }}>{isActive ? 'ACTIVE' : 'CONNECTING'}</span></span>
-        <span className="hud-text" style={{ fontSize: '10px' }}>{isActive ? '30 FPS' : '0 FPS'}</span>
+  if (isMinimized) {
+    return (
+      <div 
+        style={{
+          position: 'fixed',
+          bottom: '10px',
+          right: '10px',
+          background: 'rgba(2, 2, 5, 0.95)',
+          border: '1.5px solid rgba(57, 255, 20, 0.5)',
+          borderRadius: '20px',
+          padding: '8px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          boxShadow: '0 0 15px rgba(57, 255, 20, 0.2)',
+          zIndex: 500,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onClick={() => setIsMinimized(false)}
+      >
+        <span className="pulse" style={{ 
+          width: '8px', 
+          height: '8px', 
+          background: '#39ff14', 
+          borderRadius: '50%', 
+          display: 'inline-block',
+          boxShadow: '0 0 8px #39ff14',
+          animation: 'pulse-glow 1.5s infinite' 
+        }} />
+        <span style={{ fontSize: '9px', fontWeight: 800, fontFamily: 'var(--font-gaming)', color: '#39ff14', letterSpacing: '1px' }}>
+          TRACKER ACTIVE ({mode === 'jacks' ? 'JACKS' : mode.toUpperCase()})
+        </span>
+        <Maximize2 size={12} color="#39ff14" style={{ marginLeft: '4px' }} />
       </div>
+    );
+  }
+
+  return (
+    <div style={{ 
+      position: 'fixed', 
+      bottom: '10px', 
+      right: '10px', 
+      width: isMobile ? '140px' : '280px', 
+      zIndex: 500,
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+    }}>
+      {/* HUD Label */}
+      {!isMobile && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <span className="hud-text" style={{ fontSize: '10px' }}>LINK STATUS: <span style={{ color: isActive ? 'var(--accent)' : 'var(--danger)' }}>{isActive ? 'ACTIVE' : 'CONNECTING'}</span></span>
+          <span className="hud-text" style={{ fontSize: '10px' }}>{isActive ? '30 FPS' : '0 FPS'}</span>
+        </div>
+      )}
 
       {/* Camera Feed Container */}
-      <div style={{ position: 'relative', width: '100%', height: '210px', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(57, 255, 20, 0.4)', background: '#000', boxShadow: '0 0 30px rgba(0,0,0,0.6)' }}>
+      <div style={{ 
+        position: 'relative', 
+        width: '100%', 
+        height: isMobile ? '105px' : '210px', 
+        borderRadius: '12px', 
+        overflow: 'hidden', 
+        border: '2px solid rgba(57, 255, 20, 0.4)', 
+        background: '#000', 
+        boxShadow: '0 0 30px rgba(0,0,0,0.6)' 
+      }}>
         
         {/* Boost Flash Overlay */}
         <AnimatePresence>
@@ -148,38 +230,93 @@ const MotionTracker = ({ mode, onReady }) => {
           )}
         </AnimatePresence>
 
+        {/* Minimize Button */}
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMinimized(true);
+          }}
+          style={{
+            position: 'absolute',
+            top: isMobile ? '4px' : '8px',
+            right: isMobile ? '4px' : '8px',
+            zIndex: 40,
+            background: 'rgba(0,0,0,0.6)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '4px',
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#fff',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = '#39ff14'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+        >
+          <Minimize2 size={12} />
+        </button>
+
         {/* Corner Brackets */}
-        <div style={{ position: 'absolute', top: 10, left: 10, width: 20, height: 20, borderLeft: '3px solid var(--accent)', borderTop: '3px solid var(--accent)', zIndex: 20 }} />
-        <div style={{ position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRight: '3px solid var(--accent)', borderTop: '3px solid var(--accent)', zIndex: 20 }} />
-        <div style={{ position: 'absolute', bottom: 10, left: 10, width: 20, height: 20, borderLeft: '3px solid var(--accent)', borderBottom: '3px solid var(--accent)', zIndex: 20 }} />
-        <div style={{ position: 'absolute', bottom: 10, right: 10, width: 20, height: 20, borderRight: '3px solid var(--accent)', borderBottom: '3px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', top: isMobile ? 4 : 10, left: isMobile ? 4 : 10, width: isMobile ? 12 : 20, height: isMobile ? 12 : 20, borderLeft: '2px solid var(--accent)', borderTop: '2px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', top: isMobile ? 4 : 10, right: isMobile ? 4 : 10, width: isMobile ? 12 : 20, height: isMobile ? 12 : 20, borderRight: '2px solid var(--accent)', borderTop: '2px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', bottom: isMobile ? 4 : 10, left: isMobile ? 4 : 10, width: isMobile ? 12 : 20, height: isMobile ? 12 : 20, borderLeft: '2px solid var(--accent)', borderBottom: '2px solid var(--accent)', zIndex: 20 }} />
+        <div style={{ position: 'absolute', bottom: isMobile ? 4 : 10, right: isMobile ? 4 : 10, width: isMobile ? 12 : 20, height: isMobile ? 12 : 20, borderRight: '2px solid var(--accent)', borderBottom: '2px solid var(--accent)', zIndex: 20 }} />
 
         <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', opacity: 1 }} playsInline muted />
         
         {!isActive && !error && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', zIndex: 30 }}>
-            <div className="loader"></div>
+            <div className="loader" style={{ width: '18px', height: '18px', border: '2px solid rgba(57,255,20,0.1)', borderTopColor: '#39ff14', borderRadius: '50%', animation: 'spin 1s infinite linear' }} />
           </div>
         )}
       </div>
 
       {/* Mode Status HUD */}
-      <div className="glass-card" style={{ marginTop: '10px', padding: '15px', borderRadius: '12px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.15)' }}>
-        <p className="hud-text" style={{ fontSize: '11px', opacity: 0.6, letterSpacing: '2px' }}>NEURAL TRACKER: ACTIVE</p>
-        <p className="arcade-text" style={{ fontSize: '16px', color: 'var(--accent)', marginTop: '5px' }}>{mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}</p>
-        
-        {mode === 'fingers' && (
-          <div style={{ marginTop: '12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', background: 'rgba(57, 255, 20, 0.05)', padding: '10px', borderRadius: '8px' }}>
-            <span style={{ fontSize: '32px' }}>{['✊', '☝️', '✌️', '🤟', '🖖', '🖐️'][Math.min(fingerCount || 0, 5)]}</span>
-            <div style={{ textAlign: 'left' }}>
-              <p className="hud-text" style={{ fontSize: '12px', color: fingerCount === 1 ? 'var(--accent)' : '#fff', fontWeight: 800 }}>
-                {fingerCount === 1 ? 'LOCKED ON' : 'DETECTION REQ.'}
-              </p>
-              <p style={{ fontSize: '9px', opacity: 0.5 }}>{fingerCount === 1 ? 'READY FOR BOOST' : 'SHOW 1 FINGER'}</p>
+      {!isMobile && (
+        <div className="glass-card" style={{ marginTop: '10px', padding: '15px', borderRadius: '12px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.15)' }}>
+          <p className="hud-text" style={{ fontSize: '11px', opacity: 0.6, letterSpacing: '2px' }}>NEURAL TRACKER: ACTIVE</p>
+          <p className="arcade-text" style={{ fontSize: '16px', color: 'var(--accent)', marginTop: '5px' }}>{mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}</p>
+          
+          {mode === 'fingers' && (
+            <div style={{ marginTop: '12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', background: 'rgba(57, 255, 20, 0.05)', padding: '10px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '32px' }}>{['✊', '☝️', '✌️', '🤟', '🖖', '🖐️'][Math.min(fingerCount || 0, 5)]}</span>
+              <div style={{ textAlign: 'left' }}>
+                <p className="hud-text" style={{ fontSize: '12px', color: fingerCount === 1 ? 'var(--accent)' : '#fff', fontWeight: 800 }}>
+                  {fingerCount === 1 ? 'LOCKED ON' : 'DETECTION REQ.'}
+                </p>
+                <p style={{ fontSize: '9px', opacity: 0.5 }}>{fingerCount === 1 ? 'READY FOR BOOST' : 'SHOW 1 FINGER'}</p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+
+      {/* On mobile, we show a tiny mode tag below the video */}
+      {isMobile && (
+        <div style={{ 
+          marginTop: '6px', 
+          padding: '6px 8px', 
+          borderRadius: '8px', 
+          background: 'rgba(0,0,0,0.85)', 
+          border: '1px solid rgba(57, 255, 20, 0.3)', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: '5px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+        }}>
+          <span style={{ width: '5px', height: '5px', background: '#39ff14', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 6px #39ff14' }} />
+          <span style={{ fontSize: '8px', fontWeight: 900, fontFamily: 'var(--font-gaming)', color: '#39ff14', letterSpacing: '0.5px' }}>
+            {mode === 'jacks' ? 'JACKS' : mode.toUpperCase()}
+          </span>
+          {mode === 'fingers' && (
+            <span style={{ fontSize: '10px' }}>{['✊', '☝️', '✌️', '🤟', '🖖', '🖐️'][Math.min(fingerCount || 0, 5)]}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

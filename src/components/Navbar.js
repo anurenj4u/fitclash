@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { User, LogOut, Menu, X, Flame } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -93,26 +93,6 @@ export default function Navbar() {
             {item}
           </Link>
         ))}
-
-        {/* Animated Calories Burned Display Badge */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: 'rgba(57, 255, 20, 0.05)',
-          border: '1px solid rgba(57, 255, 20, 0.2)',
-          padding: '8px 16px',
-          borderRadius: '50px',
-          fontSize: '11px',
-          fontWeight: 800,
-          color: '#39ff14',
-          fontFamily: 'var(--font-gaming)',
-          boxShadow: '0 0 10px rgba(57, 255, 20, 0.1)',
-          letterSpacing: '0.5px'
-        }}>
-          <Flame size={13} fill="#39ff14" color="#39ff14" />
-          <span>{animatedCalories} KCAL</span>
-        </div>
         
         {user ? (
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -169,6 +149,101 @@ export default function Navbar() {
       >
         {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
       </button>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed',
+              top: '80px',
+              left: 0,
+              right: 0,
+              background: 'rgba(2, 2, 5, 0.98)',
+              backdropFilter: 'blur(20px)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '30px 5%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              zIndex: 999
+            }}
+          >
+            {(userData?.isPremium ? ['ABOUT', 'CONTACT'] : ['ABOUT', 'CONTACT', 'PREMIUM']).map((item) => (
+              <Link 
+                key={item}
+                href={`/${item.toLowerCase()}`} 
+                onClick={() => setIsMobileMenuOpen(false)}
+                style={{ 
+                  color: item === 'PREMIUM' ? '#39ff14' : '#fff', 
+                  textDecoration: 'none', 
+                  fontSize: '16px', 
+                  fontWeight: 800, 
+                  letterSpacing: '2px',
+                  padding: '10px 0',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.03)'
+                }}
+              >
+                {item}
+              </Link>
+            ))}
+
+             {user ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '10px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <User size={16} color="#39ff14" />
+                  <span style={{ fontSize: '14px', color: '#fff', fontWeight: 800, letterSpacing: '1px' }}>{user.displayName?.toUpperCase() || 'PLAYER'}</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    logout();
+                  }}
+                  style={{
+                    background: 'rgba(255, 0, 60, 0.1)',
+                    border: '1px solid #ff4444',
+                    color: '#ff4444',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <LogOut size={16} /> EXIT
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
+                  color: '#fff', 
+                  textDecoration: 'none', 
+                  fontSize: '14px', 
+                  fontWeight: 800,
+                  textAlign: 'center',
+                  padding: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '10px'
+                }}>LOGIN</Link>
+                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="glow-btn" style={{ 
+                  textDecoration: 'none', 
+                  fontSize: '14px', 
+                  padding: '12px',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>JOIN SQUAD</Link>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx>{`
         @media (max-width: 900px) {

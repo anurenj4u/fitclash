@@ -146,6 +146,7 @@ export default function Home() {
       setShowLimitModal(true);
       return;
     }
+    setIsCameraReady(false); // Reset camera state for clean mount
     setShowOnboarding(true);
   };
 
@@ -161,6 +162,7 @@ export default function Home() {
       return;
     }
 
+    setIsCameraReady(false); // Reset camera state for clean mount
     setActiveProgram(prog);
     setExerciseMode(prog.exercise);
     setRunningProgram(true);
@@ -250,15 +252,35 @@ export default function Home() {
   // Structured Workout Plan execution screen
   if (runningProgram && activeProgram) {
     return (
-      <div style={{ 
-        position: "fixed", 
-        inset: 0,
-        height: "100vh", 
-        background: "#020205", 
-        color: "#fff", 
-        overflow: "hidden",
-        zIndex: 2000 
-      }}>
+      <div 
+        onClick={() => {
+          if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+            const enterFullscreen = () => {
+              const element = document.documentElement;
+              if (element.requestFullscreen) {
+                element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+              } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+              } else if (element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+              } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+              }
+            };
+            enterFullscreen();
+          }
+        }}
+        style={{ 
+          position: "fixed", 
+          inset: 0,
+          height: "100dvh", 
+          background: "#020205", 
+          color: "#fff", 
+          overflow: "hidden",
+          zIndex: 2000,
+          cursor: "pointer"
+        }}
+      >
         <WorkoutProgramExecutor 
           program={activeProgram}
           isCameraReady={isCameraReady}
@@ -266,10 +288,12 @@ export default function Home() {
             handleWorkoutComplete(results);
             setRunningProgram(false);
             setActiveProgram(null);
+            setIsCameraReady(false); // Reset camera ready state on finish
           }}
           onExit={() => {
             setRunningProgram(false);
             setActiveProgram(null);
+            setIsCameraReady(false); // Reset camera ready state on exit
           }}
         />
         <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
@@ -280,15 +304,35 @@ export default function Home() {
   // Standard Workout execution screen
   if (gameStarted) {
     return (
-      <div style={{ 
-        position: "fixed", 
-        inset: 0,
-        height: "100vh", 
-        background: "#020205", 
-        color: "#fff", 
-        overflow: "hidden",
-        zIndex: 2000 
-      }}>
+      <div 
+        onClick={() => {
+          if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+            const enterFullscreen = () => {
+              const element = document.documentElement;
+              if (element.requestFullscreen) {
+                element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+              } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+              } else if (element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+              } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+              }
+            };
+            enterFullscreen();
+          }
+        }}
+        style={{ 
+          position: "fixed", 
+          inset: 0,
+          height: "100dvh", 
+          background: "#020205", 
+          color: "#fff", 
+          overflow: "hidden",
+          zIndex: 2000,
+          cursor: "pointer"
+        }}
+      >
         {playMode === 'worldcup' ? (
           <FitnessRace 
             mode={exerciseMode} 
@@ -302,6 +346,7 @@ export default function Home() {
               const xpGained = Math.round(reps * 6 + targetDistance * 50);
               handleWorkoutComplete({ reps, caloriesBurned, xpGained });
               setGameStarted(false);
+              setIsCameraReady(false); // Reset camera ready state on completion
             }}
           />
         ) : (
@@ -315,6 +360,7 @@ export default function Home() {
               const xpGained = Math.round(reps * 6 + targetDistance * 50);
               handleWorkoutComplete({ reps, caloriesBurned, xpGained });
               setGameStarted(false);
+              setIsCameraReady(false); // Reset camera ready state on completion
             }}
           />
         )}
@@ -355,7 +401,7 @@ export default function Home() {
       <section style={{
         position: 'relative',
         zIndex: 5,
-        padding: '50px 5% 120px 5%',
+        padding: 'clamp(10px, 2.5vh, 25px) 5% clamp(20px, 6vh, 60px) 5%',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -375,7 +421,7 @@ export default function Home() {
           fontWeight: 800,
           color: '#39ff14',
           letterSpacing: '1px',
-          marginBottom: '20px',
+          marginBottom: '12px',
           fontFamily: 'var(--font-gaming)'
         }}>
           <span style={{ width: '6px', height: '6px', background: '#39ff14', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #39ff14' }} />
@@ -384,12 +430,12 @@ export default function Home() {
 
         {/* Massive Glowing ClashOfCardio Title */}
         <h1 className="arcade-text animate-pulse" style={{
-          fontSize: '78px',
+          fontSize: 'clamp(32px, 8vw, 78px)',
           fontWeight: 900,
           color: '#39ff14',
           letterSpacing: '4px',
           textShadow: '0 0 30px rgba(57, 255, 20, 0.6), 0 0 60px rgba(57, 255, 20, 0.2)',
-          marginBottom: '10px',
+          marginBottom: '6px',
           lineHeight: '1'
         }}>
           CLASHOFCARDIO
@@ -401,11 +447,23 @@ export default function Home() {
           opacity: 0.7,
           maxWidth: '550px',
           lineHeight: 1.6,
-          marginBottom: '35px',
+          marginBottom: '15px',
           color: '#ffffff'
         }}>
           Achieve your fitness goals with interactive AI tracking. <span style={{ color: '#39ff14', fontWeight: 700 }}>Your body is the controller.</span>
         </p>
+
+        {/* Floating High-Tech Calories Counter Card */}
+        <div className="hero-calories-badge">
+          <Flame size={20} fill="#39ff14" color="#39ff14" style={{ filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.8))' }} />
+          <div style={{ textAlign: 'left' }}>
+            <span style={{ fontSize: '8px', opacity: 0.5, fontWeight: 800, letterSpacing: '1px', display: 'block', color: '#fff' }}>TOTAL CALORIES BURNED</span>
+            <span className="arcade-text" style={{ fontSize: '20px', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.4)', fontWeight: 900, display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+              {progression.calories} <span style={{ fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 700, color: '#fff' }}>KCAL</span>
+            </span>
+          </div>
+        </div>
+
 
         {/* Segmented Options Selector */}
         <div style={{
@@ -417,7 +475,7 @@ export default function Home() {
           padding: '8px',
           maxWidth: '550px',
           width: '100%',
-          margin: '0 auto 35px auto',
+          margin: '0 auto 20px auto',
           gap: '8px'
         }}>
           <button
@@ -474,6 +532,61 @@ export default function Home() {
           </button>
         </div>
 
+        {/* ABOVE-THE-FOLD PRIMARY START CONTROLS */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '15px',
+          alignItems: 'center',
+          marginBottom: '35px',
+          marginTop: '5px',
+          flexWrap: 'wrap'
+        }}>
+          <button
+            onClick={startOnboarding}
+            style={{
+              background: '#39ff14',
+              color: '#000000',
+              padding: '16px 48px',
+              borderRadius: '30px',
+              border: 'none',
+              fontWeight: 900,
+              fontSize: '14px',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-gaming)',
+              boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Play size={14} fill="#000" color="#000" /> START WORKOUT ⚡
+          </button>
+
+          <button
+            onClick={() => alert("Watch trailer loaded successfully!")}
+            style={{
+              background: 'transparent',
+              color: '#ffffff',
+              padding: '16px 36px',
+              borderRadius: '30px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-gaming)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ffffff'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+          >
+            WATCH TRAILER
+          </button>
+        </div>
+
         {/* DYNAMIC VIEWS WRAPPER */}
         <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
           
@@ -484,7 +597,7 @@ export default function Home() {
             <>
               {/* GOAL SELECTOR CARD */}
               <div style={{
-                padding: '24px',
+                padding: 'clamp(14px, 3vw, 24px)',
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
@@ -533,7 +646,7 @@ export default function Home() {
 
               {/* TARGET DISTANCE CARD (MAX 3 KM) */}
               <div style={{
-                padding: '24px',
+                padding: 'clamp(14px, 3vw, 24px)',
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
@@ -585,7 +698,7 @@ export default function Home() {
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
-                padding: '30px 24px',
+                padding: 'clamp(16px, 4vw, 30px) clamp(14px, 3vw, 24px)',
                 textAlign: 'left'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -657,7 +770,7 @@ export default function Home() {
             <>
               {/* SPRINT DISTANCE OPTIONS (WORLD CUP ONLY) */}
               <div style={{
-                padding: '24px',
+                padding: 'clamp(14px, 3vw, 24px)',
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
@@ -738,7 +851,7 @@ export default function Home() {
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
-                padding: '30px 24px'
+                padding: 'clamp(16px, 4vw, 30px) clamp(14px, 3vw, 24px)'
               }}>
                 <p style={{
                   textAlign: 'center',
