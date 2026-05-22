@@ -150,22 +150,6 @@ export default function Home() {
     }
   }, [userData]);
 
-
-
-
-  // Listen to camera pose changes to update dynamic workout rounds
-  useEffect(() => {
-    if (!gameStarted) {
-      setCurrentReps(0);
-      return;
-    }
-    const handlePose = (e) => {
-      setCurrentReps(prev => prev + 1);
-    };
-    window.addEventListener('pose-update', handlePose);
-    return () => window.removeEventListener('pose-update', handlePose);
-  }, [gameStarted]);
-
   const handleCameraReady = useCallback(() => {
     setIsCameraReady(true);
   }, []);
