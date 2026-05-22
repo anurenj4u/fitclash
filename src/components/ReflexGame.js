@@ -43,7 +43,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
   const [countdown, setCountdown] = useState(3);
   const [timeLeft, setTimeLeft] = useState(60);
   const { user } = useAuth();
-  
+
   const gameStateRef = useRef('waiting');
   const previousRepsRef = useRef(0);
   const scoreRef = useRef(0);
@@ -127,11 +127,11 @@ const ReflexGame = ({ mode, isCameraReady }) => {
   useEffect(() => {
     if (gameRef.current) return;
     gameRef.current = 'loading';
-    
+
     let game;
     const initPhaser = async () => {
       const Phaser = (await import('phaser')).default;
-      
+
       if (gameRef.current === null) return;
 
       const config = {
@@ -165,7 +165,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
       function create() {
         scene = this;
         balls = this.physics.add.group();
-        
+
         // Grass Pitch (Bottom)
         const grass = this.add.rectangle(0, window.innerHeight - 200, window.innerWidth, 200, 0x050510, 0.4).setOrigin(0);
         this.add.line(0, window.innerHeight - 200, 0, 0, window.innerWidth, 0, 0x39ff14, 0.3).setOrigin(0);
@@ -192,11 +192,11 @@ const ReflexGame = ({ mode, isCameraReady }) => {
         const netGraphics = this.add.graphics();
         netGraphics.lineStyle(1, 0xffffff, 0.2);
         const netStep = 20;
-        for (let gx = goalX - goalWidth/2; gx <= goalX + goalWidth/2; gx += netStep) {
-          netGraphics.lineBetween(gx, goalY - goalHeight/2, gx, goalY + goalHeight/2);
+        for (let gx = goalX - goalWidth / 2; gx <= goalX + goalWidth / 2; gx += netStep) {
+          netGraphics.lineBetween(gx, goalY - goalHeight / 2, gx, goalY + goalHeight / 2);
         }
-        for (let gy = goalY - goalHeight/2; gy <= goalY + goalHeight/2; gy += netStep) {
-          netGraphics.lineBetween(goalX - goalWidth/2, gy, goalX + goalWidth/2, gy);
+        for (let gy = goalY - goalHeight / 2; gy <= goalY + goalHeight / 2; gy += netStep) {
+          netGraphics.lineBetween(goalX - goalWidth / 2, gy, goalX + goalWidth / 2, gy);
         }
 
         // Crossbar and Posts with Neon Glow
@@ -205,7 +205,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
         this.physics.add.existing(goal, true);
 
         // Keeper (Neymar)
-        keeper = this.add.sprite(goalX, goalY + goalHeight/2 - 40, 'keeper');
+        keeper = this.add.sprite(goalX, goalY + goalHeight / 2 - 40, 'keeper');
         keeper.setScale(0.16);
         this.physics.add.existing(keeper);
         keeper.body.setCollideWorldBounds(true);
@@ -242,20 +242,20 @@ const ReflexGame = ({ mode, isCameraReady }) => {
           showFeedback("SAVED!", "#ff007f");
         }, null, this);
 
-        this.kickBall = function() {
+        this.kickBall = function () {
           if (gameStateRef.current !== 'playing') return;
           const x = window.innerWidth / 2;
           const y = window.innerHeight - 150;
-          
+
           // Use loaded football image instead of circle
           const ball = scene.physics.add.sprite(x, y, 'football');
           ball.setScale(0.15);
           balls.add(ball);
-          
+
           let speed = 1200;
-          let targetX = Phaser.Math.Between(goalX - goalWidth/2 + 30, goalX + goalWidth/2 - 30);
+          let targetX = Phaser.Math.Between(goalX - goalWidth / 2 + 30, goalX + goalWidth / 2 - 30);
           scene.physics.moveTo(ball, targetX, goalY, speed);
-          
+
           // Rotate ball as it flies
           scene.tweens.add({
             targets: ball,
@@ -333,7 +333,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
         }
       }
     };
-    
+
     window.addEventListener('pose-update', handlePoseUpdate);
     return () => window.removeEventListener('pose-update', handlePoseUpdate);
   }, [gameStateDisplay]);
@@ -342,7 +342,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
     setGameStateDisplay('countdown');
     let timer = 3;
     setCountdown(timer);
-    
+
     const interval = setInterval(() => {
       timer -= 1;
       setCountdown(timer);
@@ -354,8 +354,8 @@ const ReflexGame = ({ mode, isCameraReady }) => {
   };
 
   return (
-    <div 
-      id="phaser-game" 
+    <div
+      id="phaser-game"
       onClick={() => {
         if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
           enterFullscreen();
@@ -363,16 +363,16 @@ const ReflexGame = ({ mode, isCameraReady }) => {
       }}
       style={{ width: '100vw', height: '100dvh', position: 'absolute', top: 0, left: 0, overflow: 'hidden', cursor: 'pointer' }}
     >
-      
+
       {/* Top HUD Display */}
-      <div className="score-panel arcade-text" style={{ 
+      <div className="score-panel arcade-text" style={{
         position: 'absolute',
-        top: '20px', 
-        left: '50%', 
-        transform: 'translateX(-50%)', 
-        width: 'auto', 
-        display: 'flex', 
-        gap: '40px', 
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'auto',
+        display: 'flex',
+        gap: '40px',
         zIndex: 10,
         padding: '15px 30px',
         background: 'rgba(0,0,0,0.8)',
@@ -391,15 +391,15 @@ const ReflexGame = ({ mode, isCameraReady }) => {
 
       {/* Camera Waiting Overlay */}
       {gameStateDisplay === 'waiting' && (
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'rgba(2, 2, 5, 0.96)', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 95, 
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(2, 2, 5, 0.96)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 95,
           backdropFilter: 'blur(20px)',
           padding: '20px'
         }}>
@@ -453,7 +453,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
 
             <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
             <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
-              INITIALIZING ENGINE
+              INITIALIZING
             </h2>
 
             {/* Glowing Percentage */}
@@ -462,20 +462,20 @@ const ReflexGame = ({ mode, isCameraReady }) => {
             </div>
 
             {/* Neon Progress Bar */}
-            <div style={{ 
-              height: '6px', 
-              background: 'rgba(255, 255, 255, 0.05)', 
-              borderRadius: '3px', 
-              overflow: 'hidden', 
+            <div style={{
+              height: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '3px',
+              overflow: 'hidden',
               marginBottom: '20px',
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
-              <motion.div 
+              <motion.div
                 animate={{ width: `${trackerProgress.percent}%` }}
                 transition={{ duration: 0.3 }}
-                style={{ 
-                  height: '100%', 
-                  background: '#39ff14', 
+                style={{
+                  height: '100%',
+                  background: '#39ff14',
                   boxShadow: '0 0 12px #39ff14',
                   borderRadius: '3px'
                 }}
@@ -483,9 +483,9 @@ const ReflexGame = ({ mode, isCameraReady }) => {
             </div>
 
             {/* Dynamic Step Text */}
-            <p className="hud-text" style={{ 
-              fontSize: '12px', 
-              color: '#fff', 
+            <p className="hud-text" style={{
+              fontSize: '12px',
+              color: '#fff',
               opacity: 0.8,
               margin: 0,
               fontWeight: 700,
@@ -521,21 +521,21 @@ const ReflexGame = ({ mode, isCameraReady }) => {
 
       {/* Game Finished Overlay */}
       {gameStateDisplay === 'finished' && (
-        <div style={{ 
-            position: 'absolute', 
-            inset: 0, 
-            background: 'rgba(2, 2, 5, 0.95)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            zIndex: 100,
-            backdropFilter: 'blur(15px)'
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(2, 2, 5, 0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          backdropFilter: 'blur(15px)'
         }}>
           <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center', maxWidth: '600px', width: '90%' }}>
             <h2 className="arcade-text" style={{ fontSize: '50px', color: 'var(--accent)', marginBottom: '10px', textShadow: '0 0 20px var(--accent)' }}>SHOOTOUT ENDED</h2>
             <p className="hud-text" style={{ opacity: 0.6, marginBottom: '25px' }}>FANTASTIC EFFORT! YOU SHIELDED THE PITCH!</p>
-            
+
             <div className="glass-card" style={{ marginBottom: '35px', padding: '30px 40px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-around', gap: '20px', flexWrap: 'wrap' }}>
                 <div>
@@ -570,12 +570,12 @@ const ReflexGame = ({ mode, isCameraReady }) => {
       )}
 
       {/* Instructions Overlay */}
-      <div style={{ 
-        position: 'absolute', 
-        bottom: '20px', 
-        left: '20px', 
-        background: 'rgba(0,0,0,0.85)', 
-        padding: '15px 20px', 
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '20px',
+        background: 'rgba(0,0,0,0.85)',
+        padding: '15px 20px',
         borderRadius: '12px',
         border: '1px solid var(--accent)',
         fontSize: '13px',
@@ -585,7 +585,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
       }}>
         <div style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '6px', fontFamily: 'var(--font-gaming)', letterSpacing: '1px' }}>HOW TO SCORE:</div>
         <div style={{ opacity: 0.8, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <div>🏃 1 {mode === 'jacks' ? 'Jumping Jack' : mode.toUpperCase().slice(0,-1)} = 1 KICK</div>
+          <div>🏃 1 {mode === 'jacks' ? 'Jumping Jack' : mode.toUpperCase().slice(0, -1)} = 1 KICK</div>
           <div>🧤 Beat goalkeeper Neymar to score a goal!</div>
           <div>⏱️ Score as many as possible in 60s</div>
         </div>

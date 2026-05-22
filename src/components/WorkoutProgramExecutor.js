@@ -38,7 +38,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
   const [reps, setReps] = useState(0);
   const [roundReps, setRoundReps] = useState([]);
   const [accuracy, setAccuracy] = useState(94); // Mock high-fidelity pose accuracy
-  
+
   const previousRepsRef = useRef(0);
   const totalRepsAcrossRounds = roundReps.reduce((a, b) => a + b, 0) + reps;
   const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
@@ -130,7 +130,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
   const handleRoundComplete = () => {
     const updatedRounds = [...roundReps, reps];
     setRoundReps(updatedRounds);
-    
+
     if (currentRound < program.rounds) {
       setPhase('rest');
       setRestTimer(program.restDuration);
@@ -152,7 +152,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
     const totalReps = finalRounds.reduce((a, b) => a + b, 0);
     const caloriesBurned = Math.round(totalReps * 0.45 + (program.rounds * program.workDuration * 0.05));
     const xpGained = Math.round(totalReps * 5 + (program.rounds * program.workDuration * 0.2) * (accuracy / 100));
-    
+
     if (onComplete) {
       onComplete({
         totalReps,
@@ -196,7 +196,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
       {/* Top Bar (Exit) */}
       {phase !== 'complete' && (
         <div style={{ position: 'absolute', top: 'clamp(10px, 4vh, 30px)', right: 'clamp(10px, 4vw, 30px)', zIndex: 1010, pointerEvents: 'auto' }}>
-          <button 
+          <button
             onClick={() => {
               exitFullscreen();
               onExit();
@@ -223,15 +223,15 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
       )}
 
       <AnimatePresence mode="wait">
-        
+
         {/* Phase: Waiting for Pose Calibration */}
         {phase === 'waiting' && (
-          <motion.div 
+          <motion.div
             key="waiting"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            style={{ 
+            style={{
               position: 'relative',
               zIndex: 2,
               maxWidth: '450px',
@@ -272,7 +272,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
 
             <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
             <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
-              INITIALIZING ENGINE
+              INITIALIZING
             </h2>
 
             {/* Glowing Percentage */}
@@ -281,20 +281,20 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
             </div>
 
             {/* Neon Progress Bar */}
-            <div style={{ 
-              height: '6px', 
-              background: 'rgba(255, 255, 255, 0.05)', 
-              borderRadius: '3px', 
-              overflow: 'hidden', 
+            <div style={{
+              height: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '3px',
+              overflow: 'hidden',
               marginBottom: '20px',
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
-              <motion.div 
+              <motion.div
                 animate={{ width: `${trackerProgress.percent}%` }}
                 transition={{ duration: 0.3 }}
-                style={{ 
-                  height: '100%', 
-                  background: '#39ff14', 
+                style={{
+                  height: '100%',
+                  background: '#39ff14',
                   boxShadow: '0 0 12px #39ff14',
                   borderRadius: '3px'
                 }}
@@ -302,9 +302,9 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
             </div>
 
             {/* Dynamic Step Text */}
-            <p className="hud-text" style={{ 
-              fontSize: '12px', 
-              color: '#fff', 
+            <p className="hud-text" style={{
+              fontSize: '12px',
+              color: '#fff',
               opacity: 0.8,
               margin: 0,
               fontWeight: 700,
@@ -318,20 +318,20 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
 
         {/* Phase: Calibrated & Ready */}
         {phase === 'ready' && (
-          <motion.div 
+          <motion.div
             key="ready"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            style={{ 
-              maxWidth: '500px', 
+            style={{
+              maxWidth: '500px',
               width: '100%',
-              textAlign: 'center', 
-              padding: 'clamp(15px, 3.5vh, 40px) clamp(20px, 5vw, 40px)', 
-              border: '1px solid rgba(255, 255, 255, 0.12)', 
+              textAlign: 'center',
+              padding: 'clamp(15px, 3.5vh, 40px) clamp(20px, 5vw, 40px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               background: 'rgba(255, 255, 255, 0.01)',
               borderRadius: '16px',
-              pointerEvents: 'auto' 
+              pointerEvents: 'auto'
             }}
           >
             <div style={{ width: 'clamp(40px, 8vh, 64px)', height: 'clamp(40px, 8vh, 64px)', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto clamp(8px, 2vh, 20px) auto', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
@@ -339,7 +339,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
             </div>
             <span style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', fontWeight: 700, color: '#ffffff', opacity: 0.5, letterSpacing: '3px' }}>PROGRAM READY</span>
             <h2 className="arcade-text" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', margin: '8px 0 clamp(10px, 2.5vh, 15px) 0', textShadow: 'none' }}>{program.name}</h2>
-            
+
             {/* Round info grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'clamp(6px, 1.5vw, 15px)', background: 'rgba(255,255,255,0.02)', padding: 'clamp(8px, 2vh, 15px)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 'clamp(12px, 3vh, 30px)' }}>
               <div>
@@ -356,11 +356,11 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
               </div>
             </div>
 
-            <button 
-              onClick={handleStartCountdown} 
-              style={{ 
-                width: '100%', 
-                padding: 'clamp(10px, 2.5vh, 16px) 0', 
+            <button
+              onClick={handleStartCountdown}
+              style={{
+                width: '100%',
+                padding: 'clamp(10px, 2.5vh, 16px) 0',
                 fontSize: 'clamp(12px, 2vw, 14px)',
                 background: '#ffffff',
                 color: '#000000',
@@ -378,7 +378,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
 
         {/* Phase: Start Countdown */}
         {phase === 'countdown' && (
-          <motion.div 
+          <motion.div
             key="countdown"
             initial={{ scale: 0.3, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -391,7 +391,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
 
         {/* Phase: Work Round Action Screen */}
         {phase === 'work' && (
-          <motion.div 
+          <motion.div
             key="work"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -421,7 +421,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
               </div>
               <h1 className="arcade-text" style={{ fontSize: 'clamp(44px, 16vh, 100px)', color: '#ffffff', lineHeight: '1', textShadow: 'none', margin: 'clamp(10px, 2vh, 16px) 0 0 0' }}>{reps}</h1>
               <p style={{ opacity: 0.4, fontSize: 'clamp(10px, 1.8vw, 12px)', letterSpacing: '3px', marginTop: 'clamp(4px, 1vh, 10px)', fontWeight: 700, margin: 0 }}>REPS</p>
-              
+
               {currentRound > 1 && (
                 <div style={{ marginTop: 'clamp(8px, 2vh, 20px)', fontSize: 'clamp(9px, 1.5vw, 11px)', opacity: 0.6, fontWeight: 700, letterSpacing: '0.5px' }}>
                   TOTAL ACCUMULATED REPS: {totalRepsAcrossRounds}
@@ -436,14 +436,14 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
                 <span className="arcade-text" style={{ fontSize: 'clamp(14px, 3vw, 20px)', color: '#ffffff', textShadow: 'none' }}>{roundTimer}s</span>
               </div>
               <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
-                <motion.div 
+                <motion.div
                   initial={{ width: '100%' }}
                   animate={{ width: `${(roundTimer / program.workDuration) * 100}%` }}
                   transition={{ duration: 1, ease: 'linear' }}
-                  style={{ 
-                    height: '100%', 
+                  style={{
+                    height: '100%',
                     background: '#ffffff'
-                  }} 
+                  }}
                 />
               </div>
             </div>
@@ -452,7 +452,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
 
         {/* Phase: Rest Countdown Interval */}
         {phase === 'rest' && (
-          <motion.div 
+          <motion.div
             key="rest"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -462,7 +462,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
             <div style={{ width: 'clamp(36px, 8vh, 60px)', height: 'clamp(36px, 8vh, 60px)', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto clamp(8px, 2vh, 16px) auto', border: '1px solid rgba(255,255,255,0.1)' }}>
               <Heart size={20} color="#ffffff" style={{ opacity: 0.8 }} />
             </div>
-            
+
             <span style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', fontWeight: 700, opacity: 0.5, letterSpacing: '3px' }}>REST INTERMISSION</span>
             <h2 className="arcade-text" style={{ fontSize: 'clamp(16px, 4vw, 22px)', margin: '8px 0 clamp(8px, 2vh, 15px) 0', textShadow: 'none' }}>PREPARE FOR ROUND {currentRound + 1}</h2>
 
@@ -470,13 +470,13 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
             <div style={{ position: 'relative', width: 'clamp(70px, 18vh, 110px)', height: 'clamp(70px, 18vh, 110px)', margin: 'clamp(10px, 2.5vh, 25px) auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
                 <circle cx="55" cy="55" r="48" stroke="rgba(255,255,255,0.03)" strokeWidth="4" fill="transparent" />
-                <motion.circle 
-                  cx="55" 
-                  cy="55" 
-                  r="48" 
-                  stroke="#ffffff" 
-                  strokeWidth="4" 
-                  fill="transparent" 
+                <motion.circle
+                  cx="55"
+                  cy="55"
+                  r="48"
+                  stroke="#ffffff"
+                  strokeWidth="4"
+                  fill="transparent"
                   strokeDasharray={2 * Math.PI * 48}
                   strokeDashoffset={2 * Math.PI * 48 * (1 - restTimer / program.restDuration)}
                   transition={{ duration: 1, ease: 'linear' }}
@@ -502,7 +502,7 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
 
         {/* Phase: Complete Workout Summary */}
         {phase === 'complete' && (
-          <motion.div 
+          <motion.div
             key="complete"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -551,14 +551,14 @@ const WorkoutProgramExecutor = ({ program, isCameraReady, onComplete, onExit }) 
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => {
                 exitFullscreen();
                 window.location.reload();
-              }} 
-              style={{ 
-                width: '100%', 
-                padding: 'clamp(10px, 2.5vh, 16px) 0', 
+              }}
+              style={{
+                width: '100%',
+                padding: 'clamp(10px, 2.5vh, 16px) 0',
                 fontSize: 'clamp(12px, 2vw, 14px)',
                 background: '#ffffff',
                 color: '#000000',

@@ -30,98 +30,14 @@ const exitFullscreen = () => {
   }
 };
 
-// ---------------------------------------------------------------------------
-// Stickman drawing helper
-//   color : 0xRRGGBB Phaser hex color
-//   frame : 0–7, drives the running cycle (arms & legs swing)
-//   scale : pixel multiplier (pixels per "unit")
-// ---------------------------------------------------------------------------
-function drawStickman(gfx, color, frame, scale) {
-  const t = (frame / 8) * Math.PI * 2; // angle in full cycle
-
-  // Body proportions (all in abstract units, then scaled)
-  const headR   = 10 * scale;
-  const bodyLen = 26 * scale;
-  const armLen  = 18 * scale;
-  const legLen  = 22 * scale;
-  const lineW   = Math.max(3, 4 * scale);
-
-  // Anchor = hip centre
-  const hx = 0;
-  const hy = 0;
-
-  // Spine top = shoulder
-  const shoulderY = hy - bodyLen;
-
-  // Head centre
-  const headY = shoulderY - headR - 2 * scale;
-
-  gfx.clear();
-  gfx.lineStyle(lineW, color, 1);
-  gfx.fillStyle(color, 1);
-
-  // --- HEAD ---
-  gfx.fillCircle(hx, headY, headR);
-
-  // --- BODY (torso) ---
-  gfx.beginPath();
-  gfx.moveTo(hx, shoulderY);
-  gfx.lineTo(hx, hy);
-  gfx.strokePath();
-
-  // --- ARMS ---
-  // Arms swing opposite phase to each other
-  const armSwing = Math.sin(t) * 0.7; // radians
-
-  // Left arm (swings forward when right leg goes forward)
-  const lArmEndX = hx + Math.sin(-armSwing) * armLen;
-  const lArmEndY = shoulderY + 8 * scale + Math.cos(armSwing) * armLen * 0.4;
-  gfx.beginPath();
-  gfx.moveTo(hx, shoulderY + 8 * scale);
-  gfx.lineTo(lArmEndX, lArmEndY);
-  gfx.strokePath();
-
-  // Right arm
-  const rArmEndX = hx + Math.sin(armSwing) * armLen;
-  const rArmEndY = shoulderY + 8 * scale + Math.cos(-armSwing) * armLen * 0.4;
-  gfx.beginPath();
-  gfx.moveTo(hx, shoulderY + 8 * scale);
-  gfx.lineTo(rArmEndX, rArmEndY);
-  gfx.strokePath();
-
-  // --- LEGS ---
-  const legSwing = Math.sin(t) * 0.65;
-
-  // Left leg (thigh → shin with knee bend)
-  const lThighX = hx + Math.sin(legSwing) * legLen * 0.5;
-  const lThighY = hy + Math.cos(legSwing) * legLen * 0.5;
-  const lShinX  = lThighX + Math.sin(legSwing * 0.5 + 0.5) * legLen * 0.5;
-  const lShinY  = lThighY + legLen * 0.5;
-  gfx.beginPath();
-  gfx.moveTo(hx, hy);
-  gfx.lineTo(lThighX, lThighY);
-  gfx.lineTo(lShinX, lShinY);
-  gfx.strokePath();
-
-  // Right leg (opposite phase)
-  const rThighX = hx + Math.sin(-legSwing) * legLen * 0.5;
-  const rThighY = hy + Math.cos(-legSwing) * legLen * 0.5;
-  const rShinX  = rThighX + Math.sin(-legSwing * 0.5 + 0.5) * legLen * 0.5;
-  const rShinY  = rThighY + legLen * 0.5;
-  gfx.beginPath();
-  gfx.moveTo(hx, hy);
-  gfx.lineTo(rThighX, rThighY);
-  gfx.lineTo(rShinX, rShinY);
-  gfx.strokePath();
-}
-
-const FitnessRace = ({ 
-  mode, 
-  targetKm = 1, 
-  isCameraReady, 
-  activeTheme = 'default', 
-  activeStadium = 'default', 
-  onComplete 
+const FitnessRace = ({
+  mode,
+  targetKm = 1,
+  isCameraReady,
+  activeTheme = 'default',
+  activeStadium = 'default',
+  activeCharacter = 'default',
+  onComplete
 }) => {
   const gameRef = useRef(null);
   const [winnerState, setWinnerState] = useState(null);
@@ -173,23 +89,33 @@ const FitnessRace = ({
         scene: { preload, create, update }
       };
 
-      // Stickman graphics objects
-      let playerGfx, aiGfx;
-      let playerFrame = 0, aiFrame = 0;
-      let frameTimer = 0;
-      const FRAME_INTERVAL = 80; // ms per animation frame
-
-      let leaderArrow, scene;
-      let skyBg, groundLayer, mountains, clouds = [];
-
+      let player, ai, ball, leaderArrow, scene;
+      let skyBg, groundLayer, stadiumLights, trailParticles;
+      let mountains, clouds = [];
       const playerStartX = 200;
-      const STICKMAN_SCALE = window.innerWidth < 480 ? 0.5 : window.innerWidth < 768 ? 0.7 : 1.0;
 
-      const getTrackY = h => h - Math.round(h * 0.28);
+      const getScale = () => {
+        const w = window.innerWidth;
+        if (w < 480) return 0.12;
+        if (w < 768) return 0.17;
+        return 0.27;
+      };
+
+      const getTrackY = h => h - Math.round(h * 0.25);
 
       function preload() {
-        // No external images needed – stickmen are drawn with Phaser Graphics
+        this.load.image('football', '/football.png');
         this.load.image('spark', 'https://labs.phaser.io/assets/particles/blue.png');
+
+        // Load all 6 Neymar running frames
+        for (let i = 1; i <= 6; i++) {
+          this.load.image(`neymarRun${i}`, `/neymar/neymar${i}.png`);
+        }
+
+        // Load all 6 Ronaldo running frames
+        for (let i = 1; i <= 6; i++) {
+          this.load.image(`ronaldoRun${i}`, `/ronaldo/ronaldooo${i}.png`);
+        }
       }
 
       function buildStadium(W, H) {
@@ -199,12 +125,19 @@ const FitnessRace = ({
         }
         skyBg.clear();
 
-        let skyTop    = activeTheme === 'sunset' ? 0xff3300 : 0x0066cc;
-        let skyBottom = activeTheme === 'sunset' ? 0xff8800 : 0x44aaff;
+        let skyTop = 0x0088ff;
+        let skyBottom = 0x66ccff;
+        if (activeTheme === 'sunset') {
+          skyTop = 0xff3300;
+          skyBottom = 0xff8800;
+        }
         skyBg.fillGradientStyle(skyTop, skyTop, skyBottom, skyBottom, 1);
         skyBg.fillRect(0, 0, W, H * 0.75);
 
-        let grassColor = activeStadium === 'golden' ? 0xffd700 : 0x2d9a27;
+        let grassColor = 0x38b000;
+        if (activeStadium === 'golden') {
+          grassColor = 0xffd700;
+        }
         skyBg.fillStyle(grassColor, 1);
         skyBg.fillRect(0, H * 0.75, W, H * 0.25);
 
@@ -213,7 +146,11 @@ const FitnessRace = ({
           mountains.setScrollFactor(0.05, 0).setDepth(1);
         }
         mountains.clear();
-        let mtColor = activeStadium === 'golden' ? 0xb59410 : 0x004d66;
+
+        let mtColor = 0x005f73;
+        if (activeStadium === 'golden') {
+          mtColor = 0xb59410;
+        }
         mountains.fillStyle(mtColor, 0.45);
         mountains.beginPath();
         mountains.moveTo(0, H * 0.75);
@@ -221,8 +158,8 @@ const FitnessRace = ({
         mountains.lineTo(W * 0.35, H * 0.6);
         mountains.lineTo(W * 0.55, H * 0.35);
         mountains.lineTo(W * 0.75, H * 0.65);
-        mountains.lineTo(W * 0.9,  H * 0.45);
-        mountains.lineTo(W * 1.2,  H * 0.75);
+        mountains.lineTo(W * 0.9, H * 0.45);
+        mountains.lineTo(W * 1.2, H * 0.75);
         mountains.closePath();
         mountains.fillPath();
 
@@ -231,14 +168,17 @@ const FitnessRace = ({
           const cloud = scene.add.graphics();
           const cx = Math.random() * W * 1.5;
           const cy = 30 + Math.random() * (H * 0.35);
-          const sc = 0.4 + Math.random() * 0.8;
+          const scale = 0.4 + Math.random() * 0.8;
           cloud.fillStyle(0xffffff, 0.9);
           cloud.fillCircle(0, 0, 25);
           cloud.fillCircle(-20, 3, 16);
           cloud.fillCircle(20, 3, 16);
           cloud.fillRoundedRect(-35, 3, 70, 16, 8);
-          cloud.x = cx; cloud.y = cy; cloud.setScale(sc);
-          cloud.setScrollFactor(0.12, 0).setDepth(2);
+          cloud.x = cx;
+          cloud.y = cy;
+          cloud.setScale(scale);
+          cloud.setScrollFactor(0.12, 0);
+          cloud.setDepth(2);
           cloud.driftSpeed = 0.15 + Math.random() * 0.25;
           clouds.push(cloud);
         }
@@ -248,30 +188,18 @@ const FitnessRace = ({
           groundLayer.setScrollFactor(1).setDepth(3);
         }
         groundLayer.clear();
+
         const roadWidth = finishLineDistance + 3000;
-        groundLayer.fillStyle(activeStadium === 'golden' ? 0x4a3c00 : 0x1e1f24, 1);
+        groundLayer.fillStyle(activeStadium === 'golden' ? 0x4a3c00 : 0x24252a, 1);
         groundLayer.fillRect(0, H * 0.75, roadWidth, H * 0.25);
+
         groundLayer.lineStyle(6, activeStadium === 'golden' ? 0xffea00 : 0xffd000, 0.95);
         groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H * 0.75, roadWidth, H * 0.75));
         groundLayer.strokeLineShape(new Phaser.Geom.Line(0, H - 15, roadWidth, H - 15));
+
         groundLayer.lineStyle(4, 0xffffff, 0.7);
         for (let rx = 0; rx < roadWidth; rx += 140) {
           groundLayer.strokeLineShape(new Phaser.Geom.Line(rx, H * 0.86, rx + 70, H * 0.86));
-        }
-
-        // Finish line
-        const finishGfx = scene.add.graphics().setDepth(4);
-        finishGfx.lineStyle(6, 0xffffff, 1);
-        finishGfx.strokeLineShape(new Phaser.Geom.Line(
-          playerStartX + finishLineDistance, H * 0.75,
-          playerStartX + finishLineDistance, H
-        ));
-        // Checkered finish pattern
-        const stripeH = (H * 0.25) / 10;
-        for (let si = 0; si < 10; si++) {
-          const col = si % 2 === 0 ? 0xffffff : 0x000000;
-          finishGfx.fillStyle(col, 0.9);
-          finishGfx.fillRect(playerStartX + finishLineDistance, H * 0.75 + si * stripeH, 16, stripeH);
         }
       }
 
@@ -279,35 +207,115 @@ const FitnessRace = ({
         scene = this;
         const W = this.scale.width;
         const H = this.scale.height;
+        const spr = getScale();
+
+        // Helper to remove solid black background from PNG textures at runtime
+        function removeBlackBackground(sceneRef, textureKey) {
+          try {
+            const texture = sceneRef.textures.get(textureKey);
+            if (!texture) return;
+            const source = texture.getSourceImage();
+            if (!source) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = source.width;
+            canvas.height = source.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            ctx.drawImage(source, 0, 0);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              if (r < 10 && g < 10 && b < 10) {
+                data[i + 3] = 0;
+              }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            sceneRef.textures.addCanvas(textureKey + '_clean', canvas);
+          } catch (e) {
+            console.error("Error transparency-keying texture:", e);
+          }
+        }
 
         buildStadium(W, H);
 
-        // Particle trail for player boost
-        this.trailParticles = this.add.particles(0, 0, 'spark', {
-          speed: 80,
-          scale: { start: 0.08, end: 0 },
+        // Strip black backgrounds from all animation frames
+        for (let i = 1; i <= 6; i++) {
+          removeBlackBackground(this, `neymarRun${i}`);
+        }
+        for (let i = 1; i <= 6; i++) {
+          removeBlackBackground(this, `ronaldoRun${i}`);
+        }
+
+        trailParticles = this.add.particles(0, 0, 'spark', {
+          speed: 100,
+          scale: { start: 0.1, end: 0 },
           blendMode: 'ADD',
-          lifespan: 250,
+          lifespan: 300,
           alpha: { start: 0.5, end: 0 },
           frequency: -1
         });
-        this.trailParticles.setDepth(5);
+        trailParticles.setDepth(5);
 
-        // AI stickman (blue)
-        aiGfx = scene.add.graphics();
-        aiGfx.setDepth(8);
-        aiGfx.x = playerStartX;
-        aiGfx.y = getTrackY(H);
-        drawStickman(aiGfx, 0x00aaff, 0, STICKMAN_SCALE);
+        // Neymar (AI) running animation
+        this.anims.create({
+          key: 'neymar_run',
+          frames: [
+            { key: 'neymarRun1_clean' },
+            { key: 'neymarRun2_clean' },
+            { key: 'neymarRun3_clean' },
+            { key: 'neymarRun4_clean' },
+            { key: 'neymarRun5_clean' },
+            { key: 'neymarRun6_clean' }
+          ],
+          frameRate: 10,
+          repeat: -1
+        });
 
-        // Player stickman (red)
-        playerGfx = scene.add.graphics();
-        playerGfx.setDepth(9);
-        playerGfx.x = playerStartX;
-        playerGfx.y = getTrackY(H);
-        drawStickman(playerGfx, 0xff2020, 0, STICKMAN_SCALE);
+        // Ronaldo (Player) running animation
+        this.anims.create({
+          key: 'player_run',
+          frames: [
+            { key: 'ronaldoRun1_clean' },
+            { key: 'ronaldoRun2_clean' },
+            { key: 'ronaldoRun3_clean' },
+            { key: 'ronaldoRun4_clean' },
+            { key: 'ronaldoRun5_clean' },
+            { key: 'ronaldoRun6_clean' }
+          ],
+          frameRate: 10,
+          repeat: -1
+        });
 
-        // Leader arrow
+        // AI = Neymar
+        ai = this.add.sprite(playerStartX, getTrackY(H), 'neymarRun1_clean');
+        ai.setScale(spr * 1.35);
+        ai.setDepth(8);
+        ai.play('neymar_run');
+        ai.anims.pause();
+
+        // Player = Ronaldo
+        player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1_clean');
+
+        let baseScale = 2.7;
+        if (activeCharacter === 'ronaldo_elite') {
+          baseScale = 3.2;
+          player.setTint(0xffd700);
+        }
+        player.setScale(spr * baseScale);
+        player.setDepth(9);
+        player.play('player_run');
+        player.anims.pause();
+
+        ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 72, 'football');
+        ball.setScale(spr * 0.26);
+        ball.setDepth(10);
+
         leaderArrow = this.add.graphics().setDepth(20);
         leaderArrow.fillStyle(0x39ff14, 1);
         leaderArrow.fillTriangle(-10, -20, 10, -20, 0, 0);
@@ -316,13 +324,13 @@ const FitnessRace = ({
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
           const distPerRep = mode === 'fingers' ? 100 : 1000;
           playerDistanceRef.current += distPerRep;
-          this.trailParticles.emitParticleAt(playerGfx.x, playerGfx.y + 20, 3);
-          // Tiny scale pulse on rep
-          this.tweens.add({
-            targets: playerGfx,
-            scaleX: 1.12, scaleY: 1.12,
-            duration: 60, yoyo: true
-          });
+          trailParticles.emitParticleAt(player.x, player.y + 20, 3);
+
+          let yoyoScale = 2.85;
+          if (activeCharacter === 'ronaldo_elite') {
+            yoyoScale = 3.35;
+          }
+          this.tweens.add({ targets: player, scale: spr * yoyoScale, duration: 80, yoyo: true });
         };
 
         this.restart = () => {
@@ -332,71 +340,102 @@ const FitnessRace = ({
           setWinnerState(null);
           gameStateRef.current = 'ready';
           setGameStateDisplay('ready');
-          playerFrame = 0; aiFrame = 0;
-          drawStickman(aiGfx, 0x00aaff, 0, STICKMAN_SCALE);
-          drawStickman(playerGfx, 0xff2020, 0, STICKMAN_SCALE);
+
+          if (ai && ai.anims) {
+            ai.play('neymar_run');
+            ai.anims.pause();
+            ai.setTexture('neymarRun1_clean');
+          }
+
+          if (player && player.anims) {
+            player.play('player_run');
+            player.anims.pause();
+            player.setTexture('ronaldoRun1_clean');
+
+            let bScale = 2.7;
+            if (activeCharacter === 'ronaldo_elite') {
+              bScale = 3.2;
+              player.setTint(0xffd700);
+            } else {
+              player.clearTint();
+            }
+            player.setScale(spr * bScale);
+          }
         };
       }
 
       function update(time, delta) {
         const H = this.scale.height;
-        const isPlaying = gameStateRef.current === 'playing' && !winnerRef.current;
 
-        // 1. Animate stickmen frames
-        if (isPlaying) {
-          frameTimer += delta;
-          if (frameTimer >= FRAME_INTERVAL) {
-            frameTimer = 0;
-            // AI always animates; player animates only if they've moved
-            aiFrame = (aiFrame + 1) % 8;
-            if (playerDistanceRef.current > 0) playerFrame = (playerFrame + 1) % 8;
-
-            drawStickman(aiGfx, 0x00aaff, aiFrame, STICKMAN_SCALE);
-            drawStickman(playerGfx, 0xff2020, playerFrame, STICKMAN_SCALE);
-          }
-        }
-
-        // 2. Parallax clouds
+        // Parallax cloud drift
         const scrollX = this.cameras.main.scrollX;
         const screenW = window.innerWidth;
         if (clouds && clouds.length > 0) {
           clouds.forEach(cloud => {
             cloud.x -= cloud.driftSpeed;
-            if (cloud.x < scrollX * 0.12 - 120) {
-              cloud.x = scrollX * 0.12 + screenW + 120;
+            const leftBound = scrollX * 0.12 - 120;
+            const rightBound = scrollX * 0.12 + screenW + 120;
+            if (cloud.x < leftBound) {
+              cloud.x = rightBound;
               cloud.y = 30 + Math.random() * (H * 0.35);
             }
           });
         }
 
-        if (!isPlaying) return;
+        // Ball rolling
+        if (ball) {
+          const isPlaying = gameStateRef.current === 'playing' && !winnerRef.current;
+          const rollFactor = isPlaying ? 0.55 : 0.08;
+          ball.angle += rollFactor * delta;
+        }
 
-        // 3. Move AI + passive player boost
+        // Neymar animation control
+        if (ai && ai.anims) {
+          const isRunning = gameStateRef.current === 'playing' && !winnerRef.current;
+          if (isRunning) {
+            if (ai.anims.isPaused) ai.anims.resume();
+          } else {
+            if (!ai.anims.isPaused) ai.anims.pause();
+          }
+        }
+
+        // Ronaldo animation control
+        if (player && player.anims) {
+          const isPlayerRunning = gameStateRef.current === 'playing' && !winnerRef.current && playerDistanceRef.current > 0;
+          if (isPlayerRunning) {
+            if (player.anims.isPaused) player.anims.resume();
+          } else {
+            if (!player.anims.isPaused) player.anims.pause();
+          }
+        }
+
+        if (gameStateRef.current !== 'playing' || winnerRef.current) return;
+
+        // AI speed scales with target km
         const aiSpeedBase = targetKm === 1 ? 0.4 : targetKm === 2 ? 0.7 : 0.9;
         aiDistanceRef.current += aiSpeedBase * delta;
         if (playerDistanceRef.current > 0) playerDistanceRef.current += (aiSpeedBase * 0.3) * delta;
 
-        // 4. Bobbing Y position
-        playerGfx.x = playerStartX + playerDistanceRef.current;
-        playerGfx.y = getTrackY(H) + Math.sin(time * 0.01) * 5;
-        aiGfx.x = playerStartX + aiDistanceRef.current;
-        aiGfx.y = getTrackY(H) + Math.sin(time * 0.012 + 1) * 5;
+        player.x = playerStartX + playerDistanceRef.current;
+        ai.x = playerStartX + aiDistanceRef.current;
+        const trackY = getTrackY(H);
 
-        // 5. Leader arrow
-        const leader = playerDistanceRef.current >= aiDistanceRef.current ? playerGfx : aiGfx;
+        player.y = trackY + Math.sin(time * 0.01) * 5;
+        ai.y = trackY + Math.sin(time * 0.012 + 1) * 5;
+
+        const leader = playerDistanceRef.current >= aiDistanceRef.current ? player : ai;
+        ball.x = leader.x + 40;
+        ball.y = leader.y + 72;
+
         leaderArrow.x = leader.x;
-        leaderArrow.y = leader.y - 90 * STICKMAN_SCALE;
+        leaderArrow.y = leader.y - 80;
+        this.cameras.main.scrollX = Math.max(player.x, ai.x) - (window.innerWidth / 3);
 
-        // 6. Camera follow
-        this.cameras.main.scrollX = Math.max(playerGfx.x, aiGfx.x) - (window.innerWidth / 3);
-
-        // 7. HUD text updates
         if (playerDistanceUITextRef.current)
           playerDistanceUITextRef.current.innerText = Math.floor(playerDistanceRef.current / 100);
         if (aiDistanceUITextRef.current)
           aiDistanceUITextRef.current.innerText = Math.floor(aiDistanceRef.current / 100);
 
-        // 8. Win/Lose detection
         if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
           winnerRef.current = 'PLAYER'; setWinnerState('PLAYER'); setGameStateDisplay('finished');
           confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#39ff14', '#ffffff', '#00f2ff'] });
@@ -446,34 +485,33 @@ const FitnessRace = ({
 
   return (
     <div id="phaser-game" style={{ width: '100vw', height: '100dvh', position: 'fixed', inset: 0, zIndex: 1, background: '#020205' }}>
+
       {/* HUD: Distance counters */}
-      <div style={{ 
-        position: 'absolute', 
-        top: 'clamp(8px, 3.5vh, 30px)', 
-        left: '50%', 
-        transform: 'translateX(-50%)', 
-        display: 'flex', 
-        gap: 'clamp(15px, 4vw, 40px)', 
-        zIndex: 10, 
-        padding: 'clamp(8px, 2vh, 16px) clamp(16px, 4vw, 40px)', 
-        background: 'rgba(0,0,0,0.8)', 
-        borderRadius: '16px', 
-        border: '1px solid var(--accent)', 
-        backdropFilter: 'blur(10px)' 
+      <div style={{
+        position: 'absolute',
+        top: 'clamp(8px, 3.5vh, 30px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: 'clamp(15px, 4vw, 40px)',
+        zIndex: 10,
+        padding: 'clamp(8px, 2vh, 16px) clamp(16px, 4vw, 40px)',
+        background: 'rgba(0,0,0,0.8)',
+        borderRadius: '16px',
+        border: '1px solid var(--accent)',
+        backdropFilter: 'blur(10px)'
       }}>
-        {/* Player */}
         <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>YOU 🔴</p>
-          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: '#ff2020' }}>
+          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>RONALDO</p>
+          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--accent)' }}>
             <span ref={playerDistanceUITextRef}>0</span>
             <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
           </div>
         </div>
         <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
-        {/* AI */}
         <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>RIVAL 🔵</p>
-          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: '#00aaff' }}>
+          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>NEYMAR</p>
+          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}>
             <span ref={aiDistanceUITextRef}>0</span>
             <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
           </div>
@@ -489,12 +527,12 @@ const FitnessRace = ({
 
       {/* WAITING – loading overlay */}
       {gameStateDisplay === 'waiting' && (
-        <div style={{ 
-          position: 'absolute', inset: 0, 
-          background: 'rgba(2, 2, 5, 0.96)', 
-          display: 'flex', flexDirection: 'column', 
-          alignItems: 'center', justifyContent: 'center', 
-          zIndex: 95, backdropFilter: 'blur(20px)', padding: '20px' 
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(2, 2, 5, 0.96)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          zIndex: 95, backdropFilter: 'blur(20px)', padding: '20px'
         }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px)', backgroundSize: '30px 30px', pointerEvents: 'none', zIndex: 1 }} />
           <div className="glass-card" style={{ position: 'relative', zIndex: 2, maxWidth: '450px', width: '100%', padding: '40px 30px', background: 'rgba(5, 5, 8, 0.85)', border: '1px solid rgba(57, 255, 20, 0.3)', borderRadius: '20px', boxShadow: '0 0 40px rgba(57, 255, 20, 0.15)', textAlign: 'center' }}>
@@ -518,32 +556,6 @@ const FitnessRace = ({
       {/* READY */}
       {gameStateDisplay === 'ready' && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)', padding: '20px' }}>
-          {/* Mini preview of both stickmen */}
-          <div style={{ display: 'flex', gap: '40px', marginBottom: '30px', alignItems: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <svg width="60" height="90" viewBox="-20 -80 40 90">
-                <circle cx="0" cy="-70" r="10" fill="#ff2020"/>
-                <line x1="0" y1="-60" x2="0" y2="-34" stroke="#ff2020" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-52" x2="-14" y2="-38" stroke="#ff2020" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-52" x2="14" y2="-38" stroke="#ff2020" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-34" x2="-10" y2="-14" stroke="#ff2020" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-34" x2="10" y2="-14" stroke="#ff2020" strokeWidth="4" strokeLinecap="round"/>
-              </svg>
-              <p style={{ color: '#ff2020', fontFamily: 'var(--font-gaming)', fontSize: '10px', fontWeight: 900, marginTop: '4px' }}>YOU</p>
-            </div>
-            <span style={{ color: '#39ff14', fontFamily: 'var(--font-gaming)', fontSize: '22px', fontWeight: 900 }}>VS</span>
-            <div style={{ textAlign: 'center' }}>
-              <svg width="60" height="90" viewBox="-20 -80 40 90">
-                <circle cx="0" cy="-70" r="10" fill="#00aaff"/>
-                <line x1="0" y1="-60" x2="0" y2="-34" stroke="#00aaff" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-52" x2="-14" y2="-38" stroke="#00aaff" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-52" x2="14" y2="-38" stroke="#00aaff" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-34" x2="-10" y2="-14" stroke="#00aaff" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="0" y1="-34" x2="10" y2="-14" stroke="#00aaff" strokeWidth="4" strokeLinecap="round"/>
-              </svg>
-              <p style={{ color: '#00aaff', fontFamily: 'var(--font-gaming)', fontSize: '10px', fontWeight: 900, marginTop: '4px' }}>RIVAL</p>
-            </div>
-          </div>
           <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 40px)', marginBottom: 'clamp(15px, 4vh, 30px)', textAlign: 'center' }}>TRACKER <span style={{ color: 'var(--accent)' }}>READY</span></h2>
           <button className="glow-btn pulse-glow" onClick={() => {
             enterFullscreen();

@@ -33,12 +33,12 @@ const exitFullscreen = () => {
   }
 };
 
-const NormalWorkout = ({ 
-  selectedExercises = ['squats'], 
-  targetDistance = 1, 
+const NormalWorkout = ({
+  selectedExercises = ['squats'],
+  targetDistance = 1,
   selectedGoal = 'FAT BURN',
-  isCameraReady, 
-  onComplete 
+  isCameraReady,
+  onComplete
 }) => {
   const [reps, setReps] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
@@ -47,7 +47,7 @@ const NormalWorkout = ({
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const { user } = useAuth();
   const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
-  
+
   const previousRepsRef = useRef(0);
   const targetRepsNeeded = Math.round((targetDistance * 1000) / 10); // 1 rep = 10 meters
 
@@ -82,7 +82,7 @@ const NormalWorkout = ({
         previousRepsRef.current = eventReps;
         setReps((prev) => {
           const nextReps = prev + 1;
-          
+
           // Cycle exercise modes every 10 reps if multiple exercises are selected
           if (selectedExercises.length > 1 && nextReps % 10 === 0) {
             setCurrentExerciseIndex(prevIndex => prevIndex + 1);
@@ -143,8 +143,8 @@ const NormalWorkout = ({
             </div>
           </div>
 
-          <button 
-            className="glow-btn" 
+          <button
+            className="glow-btn"
             onClick={() => {
               exitFullscreen();
               if (onComplete) {
@@ -152,15 +152,15 @@ const NormalWorkout = ({
               } else {
                 window.location.reload();
               }
-            }} 
-            style={{ 
-              background: '#39ff14', 
-              color: '#000', 
-              border: 'none', 
-              padding: 'clamp(10px, 2.5vh, 16px) clamp(30px, 8vw, 60px)', 
-              borderRadius: '30px', 
-              fontWeight: 900, 
-              cursor: 'pointer', 
+            }}
+            style={{
+              background: '#39ff14',
+              color: '#000',
+              border: 'none',
+              padding: 'clamp(10px, 2.5vh, 16px) clamp(30px, 8vw, 60px)',
+              borderRadius: '30px',
+              fontWeight: 900,
+              cursor: 'pointer',
               fontFamily: 'var(--font-gaming)',
               boxShadow: '0 0 20px rgba(57, 255, 20, 0.4)',
               fontSize: 'clamp(12px, 2vw, 15px)'
@@ -175,17 +175,17 @@ const NormalWorkout = ({
 
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 90, color: '#fff' }}>
-      
+
       {gameState === 'waiting' && (
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'rgba(2, 2, 5, 0.96)', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 95, 
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(2, 2, 5, 0.96)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 95,
           backdropFilter: 'blur(20px)',
           padding: '20px'
         }}>
@@ -239,7 +239,7 @@ const NormalWorkout = ({
 
             <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
             <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
-              INITIALIZING ENGINE
+              INITIALIZING
             </h2>
 
             {/* Glowing Percentage */}
@@ -248,20 +248,20 @@ const NormalWorkout = ({
             </div>
 
             {/* Neon Progress Bar */}
-            <div style={{ 
-              height: '6px', 
-              background: 'rgba(255, 255, 255, 0.05)', 
-              borderRadius: '3px', 
-              overflow: 'hidden', 
+            <div style={{
+              height: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '3px',
+              overflow: 'hidden',
               marginBottom: '20px',
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
-              <motion.div 
+              <motion.div
                 animate={{ width: `${trackerProgress.percent}%` }}
                 transition={{ duration: 0.3 }}
-                style={{ 
-                  height: '100%', 
-                  background: '#39ff14', 
+                style={{
+                  height: '100%',
+                  background: '#39ff14',
                   boxShadow: '0 0 12px #39ff14',
                   borderRadius: '3px'
                 }}
@@ -269,9 +269,9 @@ const NormalWorkout = ({
             </div>
 
             {/* Dynamic Step Text */}
-            <p className="hud-text" style={{ 
-              fontSize: '12px', 
-              color: '#fff', 
+            <p className="hud-text" style={{
+              fontSize: '12px',
+              color: '#fff',
               opacity: 0.8,
               margin: 0,
               fontWeight: 700,
@@ -291,33 +291,33 @@ const NormalWorkout = ({
           </div>
           <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 28px)', marginBottom: 'clamp(10px, 2vh, 15px)' }}>TRACKER <span style={{ color: '#39ff14' }}>READY</span></h2>
           <p style={{ opacity: 0.5, fontSize: 'clamp(11px, 2.5vw, 14px)', marginBottom: 'clamp(15px, 4vh, 35px)', maxWidth: '400px', textAlign: 'center', lineHeight: 1.4 }}>
-            Goal: <strong style={{ color: '#fff' }}>{selectedGoal}</strong><br/>
-            Target Distance: <strong style={{ color: '#fff' }}>{targetDistance} KM ({totalTargetMeters}M)</strong><br/>
+            Goal: <strong style={{ color: '#fff' }}>{selectedGoal}</strong><br />
+            Target Distance: <strong style={{ color: '#fff' }}>{targetDistance} KM ({totalTargetMeters}M)</strong><br />
             Exercises: <strong style={{ color: '#fff' }}>{selectedExercises.map(getExerciseLabel).join(', ')}</strong>
           </p>
-          <button 
-            onClick={() => { 
+          <button
+            onClick={() => {
               enterFullscreen();
-              setGameState('countdown'); 
-              let timer = 3; 
-              setCountdown(timer); 
-              const interval = setInterval(() => { 
-                timer -= 1; 
-                setCountdown(timer); 
-                if (timer === 0) { 
-                  clearInterval(interval); 
-                  setGameState('playing'); 
-                } 
-              }, 1000); 
-            }} 
-            style={{ 
-              background: '#39ff14', 
-              color: '#000', 
-              border: 'none', 
-              padding: 'clamp(10px, 2.5vh, 18px) clamp(40px, 8vw, 60px)', 
-              borderRadius: '30px', 
-              fontSize: 'clamp(13px, 2vw, 15px)', 
-              fontWeight: 900, 
+              setGameState('countdown');
+              let timer = 3;
+              setCountdown(timer);
+              const interval = setInterval(() => {
+                timer -= 1;
+                setCountdown(timer);
+                if (timer === 0) {
+                  clearInterval(interval);
+                  setGameState('playing');
+                }
+              }, 1000);
+            }}
+            style={{
+              background: '#39ff14',
+              color: '#000',
+              border: 'none',
+              padding: 'clamp(10px, 2.5vh, 18px) clamp(40px, 8vw, 60px)',
+              borderRadius: '30px',
+              fontSize: 'clamp(13px, 2vw, 15px)',
+              fontWeight: 900,
               cursor: 'pointer',
               fontFamily: 'var(--font-gaming)',
               boxShadow: '0 0 25px rgba(57, 255, 20, 0.5)'
@@ -335,18 +335,18 @@ const NormalWorkout = ({
       )}
 
       {gameState === 'playing' && (
-        <div style={{ 
+        <div style={{
           position: 'absolute',
           bottom: 'clamp(10px, 4vh, 40px)',
           left: '50%',
           transform: 'translateX(-50%)',
           width: '90%',
           maxWidth: '600px',
-          background: 'rgba(5, 5, 8, 0.95)', 
-          padding: 'clamp(10px, 2.5vh, 25px) clamp(16px, 4vw, 40px)', 
-          borderRadius: '16px', 
-          border: '1px solid rgba(57, 255, 20, 0.3)', 
-          backdropFilter: 'blur(20px)', 
+          background: 'rgba(5, 5, 8, 0.95)',
+          padding: 'clamp(10px, 2.5vh, 25px) clamp(16px, 4vw, 40px)',
+          borderRadius: '16px',
+          border: '1px solid rgba(57, 255, 20, 0.3)',
+          backdropFilter: 'blur(20px)',
           pointerEvents: 'auto',
           boxShadow: '0 0 30px rgba(57, 255, 20, 0.1)'
         }}>
@@ -356,7 +356,7 @@ const NormalWorkout = ({
               <Flame size={10} color="#39ff14" />
               <span style={{ fontSize: 'clamp(8px, 1.5vw, 9px)', fontWeight: 900, color: '#39ff14', letterSpacing: '0.5px' }}>{selectedGoal}</span>
             </div>
-            
+
             <div style={{ fontSize: 'clamp(10px, 2vw, 12px)', fontWeight: 700, opacity: 0.5 }}>
               DISTANCE: {currentDistanceMeters}M / {totalTargetMeters}M
             </div>
@@ -364,7 +364,7 @@ const NormalWorkout = ({
 
           {/* Progress Bar */}
           <div style={{ height: '6px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', overflow: 'hidden', marginBottom: 'clamp(10px, 2vh, 20px)' }}>
-            <motion.div 
+            <motion.div
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.3 }}
               style={{ height: '100%', background: '#39ff14', boxShadow: '0 0 10px rgba(57, 255, 20, 0.5)' }}

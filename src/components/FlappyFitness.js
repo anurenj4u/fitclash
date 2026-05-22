@@ -373,7 +373,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
 
             <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
             <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
-              INITIALIZING GAME
+              INITIALIZING
             </h2>
 
             {/* Glowing Percentage */}
