@@ -528,60 +528,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* ABOVE-THE-FOLD PRIMARY START CONTROLS */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '15px',
-          alignItems: 'center',
-          marginBottom: '35px',
-          marginTop: '5px',
-          flexWrap: 'wrap'
-        }}>
-          <button
-            onClick={startOnboarding}
-            style={{
-              background: '#39ff14',
-              color: '#000000',
-              padding: '16px 48px',
-              borderRadius: '30px',
-              border: 'none',
-              fontWeight: 900,
-              fontSize: '14px',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-gaming)',
-              boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <Play size={14} fill="#000" color="#000" /> START WORKOUT ⚡
-          </button>
-
-          <button
-            onClick={() => alert("Watch trailer loaded successfully!")}
-            style={{
-              background: 'transparent',
-              color: '#ffffff',
-              padding: '16px 36px',
-              borderRadius: '30px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              fontWeight: 700,
-              fontSize: '12px',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-gaming)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ffffff'}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
-          >
-            WATCH TRAILER
-          </button>
-        </div>
 
         {/* DYNAMIC VIEWS WRAPPER */}
         <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
