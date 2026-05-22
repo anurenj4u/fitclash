@@ -110,11 +110,8 @@ export default function Home() {
   // Set default playmode based on premium state
   useEffect(() => {
     if (userData) {
-      if (userData.isPremium) {
-        setPlayMode('normal');
-      } else {
-        setPlayMode('worldcup');
-      }
+      // Unlocked 'normal' (Fitness Workout) for all users for testing
+      setPlayMode('normal');
     }
   }, [userData]);
 
@@ -142,10 +139,11 @@ export default function Home() {
       return;
     }
     
-    if (!userData?.isPremium && userData?.gamesToday >= 5) {
-      setShowLimitModal(true);
-      return;
-    }
+    // Temporarily disabled daily limit for easier testing
+    // if (!userData?.isPremium && userData?.gamesToday >= 5) {
+    //   setShowLimitModal(true);
+    //   return;
+    // }
     setIsCameraReady(false); // Reset camera state for clean mount
     setShowOnboarding(true);
   };
@@ -157,10 +155,11 @@ export default function Home() {
       return;
     }
     
-    if (!userData?.isPremium && userData?.gamesToday >= 5) {
-      setShowLimitModal(true);
-      return;
-    }
+    // Temporarily disabled daily limit for easier testing
+    // if (!userData?.isPremium && userData?.gamesToday >= 5) {
+    //   setShowLimitModal(true);
+    //   return;
+    // }
 
     setIsCameraReady(false); // Reset camera state for clean mount
     setActiveProgram(prog);
@@ -480,11 +479,8 @@ export default function Home() {
         }}>
           <button
             onClick={() => {
-              if (userData?.isPremium) {
-                setPlayMode('normal');
-              } else {
-                router.push('/premium?feature=fitness-workout');
-              }
+              // Unlocked for testing and development
+              setPlayMode('normal');
             }}
             style={{
               padding: '16px 20px',
@@ -505,7 +501,7 @@ export default function Home() {
               letterSpacing: '0.5px'
             }}
           >
-            <Zap size={14} fill={playMode === 'normal' ? '#000' : '#fff'} color={playMode === 'normal' ? '#000' : '#fff'} /> FITNESS WORKOUT {!userData?.isPremium && '🔒'}
+            <Zap size={14} fill={playMode === 'normal' ? '#000' : '#fff'} color={playMode === 'normal' ? '#000' : '#fff'} /> FITNESS WORKOUT
           </button>
           <button
             onClick={() => setPlayMode('worldcup')}
