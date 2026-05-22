@@ -789,58 +789,60 @@ export default function Home() {
             </>
           )}
 
-          {/* BOTTOM CONTROLS */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '20px',
-            alignItems: 'center',
-            marginTop: '15px'
-          }}>
-            <button
-              onClick={startOnboarding}
-              style={{
-                background: '#39ff14',
-                color: '#000000',
-                padding: '16px 54px',
-                borderRadius: '30px',
-                border: 'none',
-                fontWeight: 900,
-                fontSize: '14px',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-gaming)',
-                boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <Play size={14} fill="#000" color="#000" /> START
-            </button>
+          {/* BOTTOM CONTROLS (ONLY FOR WORLD CUP SPRINT) */}
+          {playMode === 'worldcup' && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '20px',
+              alignItems: 'center',
+              marginTop: '15px'
+            }}>
+              <button
+                onClick={startOnboarding}
+                style={{
+                  background: '#39ff14',
+                  color: '#000000',
+                  padding: '16px 54px',
+                  borderRadius: '30px',
+                  border: 'none',
+                  fontWeight: 900,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-gaming)',
+                  boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <Play size={14} fill="#000" color="#000" /> START
+              </button>
 
-            <button
-              onClick={() => alert("Watch trailer loaded successfully!")}
-              style={{
-                background: 'transparent',
-                color: '#ffffff',
-                padding: '16px 40px',
-                borderRadius: '30px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                fontWeight: 700,
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-gaming)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ffffff'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
-            >
-              WATCH TRAILER
-            </button>
-          </div>
+              <button
+                onClick={() => alert("Watch trailer loaded successfully!")}
+                style={{
+                  background: 'transparent',
+                  color: '#ffffff',
+                  padding: '16px 40px',
+                  borderRadius: '30px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-gaming)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ffffff'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+              >
+                WATCH TRAILER
+              </button>
+            </div>
+          )}
 
         </div>
 
@@ -931,6 +933,7 @@ export default function Home() {
               onClick={() => {
                 if (selectedExercises.length === 3) {
                   setShowSetupModal(false);
+                  startOnboarding();
                 } else {
                   alert("Please select exactly 3 exercises.");
                 }
@@ -941,7 +944,7 @@ export default function Home() {
                 border: 'none', padding: '16px', borderRadius: '30px', fontWeight: 900, fontSize: '14px', cursor: selectedExercises.length === 3 ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-gaming)', marginTop: '10px'
               }}
             >
-              CONFIRM SETUP
+              START WORKOUT
             </button>
           </div>
         </div>
