@@ -712,7 +712,7 @@ export default function Home() {
             <>
               {/* SPRINT DISTANCE OPTIONS (WORLD CUP ONLY) */}
               <div style={{
-                padding: 'clamp(14px, 3vw, 24px)',
+                padding: 'clamp(10px, 2vw, 16px)',
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
@@ -734,7 +734,7 @@ export default function Home() {
                         background: targetDistance === km ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255,255,255,0.02)',
                         color: '#ffffff',
                         border: `1px solid ${targetDistance === km ? '#ffffff' : 'rgba(255,255,255,0.06)'}`,
-                        padding: "14px 10px",
+                        padding: "8px 10px",
                         borderRadius: '12px',
                         fontSize: '12px',
                         fontWeight: 700,
@@ -777,7 +777,7 @@ export default function Home() {
                         fontSize: '11px',
                         fontWeight: 700,
                         width: '100%',
-                        padding: '14px 0',
+                        padding: '8px 0',
                         outline: 'none',
                         fontFamily: 'var(--font-gaming)',
                         textAlign: 'center'
@@ -793,7 +793,7 @@ export default function Home() {
                 background: 'rgba(5, 5, 8, 0.4)',
                 border: '1px solid rgba(57, 255, 20, 0.15)',
                 borderRadius: '16px',
-                padding: 'clamp(16px, 4vw, 30px) clamp(14px, 3vw, 24px)'
+                padding: 'clamp(10px, 2vw, 16px) clamp(10px, 2.5vw, 18px)'
               }}>
                 <p style={{
                   textAlign: 'center',
@@ -801,7 +801,7 @@ export default function Home() {
                   fontSize: '10px',
                   fontWeight: 800,
                   letterSpacing: '3px',
-                  marginBottom: '20px',
+                  marginBottom: '12px',
                   fontFamily: 'var(--font-gaming)'
                 }}>
                   [02] SELECT SPRINT WORKOUT TYPE
@@ -820,7 +820,7 @@ export default function Home() {
                         key={mode}
                         onClick={() => setExerciseMode(mode)}
                         style={{
-                          padding: '20px 10px',
+                          padding: '10px 10px',
                           borderRadius: '12px',
                           background: 'transparent',
                           color: isActive ? '#39ff14' : '#ffffff',
