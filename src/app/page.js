@@ -607,9 +607,9 @@ export default function Home() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
-                  {['FAT BURN', 'STAMINA IMPROVEMENT', 'STRENGTH ENDURANCE', 'REFLEX BOOSTER'].map(goal => {
+                  {['FAT BURN', 'STAMINA IMPROVEMENT', 'STRENGTH ENDURANCE'].map(goal => {
                     const isActive = selectedGoal === goal;
-                    const icon = goal === 'FAT BURN' ? '🔥' : goal === 'STAMINA IMPROVEMENT' ? '⚡' : goal === 'STRENGTH ENDURANCE' ? '🫁' : '🎯';
+                    const icon = goal === 'FAT BURN' ? '🔥' : goal === 'STAMINA IMPROVEMENT' ? '⚡' : '🫁';
                     return (
                       <button
                         key={goal}
