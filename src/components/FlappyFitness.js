@@ -36,9 +36,9 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
   const [isGameOverState, setIsGameOverState] = useState(false);
   const [gameStateDisplay, setGameStateDisplay] = useState('waiting'); // UI state
   const [countdown, setCountdown] = useState(5);
-  
+
   // Refs for Phaser logic to avoid stale closures
-  const gameStateRef = useRef('waiting'); 
+  const gameStateRef = useRef('waiting');
   const isGameOverRef = useRef(false);
   const previousRepsRef = useRef(0);
   const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
@@ -56,11 +56,11 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
   useEffect(() => {
     if (gameRef.current) return;
     gameRef.current = 'loading';
-    
+
     let game;
     const initPhaser = async () => {
       const Phaser = (await import('phaser')).default;
-      
+
       if (gameRef.current === null) return;
 
       const config = {
@@ -102,11 +102,11 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
         // Create Player (Ronaldo)
         bird = this.add.sprite(100, window.innerHeight / 2, 'player');
         bird.setScale(0.15); // Adjust scale for flappy game
-        
+
         this.physics.add.existing(bird);
         bird.body.setCollideWorldBounds(true);
         bird.body.setCircle(30);
-        
+
         // Start paused
         this.physics.pause();
         bird.body.setAllowGravity(false);
@@ -129,25 +129,25 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
 
         this.flap = flap;
         this.startGame = () => {
-            console.log("Phaser: Starting Game");
-            this.physics.resume();
-            bird.body.setAllowGravity(true);
-            pipeTimer.paused = false;
+          console.log("Phaser: Starting Game");
+          this.physics.resume();
+          bird.body.setAllowGravity(true);
+          pipeTimer.paused = false;
         };
         this.restart = () => {
-            scene.scene.restart();
-            setScore(0);
-            setIsGameOverState(false);
-            isGameOverRef.current = false;
-            gameStateRef.current = 'ready';
-            setGameStateDisplay('ready');
+          scene.scene.restart();
+          setScore(0);
+          setIsGameOverState(false);
+          isGameOverRef.current = false;
+          gameStateRef.current = 'ready';
+          setGameStateDisplay('ready');
         };
       }
 
       function flap() {
         if (gameStateRef.current !== 'playing' || isGameOverRef.current) return;
         bird.body.setVelocityY(-400);
-        
+
         // Tilt animation
         scene.tweens.add({
           targets: bird,
@@ -167,14 +167,14 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
         const pipeY = Phaser.Math.Between(minHeight, maxHeight);
 
         // Top Pipe
-        const topPipe = scene.add.rectangle(window.innerWidth + 50, pipeY - gap/2 - 400, 60, 800, 0x00f2ff, 1);
+        const topPipe = scene.add.rectangle(window.innerWidth + 50, pipeY - gap / 2 - 400, 60, 800, 0x00f2ff, 1);
         topPipe.setStrokeStyle(3, 0xffffff);
         pipes.add(topPipe);
         topPipe.body.setAllowGravity(false);
         topPipe.body.setVelocityX(gameVelocity);
 
         // Bottom Pipe
-        const bottomPipe = scene.add.rectangle(window.innerWidth + 50, pipeY + gap/2 + 400, 60, 800, 0x00f2ff, 1);
+        const bottomPipe = scene.add.rectangle(window.innerWidth + 50, pipeY + gap / 2 + 400, 60, 800, 0x00f2ff, 1);
         bottomPipe.setStrokeStyle(3, 0xffffff);
         pipes.add(bottomPipe);
         bottomPipe.body.setAllowGravity(false);
@@ -190,11 +190,11 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
 
       function hitPipe(b, p) {
         if (p.isSensor) {
-            p.destroy();
-            setScore(prev => prev + 1);
-            return;
+          p.destroy();
+          setScore(prev => prev + 1);
+          return;
         }
-        
+
         this.physics.pause();
         bird.setAlpha(0.5);
         isGameOverRef.current = true;
@@ -218,7 +218,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
         });
 
         if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-            flap();
+          flap();
         }
       }
 
@@ -257,7 +257,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
         }
       }
     };
-    
+
     window.addEventListener('pose-update', handlePoseUpdate);
     return () => window.removeEventListener('pose-update', handlePoseUpdate);
   }, []);
@@ -267,7 +267,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
     setGameStateDisplay('countdown');
     let timer = 5;
     setCountdown(timer);
-    
+
     const interval = setInterval(() => {
       timer -= 1;
       setCountdown(timer);
@@ -276,7 +276,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
         gameStateRef.current = 'playing';
         setGameStateDisplay('playing');
         if (gameRef.current && gameRef.current.scene.scenes[0]) {
-            gameRef.current.scene.scenes[0].startGame();
+          gameRef.current.scene.scenes[0].startGame();
         }
       }
     }, 1000);
@@ -284,7 +284,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
 
   const handleRestart = () => {
     if (gameRef.current && gameRef.current.scene.scenes[0]) {
-        gameRef.current.scene.scenes[0].restart();
+      gameRef.current.scene.scenes[0].restart();
     }
     setScore(0);
     setIsGameOverState(false);
@@ -294,8 +294,8 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
   };
 
   return (
-    <div 
-      id="phaser-game" 
+    <div
+      id="phaser-game"
       onClick={() => {
         if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
           enterFullscreen();
@@ -311,15 +311,15 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
 
       {/* Camera Waiting Overlay */}
       {gameStateDisplay === 'waiting' && (
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'rgba(2, 2, 5, 0.96)', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 95, 
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(2, 2, 5, 0.96)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 95,
           backdropFilter: 'blur(20px)',
           padding: '20px'
         }}>
@@ -373,7 +373,7 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
 
             <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '3px', display: 'block', color: '#fff', marginBottom: '8px' }}>NEURAL TRACKING SYSTEM</span>
             <h2 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(18px, 4.5vw, 24px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.3)', margin: 0 }}>
-              INITIALIZING ENGINE
+              INITIALIZING GAME
             </h2>
 
             {/* Glowing Percentage */}
@@ -382,20 +382,20 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
             </div>
 
             {/* Neon Progress Bar */}
-            <div style={{ 
-              height: '6px', 
-              background: 'rgba(255, 255, 255, 0.05)', 
-              borderRadius: '3px', 
-              overflow: 'hidden', 
+            <div style={{
+              height: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '3px',
+              overflow: 'hidden',
               marginBottom: '20px',
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
-              <motion.div 
+              <motion.div
                 animate={{ width: `${trackerProgress.percent}%` }}
                 transition={{ duration: 0.3 }}
-                style={{ 
-                  height: '100%', 
-                  background: '#39ff14', 
+                style={{
+                  height: '100%',
+                  background: '#39ff14',
                   boxShadow: '0 0 12px #39ff14',
                   borderRadius: '3px'
                 }}
@@ -403,9 +403,9 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
             </div>
 
             {/* Dynamic Step Text */}
-            <p className="hud-text" style={{ 
-              fontSize: '12px', 
-              color: '#fff', 
+            <p className="hud-text" style={{
+              fontSize: '12px',
+              color: '#fff',
               opacity: 0.8,
               margin: 0,
               fontWeight: 700,
@@ -435,36 +435,36 @@ const FlappyFitness = ({ poseData, mode, isCameraReady }) => {
       )}
 
       {isGameOverState && (
-        <div style={{ 
-            position: 'absolute', 
-            top: 0, left: 0, right: 0, bottom: 0, 
-            background: 'rgba(0,0,0,0.8)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            zIndex: 100
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100
         }}>
-            <h2 className="arcade-text" style={{ fontSize: '48px', color: '#ff0055', marginBottom: '20px' }}>GAME OVER</h2>
-            <p className="arcade-text" style={{ fontSize: '24px', marginBottom: '40px' }}>FINAL SCORE: {score}</p>
-            <button className="glow-btn" onClick={handleRestart} style={{ padding: '15px 40px' }}>RETRY</button>
+          <h2 className="arcade-text" style={{ fontSize: '48px', color: '#ff0055', marginBottom: '20px' }}>GAME OVER</h2>
+          <p className="arcade-text" style={{ fontSize: '24px', marginBottom: '40px' }}>FINAL SCORE: {score}</p>
+          <button className="glow-btn" onClick={handleRestart} style={{ padding: '15px 40px' }}>RETRY</button>
         </div>
       )}
 
       {/* Instructions Overlay */}
-      <div style={{ 
-        position: 'absolute', 
-        bottom: '20px', 
-        left: '20px', 
-        background: 'rgba(0,0,0,0.5)', 
-        padding: '15px', 
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '20px',
+        background: 'rgba(0,0,0,0.5)',
+        padding: '15px',
         borderRadius: '10px',
         border: '1px solid var(--accent)',
         fontSize: '14px',
         pointerEvents: 'none'
       }}>
         <div style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '5px' }}>HOW TO PLAY:</div>
-        <div>Each 1 {mode.slice(0,-1)} = 1 FLAP</div>
+        <div>Each 1 {mode.slice(0, -1)} = 1 FLAP</div>
         <div>Avoid the neon barriers!</div>
       </div>
     </div>
