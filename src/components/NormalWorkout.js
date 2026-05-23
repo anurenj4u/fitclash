@@ -39,6 +39,7 @@ const NormalWorkout = ({
   difficulty = 'easy',
   selectedGoal = 'FAT BURN',
   isCameraReady,
+  restDuration = 120,
   onExerciseChange,
   onComplete
 }) => {
@@ -148,7 +149,7 @@ const NormalWorkout = ({
 
           if (nextReps % targetRepsPerExercise === 0 && nextReps < targetRepsNeeded) {
             setGameState('rest');
-            setRestTimer(120); // 120s rest between exercises as requested
+            setRestTimer(restDuration); // rest between exercises based on user selection
             setCurrentExerciseIndex(prevIndex => prevIndex + 1);
           }
 

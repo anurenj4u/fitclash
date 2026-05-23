@@ -47,6 +47,7 @@ export default function Home() {
   const [selectedGoal, setSelectedGoal] = useState('FAT BURN');
   const [selectedExercises, setSelectedExercises] = useState(['squats', 'pushups', 'jacks']);
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
+  const [restDuration, setRestDuration] = useState(120); // default 120s / 2 minutes rest time
   const [showSetupModal, setShowSetupModal] = useState(false);
   
   // Tracks which exercise is currently active inside NormalWorkout for the MotionTracker mode
@@ -446,6 +447,7 @@ export default function Home() {
             difficulty={difficulty}
             selectedGoal={selectedGoal}
             isCameraReady={isCameraReady}
+            restDuration={restDuration}
             onExerciseChange={(idx) => setActiveWorkoutExerciseIndex(idx)}
             onComplete={(stats) => {
               setActiveWorkoutExerciseIndex(0); // reset on complete
@@ -712,6 +714,10 @@ export default function Home() {
 
                 <div style={{ fontSize: '12px', color: '#ffffff', opacity: 0.8, marginBottom: '10px' }}>
                   {selectedExercises.map(mode => mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()).join(', ')}
+                </div>
+
+                <div style={{ fontSize: '11px', color: '#00f2ff', fontWeight: 900, textShadow: '0 0 8px rgba(0,242,255,0.3)', letterSpacing: '0.5px' }}>
+                  REST INTERVAL: {restDuration}s BETWEEN EXERCISES
                 </div>
 
                 {selectedGoal === 'FAT BURN' && (
@@ -1090,6 +1096,35 @@ export default function Home() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Rest Interval */}
+            <div>
+              <div style={{ fontSize: '11px', color: '#fff', opacity: 0.6, letterSpacing: '1px', fontWeight: 700, marginBottom: '12px' }}>[03] REST INTERVAL BETWEEN EXERCISES</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                {[
+                  { value: 30, label: '30s' },
+                  { value: 60, label: '60s' },
+                  { value: 90, label: '90s' },
+                  { value: 120, label: '120s' }
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setRestDuration(opt.value)}
+                    style={{
+                      padding: '10px 5px', borderRadius: '12px', textAlign: 'center',
+                      background: restDuration === opt.value ? 'rgba(0, 242, 255, 0.1)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${restDuration === opt.value ? '#00f2ff' : 'rgba(255,255,255,0.06)'}`,
+                      color: restDuration === opt.value ? '#00f2ff' : '#fff',
+                      cursor: 'pointer', fontFamily: 'var(--font-gaming)', fontSize: '12px', fontWeight: 900, transition: 'all 0.2s',
+                      textShadow: restDuration === opt.value ? '0 0 8px rgba(0, 242, 255, 0.5)' : 'none',
+                      boxShadow: restDuration === opt.value ? '0 0 10px rgba(0, 242, 255, 0.15)' : 'none'
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 
