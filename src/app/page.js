@@ -6,6 +6,7 @@ import WorkoutProgramExecutor from "@/components/WorkoutProgramExecutor";
 import MotionTracker from "@/components/MotionTracker";
 import StaminaMode from "@/components/StaminaMode";
 import StrengthEndurance from "@/components/StrengthEndurance";
+import LandscapeGuard from "@/components/LandscapeGuard";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -322,184 +323,188 @@ export default function Home() {
   // Structured Workout Plan execution screen
   if (runningProgram && activeProgram) {
     return (
-      <div
-        onClick={() => {
-          if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
-            const enterFullscreen = () => {
-              const element = document.documentElement;
-              if (element.requestFullscreen) {
-                element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
-              } else if (element.webkitRequestFullscreen) {
-                element.webkitRequestFullscreen();
-              } else if (element.mozRequestFullScreen) {
-                element.mozRequestFullScreen();
-              } else if (element.msRequestFullscreen) {
-                element.msRequestFullscreen();
-              }
-            };
-            enterFullscreen();
-          }
-        }}
-        style={{
-          position: "fixed",
-          inset: 0,
-          height: "100dvh",
-          background: "#020205",
-          color: "#fff",
-          overflow: "hidden",
-          zIndex: 2000,
-          cursor: "pointer"
-        }}
-      >
-        <WorkoutProgramExecutor
-          program={activeProgram}
-          isCameraReady={isCameraReady}
-          userData={userData}
-          onComplete={(results) => {
-            handleWorkoutComplete(results);
-            setRunningProgram(false);
-            setActiveProgram(null);
-            setIsCameraReady(false); // Reset camera ready state on finish
+      <LandscapeGuard>
+        <div
+          onClick={() => {
+            if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+              const enterFullscreen = () => {
+                const element = document.documentElement;
+                if (element.requestFullscreen) {
+                  element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+                } else if (element.webkitRequestFullscreen) {
+                  element.webkitRequestFullscreen();
+                } else if (element.mozRequestFullScreen) {
+                  element.mozRequestFullScreen();
+                } else if (element.msRequestFullscreen) {
+                  element.msRequestFullscreen();
+                }
+              };
+              enterFullscreen();
+            }
           }}
-          onExit={() => {
-            setRunningProgram(false);
-            setActiveProgram(null);
-            setIsCameraReady(false); // Reset camera ready state on exit
+          style={{
+            position: "fixed",
+            inset: 0,
+            height: "100dvh",
+            background: "#020205",
+            color: "#fff",
+            overflow: "hidden",
+            zIndex: 2000,
+            cursor: "pointer"
           }}
-        />
-        <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
-      </div>
+        >
+          <WorkoutProgramExecutor
+            program={activeProgram}
+            isCameraReady={isCameraReady}
+            userData={userData}
+            onComplete={(results) => {
+              handleWorkoutComplete(results);
+              setRunningProgram(false);
+              setActiveProgram(null);
+              setIsCameraReady(false); // Reset camera ready state on finish
+            }}
+            onExit={() => {
+              setRunningProgram(false);
+              setActiveProgram(null);
+              setIsCameraReady(false); // Reset camera ready state on exit
+            }}
+          />
+          <MotionTracker mode={exerciseMode} onReady={handleCameraReady} />
+        </div>
+      </LandscapeGuard>
     );
   }
 
   // Standard Workout execution screen
   if (gameStarted) {
     return (
-      <div
-        onClick={() => {
-          if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
-            const enterFullscreen = () => {
-              const element = document.documentElement;
-              if (element.requestFullscreen) {
-                element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
-              } else if (element.webkitRequestFullscreen) {
-                element.webkitRequestFullscreen();
-              } else if (element.mozRequestFullScreen) {
-                element.mozRequestFullScreen();
-              } else if (element.msRequestFullscreen) {
-                element.msRequestFullscreen();
-              }
-            };
-            enterFullscreen();
-          }
-        }}
-        style={{
-          position: "fixed",
-          inset: 0,
-          height: "100dvh",
-          background: "#020205",
-          color: "#fff",
-          overflow: "hidden",
-          zIndex: 2000,
-          cursor: "pointer"
-        }}
-      >
-        {playMode === 'worldcup' ? (
-          <FitnessRace
-            mode={exerciseMode}
-            targetKm={targetDistance}
-            isCameraReady={isCameraReady}
-            activeTheme={progression.activeTheme}
-            activeStadium={progression.activeStadium}
-            activeCharacter={progression.activeCharacter}
-            onComplete={(reps) => {
-              const userWeight = userData?.weight || 70;
-              const caloriesBurned = Math.round((reps * 0.45 + targetDistance * 10) * (userWeight / 70));
-              const xpGained = Math.round(reps * 6 + targetDistance * 50);
-              handleWorkoutComplete({ reps, caloriesBurned, xpGained });
-              setGameStarted(false);
-              setIsCameraReady(false); // Reset camera ready state on completion
-            }}
-          />
-        ) : selectedGoal === 'STAMINA IMPROVEMENT' ? (
-          <StaminaMode
-            selectedExercises={selectedExercises}
-            isCameraReady={isCameraReady}
-            staminaData={progression.staminaData}
-            onSaveStaminaData={(newStaminaData) => {
-              setProgression(prev => {
-                const updated = { ...prev, staminaData: newStaminaData };
-                localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
-                return updated;
-              });
-            }}
-            onComplete={(stats) => {
-              const userWeight = userData?.weight || 70;
-              const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
+      <LandscapeGuard>
+        <div
+          onClick={() => {
+            if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+              const enterFullscreen = () => {
+                const element = document.documentElement;
+                if (element.requestFullscreen) {
+                  element.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+                } else if (element.webkitRequestFullscreen) {
+                  element.webkitRequestFullscreen();
+                } else if (element.mozRequestFullScreen) {
+                  element.mozRequestFullScreen();
+                } else if (element.msRequestFullscreen) {
+                  element.msRequestFullscreen();
+                }
+              };
+              enterFullscreen();
+            }
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            height: "100dvh",
+            background: "#020205",
+            color: "#fff",
+            overflow: "hidden",
+            zIndex: 2000,
+            cursor: "pointer"
+          }}
+        >
+          {playMode === 'worldcup' ? (
+            <FitnessRace
+              mode={exerciseMode}
+              targetKm={targetDistance}
+              isCameraReady={isCameraReady}
+              activeTheme={progression.activeTheme}
+              activeStadium={progression.activeStadium}
+              activeCharacter={progression.activeCharacter}
+              onComplete={(reps) => {
+                const userWeight = userData?.weight || 70;
+                const caloriesBurned = Math.round((reps * 0.45 + targetDistance * 10) * (userWeight / 70));
+                const xpGained = Math.round(reps * 6 + targetDistance * 50);
+                handleWorkoutComplete({ reps, caloriesBurned, xpGained });
+                setGameStarted(false);
+                setIsCameraReady(false); // Reset camera ready state on completion
+              }}
+            />
+          ) : selectedGoal === 'STAMINA IMPROVEMENT' ? (
+            <StaminaMode
+              selectedExercises={selectedExercises}
+              isCameraReady={isCameraReady}
+              staminaData={progression.staminaData}
+              onSaveStaminaData={(newStaminaData) => {
+                setProgression(prev => {
+                  const updated = { ...prev, staminaData: newStaminaData };
+                  localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+                  return updated;
+                });
+              }}
+              onComplete={(stats) => {
+                const userWeight = userData?.weight || 70;
+                const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
 
-              handleWorkoutComplete({
-                reps: stats.reps,
-                caloriesBurned: scaledCalories,
-                xpGained: stats.xp,
-                accuracy: stats.accuracy,
-                duration: stats.duration,
-                rank: stats.rank,
-                isFatBurn: false
-              });
-              setGameStarted(false);
-              setIsCameraReady(false);
-            }}
-          />
-        ) : selectedGoal === 'STRENGTH ENDURANCE' ? (
-          <StrengthEndurance
-            selectedExercises={selectedExercises}
-            isCameraReady={isCameraReady}
-            onComplete={(stats) => {
-              const userWeight = userData?.weight || 70;
-              const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
+                handleWorkoutComplete({
+                  reps: stats.reps,
+                  caloriesBurned: scaledCalories,
+                  xpGained: stats.xp,
+                  accuracy: stats.accuracy,
+                  duration: stats.duration,
+                  rank: stats.rank,
+                  isFatBurn: false
+                });
+                setGameStarted(false);
+                setIsCameraReady(false);
+              }}
+            />
+          ) : selectedGoal === 'STRENGTH ENDURANCE' ? (
+            <StrengthEndurance
+              selectedExercises={selectedExercises}
+              isCameraReady={isCameraReady}
+              onComplete={(stats) => {
+                const userWeight = userData?.weight || 70;
+                const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
 
-              handleWorkoutComplete({
-                reps: stats.reps,
-                caloriesBurned: scaledCalories,
-                xpGained: stats.xp,
-                accuracy: stats.accuracy,
-                duration: stats.duration,
-                rank: stats.rank,
-                isFatBurn: false
-              });
-              setGameStarted(false);
-              setIsCameraReady(false);
-            }}
-          />
-        ) : (
-          <NormalWorkout
-            selectedExercises={selectedExercises}
-            difficulty={difficulty}
-            selectedGoal={selectedGoal}
-            isCameraReady={isCameraReady}
-            restDuration={restDuration}
-            onExerciseChange={(idx) => setActiveWorkoutExerciseIndex(idx)}
-            onComplete={(stats) => {
-              setActiveWorkoutExerciseIndex(0); // reset on complete
-              const userWeight = userData?.weight || 70;
-              const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
+                handleWorkoutComplete({
+                  reps: stats.reps,
+                  caloriesBurned: scaledCalories,
+                  xpGained: stats.xp,
+                  accuracy: stats.accuracy,
+                  duration: stats.duration,
+                  rank: stats.rank,
+                  isFatBurn: false
+                });
+                setGameStarted(false);
+                setIsCameraReady(false);
+              }}
+            />
+          ) : (
+            <NormalWorkout
+              selectedExercises={selectedExercises}
+              difficulty={difficulty}
+              selectedGoal={selectedGoal}
+              isCameraReady={isCameraReady}
+              restDuration={restDuration}
+              onExerciseChange={(idx) => setActiveWorkoutExerciseIndex(idx)}
+              onComplete={(stats) => {
+                setActiveWorkoutExerciseIndex(0); // reset on complete
+                const userWeight = userData?.weight || 70;
+                const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
 
-              handleWorkoutComplete({
-                reps: stats.reps,
-                caloriesBurned: scaledCalories,
-                xpGained: stats.xp,
-                accuracy: stats.accuracy,
-                duration: stats.duration,
-                rank: stats.rank,
-                isFatBurn: selectedGoal === 'FAT BURN'
-              });
-              setGameStarted(false);
-              setIsCameraReady(false); // Reset camera ready state on completion
-            }}
-          />
-        )}
-        <MotionTracker mode={trackerMode} onReady={handleCameraReady} />
-      </div>
+                handleWorkoutComplete({
+                  reps: stats.reps,
+                  caloriesBurned: scaledCalories,
+                  xpGained: stats.xp,
+                  accuracy: stats.accuracy,
+                  duration: stats.duration,
+                  rank: stats.rank,
+                  isFatBurn: selectedGoal === 'FAT BURN'
+                });
+                setGameStarted(false);
+                setIsCameraReady(false); // Reset camera ready state on completion
+              }}
+            />
+          )}
+          <MotionTracker mode={trackerMode} onReady={handleCameraReady} />
+        </div>
+      </LandscapeGuard>
     );
   }
 

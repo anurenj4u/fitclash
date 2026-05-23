@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
-import LandscapeGuard from "@/components/LandscapeGuard";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from 'next/script';
 import Navbar from "@/components/Navbar";
@@ -80,9 +79,7 @@ export default function RootLayout({ children }) {
           <PerformanceMonitor />
           <Navbar />
           <main style={{ flex: 1, paddingTop: '70px' }}>
-            <LandscapeGuard>
-              {children}
-            </LandscapeGuard>
+            {children}
           </main>
           <Footer />
         </AuthProvider>
