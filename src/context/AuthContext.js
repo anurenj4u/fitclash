@@ -8,7 +8,7 @@ const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState({ isPremium: false, gamesToday: 0 });
+  const [userData, setUserData] = useState({ isPremium: false, gamesToday: 0, caloriesToday: 0, calories: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,12 +39,16 @@ export const AuthProvider = ({ children }) => {
             
             setUserData({
               ...data,
-              gamesToday: lastPlayed === today ? data.gamesToday : 0
+              gamesToday: lastPlayed === today ? (data.gamesToday || 0) : 0,
+              caloriesToday: lastPlayed === today ? (data.caloriesToday || 0) : 0,
+              calories: data.calories || 0
             });
           } else {
             setDoc(userDocRef, { 
               isPremium: false, 
               gamesToday: 0, 
+              caloriesToday: 0,
+              calories: 0,
               lastPlayed: new Date(),
               email: user.email 
             });
@@ -53,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         });
       } else {
         setUser(null);
-        setUserData({ isPremium: false, gamesToday: 0 });
+        setUserData({ isPremium: false, gamesToday: 0, caloriesToday: 0, calories: 0 });
         if (unsubscribeDoc) {
           unsubscribeDoc();
           unsubscribeDoc = null;

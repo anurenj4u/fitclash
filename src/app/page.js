@@ -9,18 +9,18 @@ import StrengthEndurance from "@/components/StrengthEndurance";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Play, 
-  Activity, 
-  Users, 
-  Trophy, 
-  Zap, 
-  ShieldCheck, 
-  ChevronRight, 
-  TrendingUp, 
-  Star, 
-  Crown, 
-  AlertTriangle, 
+import {
+  Play,
+  Activity,
+  Users,
+  Trophy,
+  Zap,
+  ShieldCheck,
+  ChevronRight,
+  TrendingUp,
+  Star,
+  Crown,
+  AlertTriangle,
   X,
   Heart,
   Award,
@@ -49,7 +49,7 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
   const [restDuration, setRestDuration] = useState(120); // default 120s / 2 minutes rest time
   const [showSetupModal, setShowSetupModal] = useState(false);
-  
+
   // Tracks which exercise is currently active inside NormalWorkout for the MotionTracker mode
   const [activeWorkoutExerciseIndex, setActiveWorkoutExerciseIndex] = useState(0);
 
@@ -65,8 +65,10 @@ export default function Home() {
     xp: 450,
     level: 5,
     calories: 0,
+    caloriesToday: 0,
     workoutStreak: 7,
     totalWorkouts: 24,
+    gamesToday: 0,
     rank: "SPRINTER",
     dailyMissions: [
       { id: 1, text: "Complete 1 Workout Session", xp: 150, completed: false },
@@ -98,7 +100,7 @@ export default function Home() {
   // Load progression state on mount
   useEffect(() => {
     setMounted(true);
-    
+
     // Load local storage values
     const saved = localStorage.getItem("clashOfCardioProgression");
     if (saved) {
@@ -118,7 +120,7 @@ export default function Home() {
           localStorage.setItem("clashOfCardioProgression", JSON.stringify(merged));
           return merged;
         });
-      } catch (e) {}
+      } catch (e) { }
     } else {
       localStorage.setItem("clashOfCardioProgression", JSON.stringify(progression));
     }
@@ -139,14 +141,31 @@ export default function Home() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Sync calories from Firebase to local progression state when available
+  // Sync progression state from Firebase to local state when available
   useEffect(() => {
-    if (userData && userData.calories !== undefined) {
+    if (userData) {
       setProgression(prev => {
-        if (prev.calories === userData.calories) return prev;
-        const updated = { ...prev, calories: userData.calories };
-        localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
-        return updated;
+        let changed = false;
+        const updated = { ...prev };
+
+        if (userData.calories !== undefined && prev.calories !== userData.calories) {
+          updated.calories = userData.calories;
+          changed = true;
+        }
+        if (userData.caloriesToday !== undefined && prev.caloriesToday !== userData.caloriesToday) {
+          updated.caloriesToday = userData.caloriesToday;
+          changed = true;
+        }
+        if (userData.gamesToday !== undefined && prev.gamesToday !== userData.gamesToday) {
+          updated.gamesToday = userData.gamesToday;
+          changed = true;
+        }
+
+        if (changed) {
+          localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+          return updated;
+        }
+        return prev;
       });
     }
   }, [userData]);
@@ -161,7 +180,7 @@ export default function Home() {
       router.push('/login');
       return;
     }
-    
+
     // Temporarily disabled daily limit for easier testing
     // if (!userData?.isPremium && userData?.gamesToday >= 5) {
     //   setShowLimitModal(true);
@@ -177,7 +196,7 @@ export default function Home() {
       router.push('/login');
       return;
     }
-    
+
     // Temporarily disabled daily limit for easier testing
     // if (!userData?.isPremium && userData?.gamesToday >= 5) {
     //   setShowLimitModal(true);
@@ -198,10 +217,9 @@ export default function Home() {
       const userDocRef = doc(db, "users", user.uid);
       try {
         await updateDoc(userDocRef, {
-          gamesToday: increment(1),
           lastPlayed: serverTimestamp()
         });
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
@@ -214,12 +232,12 @@ export default function Home() {
       if (newXp >= nextLevelNeeded) {
         newLevel += 1;
       }
-      
+
       const newStreak = prev.workoutStreak + 1;
       const newUnlockedThemes = [...prev.unlockedThemes];
       const newUnlockedStadiums = [...prev.unlockedStadiums];
       const newUnlockedCharacters = [...prev.unlockedCharacters];
-      
+
       if (newStreak >= 3 && !newUnlockedThemes.includes("sunset")) {
         newUnlockedThemes.push("sunset");
       }
@@ -248,20 +266,29 @@ export default function Home() {
         }
       }
 
+      const updatedCaloriesToday = prev.caloriesToday + results.caloriesBurned;
+
       const updated = {
         ...prev,
         xp: newXp % nextLevelNeeded,
         level: newLevel,
         calories: prev.calories + results.caloriesBurned,
+        caloriesToday: updatedCaloriesToday,
         totalWorkouts: prev.totalWorkouts + 1,
+        gamesToday: prev.gamesToday + 1,
         workoutStreak: newStreak,
         unlockedThemes: newUnlockedThemes,
         unlockedStadiums: newUnlockedStadiums,
         unlockedCharacters: newUnlockedCharacters,
         ...(results.isFatBurn ? { fatBurnCalendar: newFatBurnCalendar } : {}),
-        dailyMissions: prev.dailyMissions.map(m => m.id === 1 ? { ...m, completed: true } : m)
+        dailyMissions: prev.dailyMissions.map(m => {
+          if (m.id === 1) return { ...m, completed: true };
+          if (m.id === 2 && updatedCaloriesToday >= 100) return { ...m, completed: true };
+          if (m.id === 3 && results.programName) return { ...m, completed: true };
+          return m;
+        })
       };
-      
+
       localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
       return updated;
     });
@@ -271,8 +298,11 @@ export default function Home() {
       updateDoc(userDocRef, {
         xp: increment(results.xpGained),
         calories: increment(results.caloriesBurned),
+        caloriesToday: increment(results.caloriesBurned),
         totalWorkouts: increment(1),
-        workoutStreak: increment(1)
+        gamesToday: increment(1),
+        workoutStreak: increment(1),
+        lastPlayed: serverTimestamp()
       }).catch(e => console.error("Firestore sync error:", e));
     }
   };
@@ -292,7 +322,7 @@ export default function Home() {
   // Structured Workout Plan execution screen
   if (runningProgram && activeProgram) {
     return (
-      <div 
+      <div
         onClick={() => {
           if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
             const enterFullscreen = () => {
@@ -310,18 +340,18 @@ export default function Home() {
             enterFullscreen();
           }
         }}
-        style={{ 
-          position: "fixed", 
+        style={{
+          position: "fixed",
           inset: 0,
-          height: "100dvh", 
-          background: "#020205", 
-          color: "#fff", 
+          height: "100dvh",
+          background: "#020205",
+          color: "#fff",
           overflow: "hidden",
           zIndex: 2000,
           cursor: "pointer"
         }}
       >
-        <WorkoutProgramExecutor 
+        <WorkoutProgramExecutor
           program={activeProgram}
           isCameraReady={isCameraReady}
           userData={userData}
@@ -345,7 +375,7 @@ export default function Home() {
   // Standard Workout execution screen
   if (gameStarted) {
     return (
-      <div 
+      <div
         onClick={() => {
           if (typeof window !== 'undefined' && !document.fullscreenElement && !document.webkitFullscreenElement) {
             const enterFullscreen = () => {
@@ -363,22 +393,22 @@ export default function Home() {
             enterFullscreen();
           }
         }}
-        style={{ 
-          position: "fixed", 
+        style={{
+          position: "fixed",
           inset: 0,
-          height: "100dvh", 
-          background: "#020205", 
-          color: "#fff", 
+          height: "100dvh",
+          background: "#020205",
+          color: "#fff",
           overflow: "hidden",
           zIndex: 2000,
           cursor: "pointer"
         }}
       >
         {playMode === 'worldcup' ? (
-          <FitnessRace 
-            mode={exerciseMode} 
-            targetKm={targetDistance} 
-            isCameraReady={isCameraReady} 
+          <FitnessRace
+            mode={exerciseMode}
+            targetKm={targetDistance}
+            isCameraReady={isCameraReady}
             activeTheme={progression.activeTheme}
             activeStadium={progression.activeStadium}
             activeCharacter={progression.activeCharacter}
@@ -392,7 +422,7 @@ export default function Home() {
             }}
           />
         ) : selectedGoal === 'STAMINA IMPROVEMENT' ? (
-          <StaminaMode 
+          <StaminaMode
             selectedExercises={selectedExercises}
             isCameraReady={isCameraReady}
             staminaData={progression.staminaData}
@@ -406,10 +436,10 @@ export default function Home() {
             onComplete={(stats) => {
               const userWeight = userData?.weight || 70;
               const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-              
-              handleWorkoutComplete({ 
-                reps: stats.reps, 
-                caloriesBurned: scaledCalories, 
+
+              handleWorkoutComplete({
+                reps: stats.reps,
+                caloriesBurned: scaledCalories,
                 xpGained: stats.xp,
                 accuracy: stats.accuracy,
                 duration: stats.duration,
@@ -421,16 +451,16 @@ export default function Home() {
             }}
           />
         ) : selectedGoal === 'STRENGTH ENDURANCE' ? (
-          <StrengthEndurance 
+          <StrengthEndurance
             selectedExercises={selectedExercises}
             isCameraReady={isCameraReady}
             onComplete={(stats) => {
               const userWeight = userData?.weight || 70;
               const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-              
-              handleWorkoutComplete({ 
-                reps: stats.reps, 
-                caloriesBurned: scaledCalories, 
+
+              handleWorkoutComplete({
+                reps: stats.reps,
+                caloriesBurned: scaledCalories,
                 xpGained: stats.xp,
                 accuracy: stats.accuracy,
                 duration: stats.duration,
@@ -442,7 +472,7 @@ export default function Home() {
             }}
           />
         ) : (
-          <NormalWorkout 
+          <NormalWorkout
             selectedExercises={selectedExercises}
             difficulty={difficulty}
             selectedGoal={selectedGoal}
@@ -453,10 +483,10 @@ export default function Home() {
               setActiveWorkoutExerciseIndex(0); // reset on complete
               const userWeight = userData?.weight || 70;
               const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-              
-              handleWorkoutComplete({ 
-                reps: stats.reps, 
-                caloriesBurned: scaledCalories, 
+
+              handleWorkoutComplete({
+                reps: stats.reps,
+                caloriesBurned: scaledCalories,
                 xpGained: stats.xp,
                 accuracy: stats.accuracy,
                 duration: stats.duration,
@@ -511,7 +541,7 @@ export default function Home() {
         alignItems: 'center',
         textAlign: 'center'
       }}>
-        
+
         {/* Micro Green Header Tag */}
         <div style={{
           display: 'inline-flex',
@@ -561,9 +591,9 @@ export default function Home() {
         <div className="hero-calories-badge">
           <Flame size={20} fill="#39ff14" color="#39ff14" style={{ filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.8))' }} />
           <div style={{ textAlign: 'left' }}>
-            <span style={{ fontSize: '8px', opacity: 0.5, fontWeight: 800, letterSpacing: '1px', display: 'block', color: '#fff' }}>TOTAL CALORIES BURNED</span>
+            <span style={{ fontSize: '8px', opacity: 0.5, fontWeight: 800, letterSpacing: '1px', display: 'block', color: '#fff' }}>TODAY'S CALORIES BURNED</span>
             <span className="arcade-text" style={{ fontSize: '20px', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.4)', fontWeight: 900, display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-              {progression.calories} <span style={{ fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 700, color: '#fff' }}>KCAL</span>
+              {progression.caloriesToday} <span style={{ fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 700, color: '#fff' }}>KCAL</span>
             </span>
           </div>
         </div>
@@ -636,7 +666,7 @@ export default function Home() {
 
         {/* DYNAMIC VIEWS WRAPPER */}
         <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
-          
+
           {/* ============================================================ */}
           {/* FITNESS WORKOUT CUSTOMIZER (GOAL + KILOMETERS + MULTI-SELECT) */}
           {/* ============================================================ */}
@@ -705,9 +735,9 @@ export default function Home() {
                 gap: '15px'
               }}>
                 <div style={{ fontSize: '11px', color: '#fff', opacity: 0.6, letterSpacing: '1px', fontWeight: 700 }}>
-                  DIFFICULTY & EXERCISES
+                  30 Days Challange
                 </div>
-                
+
                 <div style={{ fontSize: '14px', color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
                   {difficulty.toUpperCase()} MODE: 3 EXERCISES ({difficulty === 'easy' ? 60 : difficulty === 'medium' ? 150 : 300} TOTAL REPS)
                 </div>
@@ -741,7 +771,7 @@ export default function Home() {
                       let border = '1px solid rgba(255,255,255,0.1)';
                       let color = '#fff';
                       let opacity = 1;
-                      
+
                       if (dayObj.status === 'completed') {
                         bg = 'rgba(57, 255, 20, 0.15)';
                         border = '1px solid #39ff14';
@@ -862,7 +892,7 @@ export default function Home() {
                       <span style={{ fontSize: '8px', opacity: 0.4 }}>{km * 10} MINS</span>
                     </button>
                   ))}
-                  
+
                   {/* Custom input */}
                   <div style={{
                     position: 'relative',
@@ -874,7 +904,7 @@ export default function Home() {
                     padding: '0 15px',
                     transition: 'all 0.2s ease'
                   }}>
-                    <input 
+                    <input
                       type="number"
                       placeholder="CUSTOM M"
                       onChange={(e) => {
@@ -1152,7 +1182,7 @@ export default function Home() {
       {/* Calibration Modal */}
       <AnimatePresence>
         {showOnboarding && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1168,7 +1198,7 @@ export default function Home() {
               backdropFilter: 'blur(15px)'
             }}
           >
-            <div 
+            <div
               style={{
                 maxWidth: '500px',
                 width: '100%',
@@ -1195,7 +1225,7 @@ export default function Home() {
                   <p style={{ opacity: 0.7, fontSize: '13px' }}>Privacy Guaranteed. All data is processed <span style={{ color: '#ffffff', fontWeight: 600 }}>locally on your device</span>.</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={finishOnboarding}
                 style={{
                   width: '100%',
@@ -1222,13 +1252,13 @@ export default function Home() {
       {/* Free Game Limits modal */}
       <AnimatePresence>
         {showLimitModal && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}
           >
-            <div 
+            <div
               style={{
                 maxWidth: '450px',
                 width: '90%',
@@ -1247,9 +1277,9 @@ export default function Home() {
               <p style={{ opacity: 0.5, marginBottom: '25px', fontSize: '13px', lineHeight: 1.5 }}>
                 You've reached your <span style={{ color: '#ffffff', fontWeight: 600 }}>5 free games</span> for today. Upgrade to Premium for unlimited gaming and elite features.
               </p>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button 
+                <button
                   onClick={() => router.push('/premium')}
                   style={{
                     width: '100%',
@@ -1266,7 +1296,7 @@ export default function Home() {
                 >
                   GO PREMIUM NOW
                 </button>
-                <button 
+                <button
                   onClick={() => setShowLimitModal(false)}
                   style={{ background: 'transparent', border: 'none', color: '#fff', opacity: 0.5, fontSize: '12px', cursor: 'pointer', marginTop: '5px' }}
                 >
