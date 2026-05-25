@@ -633,17 +633,43 @@ const FitnessRace = ({
     };
   }, []);
 
+  const triggerStartRace = () => {
+    enterFullscreen();
+    gameStateRef.current = 'countdown';
+    setGameStateDisplay('countdown');
+    let timer = 3;
+    setCountdown(timer);
+    const interval = setInterval(() => {
+      timer -= 1;
+      setCountdown(timer);
+      if (timer === 0) {
+        clearInterval(interval);
+        gameStateRef.current = 'playing';
+        setGameStateDisplay('playing');
+        if (refereeAudioRef.current) {
+          refereeAudioRef.current.currentTime = 0;
+          refereeAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+        }
+      }
+    }, 1000);
+  };
+
   const handleCalibrationComplete = () => {
-    gameStateRef.current = 'ready';
-    setGameStateDisplay('ready');
-    
-    // Update camera status in Firestore if multiplayer room is active
-    if (roomId && role) {
-      const roomRef = doc(db, "sprint_rooms", roomId);
-      if (role === 'host') {
-        updateDoc(roomRef, { hostCameraReady: true });
-      } else {
-        updateDoc(roomRef, { guestCameraReady: true });
+    if (!roomId) {
+      // Single player / simulated bot: start the game automatically with the countdown!
+      triggerStartRace();
+    } else {
+      gameStateRef.current = 'ready';
+      setGameStateDisplay('ready');
+      
+      // Update camera status in Firestore if multiplayer room is active
+      if (role) {
+        const roomRef = doc(db, "sprint_rooms", roomId);
+        if (role === 'host') {
+          updateDoc(roomRef, { hostCameraReady: true });
+        } else {
+          updateDoc(roomRef, { guestCameraReady: true });
+        }
       }
     }
   };
@@ -796,63 +822,63 @@ const FitnessRace = ({
 
       {/* Live Gameplay HUD overlays */}
       {gameStateDisplay === 'playing' && (
-        <>
-          {/* Rep Count Badge (Left) */}
-          <div className="glass-card hud-left-card" style={{
-            position: 'absolute',
-            left: 'clamp(10px, 3vw, 30px)',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            background: 'rgba(5, 5, 8, 0.85)',
-            border: '1px solid rgba(57, 255, 20, 0.3)',
-            boxShadow: '0 0 30px rgba(57, 255, 20, 0.15)',
-            borderRadius: '20px',
-            padding: 'clamp(12px, 2vh, 24px) clamp(16px, 3vw, 32px)',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>SENSORS LIVE</span>
-            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
-              {mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}
-            </h3>
-            <div className="arcade-text" style={{ fontSize: 'clamp(28px, 6vw, 48px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
-              {repsCount}
-            </div>
-            <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REPS completed</span>
-          </div>
-
-          {/* Distance Remaining Badge (Right) */}
+        <div style={{
+          position: 'absolute',
+          left: 'clamp(10px, 3vw, 30px)',
+          top: '52%',
+          transform: 'translateY(-50%)',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'clamp(10px, 2.5vh, 20px)',
+          width: 'clamp(160px, 24vw, 240px)'
+        }}>
+          {/* Distance Remaining Badge (Right) - Placed Above */}
           <div className="glass-card hud-right-card" style={{
-            position: 'absolute',
-            right: 'clamp(10px, 3vw, 30px)',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
             background: 'rgba(5, 5, 8, 0.85)',
             border: '1px solid rgba(0, 242, 255, 0.3)',
             boxShadow: '0 0 30px rgba(0, 242, 255, 0.15)',
             borderRadius: '20px',
-            padding: 'clamp(12px, 2vh, 24px) clamp(16px, 3vw, 32px)',
+            padding: 'clamp(10px, 1.8vh, 20px) clamp(12px, 2.5vw, 24px)',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '8px'
+            gap: '6px'
           }}>
             <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--secondary)' }}>DISTANCE TO GO</span>
             <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
               TARGET: {targetKm} KM
             </h3>
-            <div className="arcade-text" style={{ fontSize: 'clamp(24px, 5vw, 42px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
+            <div className="arcade-text" style={{ fontSize: 'clamp(20px, 4vw, 36px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
               {formatRemainingDistance(remainingDist)}
             </div>
             <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REMAINING</span>
           </div>
-        </>
+
+          {/* Rep Count Badge (Left) - Placed Below */}
+          <div className="glass-card hud-left-card" style={{
+            background: 'rgba(5, 5, 8, 0.85)',
+            border: '1px solid rgba(57, 255, 20, 0.3)',
+            boxShadow: '0 0 30px rgba(57, 255, 20, 0.15)',
+            borderRadius: '20px',
+            padding: 'clamp(10px, 1.8vh, 20px) clamp(12px, 2.5vw, 24px)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>SENSORS LIVE</span>
+            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
+              {mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}
+            </h3>
+            <div className="arcade-text" style={{ fontSize: 'clamp(24px, 5vw, 42px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
+              {repsCount}
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REPS completed</span>
+          </div>
+        </div>
       )}
 
       {/* Combo */}
@@ -953,25 +979,7 @@ const FitnessRace = ({
               )}
             </div>
           ) : (
-            <button className="glow-btn pulse-glow" onClick={() => {
-              enterFullscreen();
-              gameStateRef.current = 'countdown';
-              setGameStateDisplay('countdown');
-              let timer = 3;
-              setCountdown(timer);
-              const interval = setInterval(() => {
-                timer -= 1; setCountdown(timer);
-                if (timer === 0) {
-                  clearInterval(interval);
-                  gameStateRef.current = 'playing';
-                  setGameStateDisplay('playing');
-                  if (refereeAudioRef.current) {
-                    refereeAudioRef.current.currentTime = 0;
-                    refereeAudioRef.current.play().catch(e => console.log("Audio play error:", e));
-                  }
-                }
-              }, 1000);
-            }} style={{ padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(16px, 4vw, 24px)' }}>START RACE ⚡</button>
+            <button className="glow-btn pulse-glow" onClick={() => triggerStartRace()} style={{ padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(16px, 4vw, 24px)' }}>START RACE ⚡</button>
           )}
         </div>
       )}
