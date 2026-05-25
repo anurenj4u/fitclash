@@ -50,6 +50,7 @@ const FitnessRace = ({
   const gameRef = useRef(null);
   const boostAudioRef = useRef(null);
   const refereeAudioRef = useRef(null);
+  const crowdAudioRef = useRef(null);
   const last100mThresholdRef = useRef(0);
   const [winnerState, setWinnerState] = useState(null);
   const [gameStateDisplay, setGameStateDisplay] = useState('waiting');
@@ -206,7 +207,16 @@ const FitnessRace = ({
     boostAudioRef.current.volume = 0.5;
     refereeAudioRef.current = new Audio('/sounds/referee.mp3');
     refereeAudioRef.current.volume = 0.5;
+    crowdAudioRef.current = new Audio('/sounds/crowdcheer.mp3');
+    crowdAudioRef.current.volume = 0.7;
   }, []);
+
+  useEffect(() => {
+    if (winnerState && crowdAudioRef.current) {
+      crowdAudioRef.current.currentTime = 0;
+      crowdAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+    }
+  }, [winnerState]);
 
   useEffect(() => {
     if (gameRef.current) return;
