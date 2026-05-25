@@ -1332,12 +1332,15 @@ export default function Home() {
                     }}>
                       <input
                         type="number"
-                        placeholder="CUSTOM"
+                        step="0.1"
+                        min="0.1"
+                        max="3"
+                        placeholder="MAX 3 KM"
                         onChange={(e) => {
-                          const val = parseInt(e.target.value);
+                          const val = parseFloat(e.target.value);
                           if (val > 0) {
-                            const cappedVal = Math.min(3000, val);
-                            setTargetDistance(cappedVal / 1000);
+                            const cappedVal = Math.min(3.0, val);
+                            setTargetDistance(cappedVal);
                           }
                         }}
                         style={{
@@ -2026,12 +2029,15 @@ export default function Home() {
                 }}>
                   <input
                     type="number"
-                    placeholder="MAX 3000M"
+                    step="0.1"
+                    min="0.1"
+                    max="3"
+                    placeholder="MAX 3 KM"
                     onChange={(e) => {
-                      const val = parseInt(e.target.value);
+                      const val = parseFloat(e.target.value);
                       if (val > 0) {
-                        const cappedVal = Math.min(3000, val);
-                        setTargetDistance(cappedVal / 1000);
+                        const cappedVal = Math.min(3.0, val);
+                        setTargetDistance(cappedVal);
                       }
                     }}
                     style={{
