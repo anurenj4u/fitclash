@@ -217,7 +217,7 @@ const MotionTracker = ({ mode, onReady }) => {
       position: 'fixed', 
       bottom: '10px', 
       right: '10px', 
-      width: isMobile ? '140px' : '280px', 
+      width: isMobile ? '200px' : '280px', 
       zIndex: 500,
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     }}>
@@ -233,7 +233,7 @@ const MotionTracker = ({ mode, onReady }) => {
       <div style={{ 
         position: 'relative', 
         width: '100%', 
-        height: isMobile ? '105px' : '210px', 
+        height: isMobile ? '150px' : '210px', 
         borderRadius: '12px', 
         overflow: 'hidden', 
         border: '2px solid rgba(57, 255, 20, 0.4)', 

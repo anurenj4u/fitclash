@@ -242,4 +242,28 @@ h1, h2, h3, .arcade-text {
   }
 }
 
+/* Mobile HUD Card Adjustments (Landscape and Small Portrait Screens) */
+@media (max-width: 932px) and (max-height: 440px), (max-width: 600px) {
+  .hud-left-card, 
+  .hud-right-card {
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+    max-width: 140px !important;
+  }
+  .hud-left-card span, 
+  .hud-right-card span {
+    font-size: 8px !important;
+    letter-spacing: 0.5px !important;
+  }
+  .hud-left-card h3, 
+  .hud-right-card h3 {
+    font-size: 7px !important;
+  }
+  .hud-left-card .arcade-text, 
+  .hud-right-card .arcade-text {
+    font-size: 20px !important;
+  }
+}
+
 

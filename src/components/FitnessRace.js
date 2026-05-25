@@ -798,7 +798,7 @@ const FitnessRace = ({
       {gameStateDisplay === 'playing' && (
         <>
           {/* Rep Count Badge (Left) */}
-          <div className="glass-card" style={{
+          <div className="glass-card hud-left-card" style={{
             position: 'absolute',
             left: 'clamp(10px, 3vw, 30px)',
             top: '50%',
@@ -826,7 +826,7 @@ const FitnessRace = ({
           </div>
 
           {/* Distance Remaining Badge (Right) */}
-          <div className="glass-card" style={{
+          <div className="glass-card hud-right-card" style={{
             position: 'absolute',
             right: 'clamp(10px, 3vw, 30px)',
             top: '50%',
