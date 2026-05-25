@@ -906,31 +906,6 @@ export default function Home() {
           >
             <Trophy size={16} fill={playMode === 'worldcup' ? '#39ff14' : 'none'} color={playMode === 'worldcup' ? '#39ff14' : 'rgba(255,255,255,0.5)'} /> 1<span style={{ fontSize: '0.8em', opacity: 0.7, textTransform: 'lowercase', margin: '0 1px' }}>vs</span>1 CHALLENGE
           </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.02, translateY: -1 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/profile')}
-            style={{
-              padding: '16px 24px',
-              borderRadius: '18px',
-              background: 'transparent',
-              color: 'rgba(255,255,255,0.5)',
-              border: '1px solid transparent',
-              fontSize: '14px',
-              fontWeight: 900,
-              cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              fontFamily: 'var(--font-gaming)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              letterSpacing: '0.5px'
-            }}
-          >
-            <Settings size={16} color="rgba(255,255,255,0.5)" /> PROFILE SETTINGS
-          </motion.button>
         </div>
 
 

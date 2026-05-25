@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, Menu, X, Flame } from 'lucide-react';
+import { User, LogOut, Menu, X, Flame, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Navbar() {
@@ -158,6 +158,27 @@ export default function Navbar() {
               </div>
             </div>
             
+            <Link href="/profile" style={{ textDecoration: 'none' }}>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#fff',
+                  padding: '8px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Settings size={14} />
+              </motion.button>
+            </Link>
+
             <motion.button 
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -263,6 +284,28 @@ export default function Navbar() {
                   <User size={16} color="#39ff14" />
                   <span style={{ fontSize: '14px', color: '#fff', fontWeight: 800, letterSpacing: '1px' }}>{user.displayName?.toUpperCase() || 'PLAYER'}</span>
                 </div>
+                
+                <Link 
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#fff',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Settings size={16} /> SETTINGS
+                </Link>
+
                 <button 
                   onClick={() => {
                     setIsMobileMenuOpen(false);
