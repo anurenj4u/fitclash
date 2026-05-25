@@ -1285,17 +1285,14 @@ export default function Home() {
                   </div>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gridTemplateColumns: 'repeat(5, 1fr)',
                     gap: '8px'
                   }}>
                     {[
                       { val: 0.2, label: '200M' },
                       { val: 0.4, label: '400M' },
                       { val: 0.6, label: '600M' },
-                      { val: 0.8, label: '800M' },
-                      { val: 1.0, label: '1 KM' },
-                      { val: 2.0, label: '2 KM' },
-                      { val: 3.0, label: '3 KM' }
+                      { val: 1.0, label: '1 KM' }
                     ].map(preset => {
                       const isActive = targetDistance === preset.val;
                       return (
@@ -1325,8 +1322,8 @@ export default function Home() {
                     {/* Custom input */}
                     <div style={{
                       position: 'relative',
-                      background: ![0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0].includes(targetDistance) ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.01)',
-                      border: `1.5px solid ${![0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0].includes(targetDistance) ? '#00f2ff' : 'rgba(255,255,255,0.08)'}`,
+                      background: ![0.2, 0.4, 0.6, 1.0].includes(targetDistance) ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.01)',
+                      border: `1.5px solid ${![0.2, 0.4, 0.6, 1.0].includes(targetDistance) ? '#00f2ff' : 'rgba(255,255,255,0.08)'}`,
                       borderRadius: '10px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1982,15 +1979,12 @@ export default function Home() {
                   {targetDistance >= 1 ? `${targetDistance} KM` : `${Math.round(targetDistance * 1000)} METERS`}
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
                 {[
                   { val: 0.2, label: '200M', sub: '2 MINS' },
                   { val: 0.4, label: '400M', sub: '4 MINS' },
                   { val: 0.6, label: '600M', sub: '6 MINS' },
-                  { val: 0.8, label: '800M', sub: '8 MINS' },
-                  { val: 1.0, label: '1 KM', sub: '10 MINS' },
-                  { val: 2.0, label: '2 KM', sub: '20 MINS' },
-                  { val: 3.0, label: '3 KM', sub: '30 MINS' }
+                  { val: 1.0, label: '1 KM', sub: '10 MINS' }
                 ].map(preset => {
                   const isPresetActive = targetDistance === preset.val;
                   return (
@@ -2022,8 +2016,8 @@ export default function Home() {
                 {/* Custom input */}
                 <div style={{
                   position: 'relative',
-                  background: ![0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0].includes(targetDistance) ? 'rgba(57, 255, 20, 0.1)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${![0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0].includes(targetDistance) ? '#39ff14' : 'rgba(255,255,255,0.06)'}`,
+                  background: ![0.2, 0.4, 0.6, 1.0].includes(targetDistance) ? 'rgba(57, 255, 20, 0.1)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${![0.2, 0.4, 0.6, 1.0].includes(targetDistance) ? '#39ff14' : 'rgba(255,255,255,0.06)'}`,
                   borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
