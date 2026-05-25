@@ -5,7 +5,7 @@ import { Maximize2, ShieldCheck, Flame, Zap, Trophy, Award, Activity } from 'luc
 import confetti from 'canvas-confetti';
 import PositionCalibration from './PositionCalibration';
 
-const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData, onSaveStaminaData }) => {
+const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData, onSaveStaminaData, onExerciseChange }) => {
   const [gameState, setGameState] = useState('motivation'); // motivation, calibration_intro, playing, rest, finished
   const [countdown, setCountdown] = useState(3);
   const [restTimer, setRestTimer] = useState(0);
@@ -21,6 +21,12 @@ const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData
   const [feedbackMsg, setFeedbackMsg] = useState(null);
   const [feedbackKey, setFeedbackKey] = useState(0);
   const previousRepsRef = useRef(0);
+  const boostAudioRef = useRef(null);
+
+  useEffect(() => {
+    boostAudioRef.current = new Audio('/sounds/boost.mp3');
+    boostAudioRef.current.volume = 0.4;
+  }, []);
 
   const isCalibrated = staminaData?.isCalibrated || false;
   const isCalibrationRun = !isCalibrated;
@@ -29,6 +35,10 @@ const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData
   
   // Adaptive targets
   const targetReps = isCalibrationRun ? 999 : (staminaData?.currentTargets?.[activeExercise] || 30);
+
+  useEffect(() => {
+    if (onExerciseChange) onExerciseChange(currentExerciseIndex);
+  }, [currentExerciseIndex, onExerciseChange]);
 
   useEffect(() => {
     if (gameState === 'motivation') {
@@ -94,6 +104,11 @@ const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData
       const { reps: eventReps } = e.detail;
       if (eventReps > previousRepsRef.current) {
         previousRepsRef.current = eventReps;
+        
+        if (boostAudioRef.current) {
+          boostAudioRef.current.currentTime = 0;
+          boostAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+        }
         setCombo(c => {
           const nc = c + 1;
           maxComboRef.current = Math.max(maxComboRef.current, nc);
@@ -236,6 +251,7 @@ const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData
 
       {gameState === 'calibration' && (
         <PositionCalibration 
+          mode={activeExercise}
           onCalibrated={() => setGameState('countdown')} 
           onSkip={() => setGameState('countdown')} 
         />

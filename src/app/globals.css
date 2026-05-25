@@ -2,18 +2,18 @@
   --background: #020205;
   --foreground: #ffffff;
   --accent: #39ff14;
-  --accent-glow: rgba(57, 255, 20, 0.4);
+  --accent-glow: rgba(57, 255, 20, 0.15); /* Reduced glow */
   --secondary: #00f2ff;
-  --secondary-glow: rgba(0, 242, 255, 0.4);
+  --secondary-glow: rgba(0, 242, 255, 0.15); /* Reduced glow */
   --tertiary: #bc13fe;
-  --tertiary-glow: rgba(188, 19, 254, 0.4);
+  --tertiary-glow: rgba(188, 19, 254, 0.15); /* Reduced glow */
   --danger: #ff003c;
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.1);
   --card-bg: rgba(10, 10, 15, 0.85);
   --font-gaming: var(--font-inter), "Söhne", "SF Pro", "Neue Haas Grotesk", "Roboto", sans-serif;
   --font-body: var(--font-inter), "Söhne", "SF Pro", "Neue Haas Grotesk", "Roboto", sans-serif;
-  --neon-shadow: 0 0 15px var(--accent-glow);
+  --neon-shadow: 0 0 5px var(--accent-glow); /* Reduced shadow spread */
 }
 
 * {
@@ -41,31 +41,31 @@ body {
 }
 
 h1, h2, h3, .arcade-text {
-  font-family: var(--font-gaming);
+  font-family: var(--font-body); /* Changed to body font for cleaner look */
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px; /* Reduced letter spacing */
 }
 
 .arcade-text {
-  letter-spacing: 4px;
-  font-weight: 900;
-  text-shadow: 0 0 10px var(--accent-glow);
+  letter-spacing: 2px; /* Reduced */
+  font-weight: 800; /* Modern bold instead of 900 */
+  /* text-shadow removed for premium feel */
 }
 
-.text-glow-green { text-shadow: 0 0 15px var(--accent-glow); }
-.text-glow-blue { text-shadow: 0 0 15px var(--secondary-glow); }
-.text-glow-purple { text-shadow: 0 0 15px var(--tertiary-glow); }
+.text-glow-green { text-shadow: 0 0 5px var(--accent-glow); } /* Reduced */
+.text-glow-blue { text-shadow: 0 0 5px var(--secondary-glow); } /* Reduced */
+.text-glow-purple { text-shadow: 0 0 5px var(--tertiary-glow); } /* Reduced */
 
 .glow-btn {
-  font-family: var(--font-gaming);
+  font-family: var(--font-body); /* Changed */
   background: var(--accent);
-  color: #000;
+  color: #020205; /* Deeper black for premium contrast */
   padding: 16px 32px;
   border-radius: 12px;
-  font-weight: 800;
+  font-weight: 700; /* Modern bold */
   border: none;
   cursor: pointer;
-  box-shadow: 0 0 20px var(--accent-glow);
+  box-shadow: 0 4px 14px 0 rgba(57, 255, 20, 0.15); /* More subtle, structural shadow instead of neon bloom */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -80,7 +80,7 @@ h1, h2, h3, .arcade-text {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent); /* Softer shine */
   transform: rotate(45deg);
   transition: 0.5s;
   pointer-events: none;
@@ -91,8 +91,8 @@ h1, h2, h3, .arcade-text {
 }
 
 .glow-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 10px 40px var(--accent-glow);
+  transform: translateY(-2px); /* Softer lift */
+  box-shadow: 0 6px 20px rgba(57, 255, 20, 0.25); /* Tighter hover shadow */
 }
 
 .glow-btn:active {
@@ -125,12 +125,12 @@ h1, h2, h3, .arcade-text {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; box-shadow: 0 0 20px var(--accent-glow); }
-  50% { opacity: 1; box-shadow: 0 0 40px var(--accent); }
+  0%, 100% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-glow); }
+  50% { opacity: 1; box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
 }
 
 .pulse-glow {
-  animation: pulse-glow 2s infinite;
+  animation: pulse-glow 3s infinite ease-in-out; /* Slower, smoother pulse */
 }
 
 /* Custom Scrollbar */
@@ -169,15 +169,16 @@ h1, h2, h3, .arcade-text {
 }
 
 .hero-calories-badge {
-  background: rgba(57, 255, 20, 0.03);
-  border: 1.5px dashed rgba(57, 255, 20, 0.3);
-  border-radius: 16px;
+  background: rgba(57, 255, 20, 0.05); /* slightly more solid background */
+  border: 1px solid rgba(57, 255, 20, 0.15); /* Solid border instead of dashed */
+  border-radius: 12px; /* Smoother radius */
   padding: 10px 20px;
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
-  animation: pulse-glow 2s infinite;
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  backdrop-filter: blur(8px); /* Premium blur effect */
+  /* Removed pulse-glow for a cleaner persistent look */
   z-index: 10;
 }
 

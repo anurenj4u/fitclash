@@ -3,6 +3,9 @@ import React, { useEffect, useRef, useState, memo } from 'react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import PositionCalibration from './PositionCalibration';
 
 const enterFullscreen = () => {
   const element = document.documentElement;
@@ -37,13 +40,32 @@ const FitnessRace = ({
   activeTheme = 'default',
   activeStadium = 'default',
   activeCharacter = 'default',
-  onComplete
+  roomId = null,
+  role = null,
+  sprintMatchType = 'ai',
+  opponentName = null,
+  onComplete,
+  onQuit
 }) => {
   const gameRef = useRef(null);
+  const boostAudioRef = useRef(null);
+  const refereeAudioRef = useRef(null);
+  const last100mThresholdRef = useRef(0);
   const [winnerState, setWinnerState] = useState(null);
   const [gameStateDisplay, setGameStateDisplay] = useState('waiting');
   const [countdown, setCountdown] = useState(3);
   const [combo, setCombo] = useState(0);
+  const [repsCount, setRepsCount] = useState(0);
+  const [remainingDist, setRemainingDist] = useState(targetKm * 1000);
+  const [activeOverlayModal, setActiveOverlayModal] = useState(null); // null, 'quit_confirm', 'performance_summary'
+  const [comparisonDetails, setComparisonDetails] = useState({
+    current: 0,
+    previous: 0,
+    diff: 0,
+    status: 'first',
+    message: '',
+    isQuit: false
+  });
 
   const playerDistanceUITextRef = useRef(null);
   const aiDistanceUITextRef = useRef(null);
@@ -57,6 +79,119 @@ const FitnessRace = ({
   const finishLineDistance = targetKm * 100000;
   const [trackerProgress, setTrackerProgress] = useState({ percent: 0, message: 'Launching Neural Core...' });
 
+  const aiTargetDistanceRef = useRef(0);
+  const [lobbyData, setLobbyData] = useState(null);
+
+  const handleMatchEnd = (finalReps, isQuit) => {
+    let previous = 0;
+    let prevRepsObj = {};
+    if (typeof window !== 'undefined') {
+      try {
+        prevRepsObj = JSON.parse(localStorage.getItem("fitclash_previous_reps") || "{}");
+        previous = prevRepsObj[mode] || 0;
+      } catch (e) {
+        console.error("Error loading previous reps from localStorage:", e);
+      }
+    }
+
+    const diff = finalReps - previous;
+    let status = 'first'; // 'improved', 'less', 'tied', 'first'
+    let feedbackMessage = '';
+
+    if (previous > 0) {
+      if (diff > 0) {
+        status = 'improved';
+        feedbackMessage = `Incredible job! You Improved when Compared to previous! Completed +${diff} more reps.`;
+      } else if (diff < 0) {
+        status = 'less';
+        feedbackMessage = `You completed ${Math.abs(diff)} fewer reps than last time. Keep pushing yourself to beat your personal best!`;
+      } else {
+        status = 'tied';
+        feedbackMessage = `You matched your previous score exactly! Steady progress!`;
+      }
+    } else {
+      status = 'first';
+      feedbackMessage = `First sprint completed! A benchmark of ${finalReps} reps has been set. Let's beat it next time!`;
+    }
+
+    if (finalReps > 0) {
+      try {
+        prevRepsObj[mode] = finalReps;
+        localStorage.setItem("fitclash_previous_reps", JSON.stringify(prevRepsObj));
+      } catch (e) {
+        console.error("Error saving reps to localStorage:", e);
+      }
+    }
+
+    let finalWinnerStr = 'OPPONENT';
+    if (winnerRef.current === 'PLAYER' || winnerRef.current === role) finalWinnerStr = 'PLAYER';
+
+    setComparisonDetails({
+      current: finalReps,
+      previous: previous,
+      diff: diff,
+      status: status,
+      message: feedbackMessage,
+      isQuit: isQuit,
+      winner: finalWinnerStr
+    });
+
+    setActiveOverlayModal('performance_summary');
+  };
+
+  // Sync finished state display to trigger comparative modal
+  useEffect(() => {
+    if (gameStateDisplay === 'finished') {
+      handleMatchEnd(previousRepsRef.current, false);
+    }
+  }, [gameStateDisplay]);
+
+  // Sync lobby state from Firestore in real-time
+  useEffect(() => {
+    if (!roomId) return;
+    const roomRef = doc(db, "sprint_rooms", roomId);
+    const unsubscribe = onSnapshot(roomRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setLobbyData(data);
+
+        // Update opponent's target distance for Phaser lerping
+        const oppDist = role === 'host' ? (data.guestDistance || 0) : (data.hostDistance || 0);
+        aiTargetDistanceRef.current = oppDist;
+
+        // Auto trigger countdown when status changes to 'countdown'
+        if (data.status === 'countdown' && gameStateRef.current === 'ready') {
+          gameStateRef.current = 'countdown';
+          setGameStateDisplay('countdown');
+          let timer = 3;
+          setCountdown(timer);
+          const interval = setInterval(() => {
+            timer -= 1;
+            setCountdown(timer);
+            if (timer === 0) {
+              clearInterval(interval);
+              gameStateRef.current = 'playing';
+              setGameStateDisplay('playing');
+              if (refereeAudioRef.current) {
+                refereeAudioRef.current.currentTime = 0;
+                refereeAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+              }
+            }
+          }, 1000);
+        }
+
+        // Auto transition to finished if opponent won
+        if (data.status === 'finished' && data.winner && data.winner !== role && !winnerRef.current) {
+          winnerRef.current = 'AI';
+          setWinnerState('AI');
+          setGameStateDisplay('finished');
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [roomId, role]);
+
   useEffect(() => {
     const handleProgress = (e) => {
       const { percent, message } = e.detail;
@@ -64,6 +199,13 @@ const FitnessRace = ({
     };
     window.addEventListener('tracker-init-status', handleProgress);
     return () => window.removeEventListener('tracker-init-status', handleProgress);
+  }, []);
+
+  useEffect(() => {
+    boostAudioRef.current = new Audio('/sounds/boost.mp3');
+    boostAudioRef.current.volume = 0.5;
+    refereeAudioRef.current = new Audio('/sounds/referee.mp3');
+    refereeAudioRef.current.volume = 0.5;
   }, []);
 
   useEffect(() => {
@@ -322,9 +464,18 @@ const FitnessRace = ({
 
         this.movePlayer = () => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
-          const distPerRep = mode === 'fingers' ? 100 : 1000;
+          const distPerRep = mode === 'jacks' ? 800 : (['pushups', 'squats'].includes(mode) ? 1500 : (mode === 'fingers' ? 100 : 800));
           playerDistanceRef.current += distPerRep;
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
+
+          if (roomId) {
+            const roomRef = doc(db, "sprint_rooms", roomId);
+            if (role === 'host') {
+              updateDoc(roomRef, { hostDistance: playerDistanceRef.current });
+            } else {
+              updateDoc(roomRef, { guestDistance: playerDistanceRef.current });
+            }
+          }
 
           let yoyoScale = 2.85;
           if (activeCharacter === 'ronaldo_elite') {
@@ -340,6 +491,7 @@ const FitnessRace = ({
           setWinnerState(null);
           gameStateRef.current = 'ready';
           setGameStateDisplay('ready');
+          last100mThresholdRef.current = 0;
 
           if (ai && ai.anims) {
             ai.play('neymar_run');
@@ -411,10 +563,19 @@ const FitnessRace = ({
 
         if (gameStateRef.current !== 'playing' || winnerRef.current) return;
 
-        // AI speed scales with target km
-        const aiSpeedBase = targetKm === 1 ? 0.4 : targetKm === 2 ? 0.7 : 0.9;
-        aiDistanceRef.current += aiSpeedBase * delta;
-        if (playerDistanceRef.current > 0) playerDistanceRef.current += (aiSpeedBase * 0.3) * delta;
+        // AI/Opponent speed mapping
+        const isSimulatedBot = roomId && lobbyData?.guestUid === 'simulated_ai_pro';
+
+        if (!roomId || isSimulatedBot) {
+          // Single-player or simulated bot: Neymar moves automatically
+          const aiSpeedBase = targetKm === 1 ? 0.4 : targetKm === 2 ? 0.7 : 0.9;
+          aiDistanceRef.current += aiSpeedBase * delta;
+          if (playerDistanceRef.current > 0) playerDistanceRef.current += (aiSpeedBase * 0.3) * delta;
+        } else {
+          // Real-time private or online multiplayer: Opponent distance updates via Firestore snapshot
+          const lerpSpeed = 0.08;
+          aiDistanceRef.current += (aiTargetDistanceRef.current - aiDistanceRef.current) * lerpSpeed;
+        }
 
         player.x = playerStartX + playerDistanceRef.current;
         ai.x = playerStartX + aiDistanceRef.current;
@@ -431,16 +592,33 @@ const FitnessRace = ({
         leaderArrow.y = leader.y - 80;
         this.cameras.main.scrollX = Math.max(player.x, ai.x) - (window.innerWidth / 3);
 
-        if (playerDistanceUITextRef.current)
-          playerDistanceUITextRef.current.innerText = Math.floor(playerDistanceRef.current / 100);
+        if (playerDistanceUITextRef.current) {
+          const currentMeters = Math.floor(playerDistanceRef.current / 100);
+          playerDistanceUITextRef.current.innerText = currentMeters;
+        }
         if (aiDistanceUITextRef.current)
           aiDistanceUITextRef.current.innerText = Math.floor(aiDistanceRef.current / 100);
 
+        // Win coordination
         if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
-          winnerRef.current = 'PLAYER'; setWinnerState('PLAYER'); setGameStateDisplay('finished');
+          winnerRef.current = 'PLAYER';
+          setWinnerState('PLAYER');
+          setGameStateDisplay('finished');
           confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#39ff14', '#ffffff', '#00f2ff'] });
+
+          if (roomId) {
+            const roomRef = doc(db, "sprint_rooms", roomId);
+            updateDoc(roomRef, {
+              status: 'finished',
+              winner: role,
+              updatedAt: serverTimestamp()
+            });
+          }
         } else if (aiDistanceRef.current >= finishLineDistance && !winnerRef.current) {
-          winnerRef.current = 'AI'; setWinnerState('AI'); setGameStateDisplay('finished');
+          // In single player, AI reaches finish. In multiplayer, handled by snapshot but fallback here is fine.
+          winnerRef.current = 'AI';
+          setWinnerState('AI');
+          setGameStateDisplay('finished');
         }
       }
 
@@ -455,18 +633,46 @@ const FitnessRace = ({
     };
   }, []);
 
+  const handleCalibrationComplete = () => {
+    gameStateRef.current = 'ready';
+    setGameStateDisplay('ready');
+    
+    // Update camera status in Firestore if multiplayer room is active
+    if (roomId && role) {
+      const roomRef = doc(db, "sprint_rooms", roomId);
+      if (role === 'host') {
+        updateDoc(roomRef, { hostCameraReady: true });
+      } else {
+        updateDoc(roomRef, { guestCameraReady: true });
+      }
+    }
+  };
+
   useEffect(() => {
     if (isCameraReady && gameStateRef.current === 'waiting') {
-      gameStateRef.current = 'ready';
-      setGameStateDisplay('ready');
+      gameStateRef.current = 'calibration';
+      setGameStateDisplay('calibration');
     }
-  }, [isCameraReady]);
+  }, [isCameraReady, roomId, role]);
 
   useEffect(() => {
     const handlePoseUpdate = (e) => {
       const { reps } = e.detail;
       if (reps > previousRepsRef.current) {
+        const diffReps = reps - previousRepsRef.current;
         previousRepsRef.current = reps;
+        
+        // Prevent HUD tracking, sounds, and game progression outside active race
+        if (gameStateRef.current !== 'playing' || winnerRef.current) return;
+
+        setRepsCount(prev => prev + diffReps);
+        
+        // Play boost sound for every completed rep
+        if (boostAudioRef.current) {
+          boostAudioRef.current.currentTime = 0;
+          boostAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+        }
+
         if (gameRef.current && gameRef.current.scene.scenes[0]) {
           gameRef.current.scene.scenes[0].movePlayer();
           setCombo(prev => prev + 1);
@@ -480,11 +686,81 @@ const FitnessRace = ({
   }, []);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      if (gameStateDisplay === 'playing') {
+        const rem = Math.max(0, Math.floor((finishLineDistance - playerDistanceRef.current) / 100));
+        setRemainingDist(rem);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [gameStateDisplay, finishLineDistance]);
+
+  useEffect(() => {
     return () => { exitFullscreen(); };
   }, []);
 
+  const localPlayerLabel = role === 'host'
+    ? (lobbyData?.hostEmail?.split('@')[0]?.toUpperCase() || 'YOU')
+    : (lobbyData?.guestEmail?.split('@')[0]?.toUpperCase() || 'YOU');
+
+  const opponentPlayerLabel = opponentName
+    ? opponentName.toUpperCase()
+    : (role === 'host'
+      ? (lobbyData?.guestEmail?.split('@')[0]?.toUpperCase() || (sprintMatchType === 'online' ? 'CR7_PRO_BOT' : 'NEYMAR'))
+      : (lobbyData?.hostEmail?.split('@')[0]?.toUpperCase() || 'NEYMAR'));
+
+  const formatRemainingDistance = (meters) => {
+    if (meters >= 1000) {
+      return `${(meters / 1000).toFixed(2)} KM`;
+    }
+    return `${meters} M`;
+  };
+
   return (
     <div id="phaser-game" style={{ width: '100vw', height: '100dvh', position: 'fixed', inset: 0, zIndex: 1, background: '#020205' }}>
+
+      {/* Floating Exit Button */}
+      {gameStateDisplay !== 'finished' && activeOverlayModal === null && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            if (gameStateDisplay === 'playing') {
+              setActiveOverlayModal('quit_confirm');
+            } else {
+              exitFullscreen();
+              if (onQuit) {
+                onQuit({ reps: repsCount, calories: repsCount * 0.45, xp: repsCount * 6 });
+              } else if (onComplete) {
+                onComplete({ reps: repsCount, calories: repsCount * 0.45, xp: repsCount * 6 });
+              }
+            }
+          }}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            zIndex: 100,
+            background: 'rgba(255, 0, 60, 0.1)',
+            border: '1.5px solid rgba(255, 0, 60, 0.4)',
+            borderRadius: '12px',
+            color: '#ff4444',
+            padding: '10px 16px',
+            fontSize: '11px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-gaming)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: '0 4px 12px rgba(255, 0, 60, 0.15)',
+            backdropFilter: 'blur(8px)',
+            transition: 'all 0.2s'
+          }}
+        >
+          <span>QUIT MATCH</span>
+        </motion.button>
+      )}
 
       {/* HUD: Distance counters */}
       <div style={{
@@ -502,7 +778,7 @@ const FitnessRace = ({
         backdropFilter: 'blur(10px)'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>RONALDO</p>
+          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>{localPlayerLabel}</p>
           <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--accent)' }}>
             <span ref={playerDistanceUITextRef}>0</span>
             <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
@@ -510,7 +786,7 @@ const FitnessRace = ({
         </div>
         <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
         <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>NEYMAR</p>
+          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>{opponentPlayerLabel}</p>
           <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}>
             <span ref={aiDistanceUITextRef}>0</span>
             <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
@@ -518,10 +794,71 @@ const FitnessRace = ({
         </div>
       </div>
 
+      {/* Live Gameplay HUD overlays */}
+      {gameStateDisplay === 'playing' && (
+        <>
+          {/* Rep Count Badge (Left) */}
+          <div className="glass-card" style={{
+            position: 'absolute',
+            left: 'clamp(10px, 3vw, 30px)',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+            background: 'rgba(5, 5, 8, 0.85)',
+            border: '1px solid rgba(57, 255, 20, 0.3)',
+            boxShadow: '0 0 30px rgba(57, 255, 20, 0.15)',
+            borderRadius: '20px',
+            padding: 'clamp(12px, 2vh, 24px) clamp(16px, 3vw, 32px)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>SENSORS LIVE</span>
+            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
+              {mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}
+            </h3>
+            <div className="arcade-text" style={{ fontSize: 'clamp(28px, 6vw, 48px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
+              {repsCount}
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REPS completed</span>
+          </div>
+
+          {/* Distance Remaining Badge (Right) */}
+          <div className="glass-card" style={{
+            position: 'absolute',
+            right: 'clamp(10px, 3vw, 30px)',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+            background: 'rgba(5, 5, 8, 0.85)',
+            border: '1px solid rgba(0, 242, 255, 0.3)',
+            boxShadow: '0 0 30px rgba(0, 242, 255, 0.15)',
+            borderRadius: '20px',
+            padding: 'clamp(12px, 2vh, 24px) clamp(16px, 3vw, 32px)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--secondary)' }}>DISTANCE TO GO</span>
+            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
+              TARGET: {targetKm} KM
+            </h3>
+            <div className="arcade-text" style={{ fontSize: 'clamp(24px, 5vw, 42px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
+              {formatRemainingDistance(remainingDist)}
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REMAINING</span>
+          </div>
+        </>
+      )}
+
       {/* Combo */}
       {combo > 1 && (
         <div style={{ position: 'absolute', top: 'clamp(65px, 18vh, 150px)', left: '50%', transform: 'translateX(-50%)', zIndex: 11, textAlign: 'center', pointerEvents: 'none' }}>
-          <div className="arcade-text" style={{ fontSize: 'clamp(18px, 4vw, 40px)', color: 'var(--accent)', textShadow: '0 0 20px var(--accent)' }}>{combo}X COMBO</div>
+          <div className="arcade-text" style={{ fontSize: 'clamp(18px, 4vw, 40px)', color: 'var(--accent)', textShadow: 'none' }}>{combo}X COMBO</div>
         </div>
       )}
 
@@ -555,23 +892,87 @@ const FitnessRace = ({
 
       {/* READY */}
       {gameStateDisplay === 'ready' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)', padding: '20px' }}>
-          <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 40px)', marginBottom: 'clamp(15px, 4vh, 30px)', textAlign: 'center' }}>TRACKER <span style={{ color: 'var(--accent)' }}>READY</span></h2>
-          <button className="glow-btn pulse-glow" onClick={() => {
-            enterFullscreen();
-            gameStateRef.current = 'countdown';
-            setGameStateDisplay('countdown');
-            let timer = 3;
-            setCountdown(timer);
-            const interval = setInterval(() => {
-              timer -= 1; setCountdown(timer);
-              if (timer === 0) {
-                clearInterval(interval);
-                gameStateRef.current = 'playing';
-                setGameStateDisplay('playing');
-              }
-            }, 1000);
-          }} style={{ padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(16px, 4vw, 24px)' }}>START RACE ⚡</button>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)', padding: '20px' }}>
+          <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 40px)', marginBottom: 'clamp(15px, 4vh, 30px)', textAlign: 'center' }}>
+            {roomId ? 'MULTIPLAYER LOBBY' : 'TRACKER'} <span style={{ color: 'var(--accent)' }}>READY</span>
+          </h2>
+
+          {roomId ? (
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="glass-card" style={{ padding: '20px 30px', display: 'flex', gap: '20px', alignItems: 'center', background: 'rgba(5, 5, 8, 0.8)' }}>
+                <div>
+                  <p style={{ opacity: 0.5, fontSize: '10px', fontWeight: 800 }}>YOUR CAMERA</p>
+                  <p style={{ color: '#39ff14', fontWeight: 900, fontSize: '14px' }}>CONNECTED 🎥</p>
+                </div>
+                <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '30px' }} />
+                <div>
+                  <p style={{ opacity: 0.5, fontSize: '10px', fontWeight: 800 }}>OPPONENT CAMERA</p>
+                  {lobbyData?.guestUid === 'simulated_ai_pro' || lobbyData?.guestCameraReady ? (
+                    <p style={{ color: '#39ff14', fontWeight: 900, fontSize: '14px' }}>CONNECTED 🎥</p>
+                  ) : (
+                    <p style={{ color: '#ff3333', fontWeight: 900, fontSize: '14px', animation: 'pulse 1.5s infinite' }}>WAITING... 📷</p>
+                  )}
+                </div>
+              </div>
+
+              {role === 'host' ? (
+                <button
+                  className="glow-btn pulse-glow"
+                  disabled={!(lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro'))}
+                  onClick={async () => {
+                    enterFullscreen();
+                    const roomRef = doc(db, "sprint_rooms", roomId);
+                    await updateDoc(roomRef, {
+                      status: 'countdown',
+                      updatedAt: serverTimestamp()
+                    });
+                  }}
+                  style={{
+                    padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)',
+                    fontSize: 'clamp(16px, 4vw, 24px)',
+                    cursor: (lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro')) ? 'pointer' : 'not-allowed',
+                    opacity: (lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro')) ? 1 : 0.5
+                  }}
+                >
+                  START SYNCED RACE ⚡
+                </button>
+              ) : (
+                <div style={{
+                  padding: '16px 40px',
+                  borderRadius: '30px',
+                  background: 'rgba(57, 255, 20, 0.05)',
+                  border: '1px solid rgba(57, 255, 20, 0.2)',
+                  color: '#39ff14',
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  fontFamily: 'var(--font-gaming)',
+                  animation: 'pulse 2s infinite'
+                }}>
+                  WAITING FOR HOST TO TRIGGER START...
+                </div>
+              )}
+            </div>
+          ) : (
+            <button className="glow-btn pulse-glow" onClick={() => {
+              enterFullscreen();
+              gameStateRef.current = 'countdown';
+              setGameStateDisplay('countdown');
+              let timer = 3;
+              setCountdown(timer);
+              const interval = setInterval(() => {
+                timer -= 1; setCountdown(timer);
+                if (timer === 0) {
+                  clearInterval(interval);
+                  gameStateRef.current = 'playing';
+                  setGameStateDisplay('playing');
+                  if (refereeAudioRef.current) {
+                    refereeAudioRef.current.currentTime = 0;
+                    refereeAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+                  }
+                }
+              }, 1000);
+            }} style={{ padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(16px, 4vw, 24px)' }}>START RACE ⚡</button>
+          )}
         </div>
       )}
 
@@ -582,26 +983,251 @@ const FitnessRace = ({
         </div>
       )}
 
-      {/* FINISHED */}
-      {gameStateDisplay === 'finished' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center', maxWidth: '90%' }}>
-            <h2 className="arcade-text" style={{ fontSize: 'clamp(24px, 5vw, 64px)', color: winnerState === 'PLAYER' ? 'var(--accent)' : 'var(--danger)', marginBottom: 'clamp(10px, 2.5vh, 20px)' }}>{winnerState === 'PLAYER' ? '🏆 WORKOUT COMPLETE' : 'WORKOUT ENDED'}</h2>
-            <div className="glass-card" style={{ marginBottom: 'clamp(15px, 4vh, 40px)', padding: 'clamp(15px, 3.5vh, 30px) clamp(20px, 6vw, 60px)' }}>
-              <p className="hud-text" style={{ fontSize: 'clamp(12px, 2.5vw, 18px)' }}>{winnerState === 'PLAYER' ? 'GREAT JOB KEEPING UP THE PACE!' : "KEEP PUSHING, YOU'LL GET IT NEXT TIME"}</p>
-              <div style={{ marginTop: 'clamp(10px, 2.5vh, 20px)', display: 'flex', gap: 'clamp(15px, 4vw, 30px)', justifyContent: 'center' }}>
-                <div><p style={{ opacity: 0.5, fontSize: 'clamp(9px, 1.5vw, 12px)' }}>CALORIES</p><p className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}>{Math.round(previousRepsRef.current * 0.45 + targetKm * 10)}</p></div>
-                <div><p style={{ opacity: 0.5, fontSize: 'clamp(9px, 1.5vw, 12px)' }}>XP GAINED</p><p className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--secondary)' }}>+{Math.round(previousRepsRef.current * 6 + targetKm * 50)}</p></div>
+      {gameStateDisplay === 'calibration' && (
+        <PositionCalibration 
+          mode={mode}
+          onCalibrated={() => handleCalibrationComplete()}
+          onSkip={() => handleCalibrationComplete()}
+        />
+      )}
+
+      {/* QUIT CONFIRMATION MODAL */}
+      {activeOverlayModal === 'quit_confirm' && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(5, 5, 10, 0.85)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 200,
+          backdropFilter: 'blur(12px)',
+          padding: '20px'
+        }}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{
+              background: 'linear-gradient(135deg, rgba(25, 25, 30, 0.95) 0%, rgba(10, 10, 15, 0.98) 100%)',
+              border: '1px solid rgba(255, 68, 68, 0.3)',
+              borderRadius: '24px',
+              padding: '30px 40px',
+              width: '100%',
+              maxWidth: '450px',
+              textAlign: 'center',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 68, 68, 0.05)'
+            }}
+          >
+            <h2 className="arcade-text" style={{ fontSize: '24px', color: '#ff4444', margin: '0 0 15px 0', textShadow: 'none' }}>QUIT MATCH?</h2>
+            <p style={{ opacity: 0.8, fontSize: '13px', lineHeight: 1.5, color: '#fff', marginBottom: '25px' }}>
+              Are you sure you want to quit the sprint? Your completed reps will be saved and progress evaluated compared to your previous best.
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button
+                onClick={() => setActiveOverlayModal(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '30px',
+                  color: '#fff',
+                  padding: '12px 25px',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-gaming)',
+                  fontSize: '12px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => {
+                  handleMatchEnd(repsCount, true);
+                }}
+                style={{
+                  background: 'linear-gradient(90deg, #ff4444 0%, #ff0055 100%)',
+                  border: 'none',
+                  borderRadius: '30px',
+                  color: '#fff',
+                  padding: '12px 25px',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-gaming)',
+                  fontSize: '12px',
+                  boxShadow: '0 4px 15px rgba(255, 68, 68, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                CONFIRM QUIT 🏃
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* PERFORMANCE COMPARISON SUMMARY MODAL */}
+      {activeOverlayModal === 'performance_summary' && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(2, 2, 5, 0.94)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 300,
+          backdropFilter: 'blur(16px)',
+          padding: '20px'
+        }}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{
+              background: 'linear-gradient(135deg, rgba(22, 22, 28, 0.96) 0%, rgba(10, 10, 14, 0.98) 100%)',
+              border: `1.5px solid ${comparisonDetails.status === 'improved' ? '#39ff14' : comparisonDetails.status === 'less' ? '#ff3366' : 'rgba(255, 255, 255, 0.15)'}`,
+              borderRadius: '28px',
+              padding: 'clamp(20px, 4vh, 40px) clamp(20px, 5vw, 50px)',
+              width: '100%',
+              maxWidth: '520px',
+              textAlign: 'center',
+              boxShadow: `0 20px 40px rgba(0,0,0,0.6), 0 0 30px ${comparisonDetails.status === 'improved' ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255,255,255,0.03)'}`
+            }}
+          >
+            {/* Achievement Header */}
+            <h2 className="arcade-text" style={{
+              fontSize: 'clamp(20px, 4.5vw, 32px)',
+              color: comparisonDetails.winner === 'PLAYER' ? '#39ff14' : comparisonDetails.isQuit ? '#ffffff' : '#ff3366',
+              margin: '0 0 8px 0',
+              letterSpacing: '1px',
+              textShadow: 'none'
+            }}>
+              {comparisonDetails.isQuit ? 'MATCH FORFEITED' : comparisonDetails.winner === 'PLAYER' ? '🏆 YOU WON!' : '💥 YOU LOST'}
+            </h2>
+            <p style={{ opacity: 0.6, fontSize: '11px', letterSpacing: '1px', fontWeight: 800, color: '#fff', marginBottom: '20px' }}>
+              SESSION METRICS & TELEMETRY PROGRESS
+            </p>
+
+            {/* Comparative Telemetry Card */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              {/* Progress Message */}
+              <div style={{
+                fontSize: '13px',
+                fontWeight: 800,
+                lineHeight: 1.45,
+                textAlign: 'center',
+                color: comparisonDetails.status === 'improved' ? '#39ff14' : '#fff',
+                borderBottom: '1px dashed rgba(255,255,255,0.08)',
+                paddingBottom: '10px'
+              }}>
+                {comparisonDetails.message}
+              </div>
+
+              {/* Comparative reps score stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center', marginTop: '4px' }}>
+                <div>
+                  <div style={{ fontSize: '9px', opacity: 0.5, fontWeight: 800 }}>PREVIOUS BEST</div>
+                  <div className="arcade-text" style={{ fontSize: '18px', color: '#fff', marginTop: '2px', textShadow: 'none' }}>
+                    {comparisonDetails.previous}
+                  </div>
+                </div>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ fontSize: '9px', opacity: 0.5, fontWeight: 800 }}>CURRENT RUN</div>
+                  <div className="arcade-text" style={{ fontSize: '20px', color: '#39ff14', marginTop: '2px', textShadow: 'none' }}>
+                    {comparisonDetails.current}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '9px', opacity: 0.5, fontWeight: 800 }}>PROGRESS</div>
+                  <div className="arcade-text" style={{ 
+                    fontSize: '18px', 
+                    color: comparisonDetails.diff > 0 ? '#39ff14' : comparisonDetails.diff < 0 ? '#ff3366' : '#fff', 
+                    marginTop: '2px',
+                    textShadow: 'none'
+                  }}>
+                    {comparisonDetails.diff > 0 ? `+${comparisonDetails.diff}` : comparisonDetails.diff < 0 ? `${comparisonDetails.diff}` : '0'}
+                  </div>
+                </div>
               </div>
             </div>
-            <button className="glow-btn" onClick={() => {
-              exitFullscreen();
-              if (onComplete) {
-                onComplete(previousRepsRef.current);
-              } else {
-                window.location.reload();
-              }
-            }} style={{ padding: 'clamp(10px, 2.5vh, 20px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(14px, 2.5vw, 18px)' }}>DONE</button>
+
+            {/* Telemetry metrics (Calories & XP) */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '15px',
+              marginBottom: '25px'
+            }}>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: '14px',
+                padding: '12px'
+              }}>
+                <div style={{ fontSize: '9px', opacity: 0.5, fontWeight: 800 }}>CALORIES BURNED</div>
+                <div className="arcade-text" style={{ fontSize: '18px', color: '#ff4444', marginTop: '4px', textShadow: 'none' }}>
+                  {Math.round(comparisonDetails.current * 0.45 + (comparisonDetails.isQuit ? 0 : targetKm * 10))} KCAL
+                </div>
+              </div>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: '14px',
+                padding: '12px'
+              }}>
+                <div style={{ fontSize: '9px', opacity: 0.5, fontWeight: 800 }}>XP ACQUIRED</div>
+                <div className="arcade-text" style={{ fontSize: '18px', color: '#ffd700', marginTop: '4px', textShadow: 'none' }}>
+                  +{Math.round(comparisonDetails.current * 6 + (comparisonDetails.isQuit ? 0 : targetKm * 50))} XP
+                </div>
+              </div>
+            </div>
+
+            {/* CTA button */}
+            <motion.button
+              whileHover={{ scale: 1.02, boxShadow: `0 0 20px ${comparisonDetails.status === 'improved' ? 'rgba(57, 255, 20, 0.4)' : 'rgba(255,255,255,0.2)'}` }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                exitFullscreen();
+                const finalStats = {
+                  reps: comparisonDetails.current,
+                  calories: comparisonDetails.current * 0.45 + (comparisonDetails.isQuit ? 0 : targetKm * 10),
+                  xp: comparisonDetails.current * 6 + (comparisonDetails.isQuit ? 0 : targetKm * 50)
+                };
+                if (comparisonDetails.isQuit) {
+                  if (onQuit) onQuit(finalStats);
+                  else if (onComplete) onComplete(finalStats);
+                } else {
+                  if (onComplete) onComplete(finalStats);
+                  else window.location.reload();
+                }
+              }}
+              style={{
+                background: comparisonDetails.status === 'improved' 
+                  ? 'linear-gradient(90deg, #39ff14 0%, #00ff88 100%)' 
+                  : 'linear-gradient(90deg, #ffffff 0%, #e0e0e0 100%)',
+                color: '#000',
+                border: 'none',
+                padding: '14px clamp(30px, 8vw, 60px)',
+                borderRadius: '30px',
+                fontWeight: 900,
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-gaming)',
+                letterSpacing: '1px'
+              }}
+            >
+              DONE & CLAIM REWARDS 🚀
+            </motion.button>
           </motion.div>
         </div>
       )}

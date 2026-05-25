@@ -49,12 +49,6 @@ export default function AboutPage() {
         </p>
       </section>
 
-      <section style={{ marginBottom: '45px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '30px' }}>
-        <h2 style={{ color: '#39ff14', fontSize: '18px', marginBottom: '15px', fontWeight: 800 }}>4. Our Tech Stack Partners</h2>
-        <p style={{ opacity: 0.8, fontSize: '14px' }}>
-          We build with Next.js App Router for dynamic layouts, Google Firestore for encrypted profile progression, Razorpay for PCI-compliant gateway processing, and canvas particle engines for arcade visual effects.
-        </p>
-      </section>
 
       <div style={{ textAlign: 'center', marginTop: '50px' }}>
         <a href="/" style={{

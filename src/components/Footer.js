@@ -20,11 +20,11 @@ export default function Footer() {
         marginBottom: '60px'
       }}>
         <div style={{ maxWidth: '400px' }}>
-          <div className="arcade-text" style={{ fontSize: '24px', marginBottom: '25px' }}>
-            CLASH<span style={{ color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)' }}>OFCARDIO</span>
+          <div className="arcade-text" style={{ fontSize: '24px', marginBottom: '25px', fontWeight: 800 }}>
+            CLASH<span style={{ color: 'var(--accent)' }}>OFCARDIO</span>
           </div>
           <p style={{ opacity: 0.6, fontSize: '16px', lineHeight: 1.8, marginBottom: '30px' }}>
-            The ultimate AI fitness engine. Weaponize your workout and dominate the digital arena. Your body is the weapon.
+            The premier AI fitness platform. Transform your training with intelligent tracking and performance analytics.
           </p>
           <div style={{ display: 'flex', gap: '20px' }}>
             {[Twitter, Github, Youtube, Instagram].map((Icon, i) => (
@@ -66,7 +66,7 @@ export default function Footer() {
 
         <div>
           <h4 className="hud-text" style={{ marginBottom: '25px', fontSize: '12px', letterSpacing: '2px' }}>NEWSLETTER</h4>
-          <p style={{ opacity: 0.6, fontSize: '14px', marginBottom: '20px' }}>Get weekly performance tips and game updates.</p>
+          <p style={{ opacity: 0.6, fontSize: '14px', marginBottom: '20px' }}>Get weekly performance tips and platform updates.</p>
           <div style={{ display: 'flex', gap: '10px' }}>
             <input 
               type="text" 

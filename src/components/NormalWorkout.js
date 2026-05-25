@@ -61,6 +61,7 @@ const NormalWorkout = ({
   const [positionStatus, setPositionStatus] = useState(null); // null = good, string = warning
 
   const previousRepsRef = useRef(0);
+  const boostAudioRef = useRef(null);
   
   const targetRepsPerExercise = difficulty === 'hard' ? 100 : difficulty === 'medium' ? 50 : 20;
   const targetRepsNeeded = targetRepsPerExercise * selectedExercises.length;
@@ -124,6 +125,8 @@ const NormalWorkout = ({
   }, [gameState, startTime]);
 
   useEffect(() => {
+    boostAudioRef.current = new Audio('/sounds/boost.mp3');
+    boostAudioRef.current.volume = 0.4;
     return () => {
       exitFullscreen();
     };
@@ -135,6 +138,11 @@ const NormalWorkout = ({
       const { reps: eventReps } = e.detail;
       if (eventReps > previousRepsRef.current) {
         previousRepsRef.current = eventReps;
+        
+        if (boostAudioRef.current) {
+          boostAudioRef.current.currentTime = 0;
+          boostAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+        }
         setCombo(c => {
           const nc = c + 1;
           maxComboRef.current = Math.max(maxComboRef.current, nc);
@@ -176,18 +184,19 @@ const NormalWorkout = ({
       }
       const getPt = (name) => pose.keypoints.find(k => k.name === name);
       const thresh = 0.3;
-      const ankles = getPt('left_ankle')?.score > thresh || getPt('right_ankle')?.score > thresh;
-      const shoulders = getPt('left_shoulder')?.score > thresh || getPt('right_shoulder')?.score > thresh;
-      const hips = getPt('left_hip')?.score > thresh || getPt('right_hip')?.score > thresh;
-      if (!shoulders && !hips && !ankles) setPositionStatus('NO BODY DETECTED');
+      const isPushup = activeExercise === 'pushups';
+      // Treat ankles as visible to allow table-mounted tracking
+      const ankles = true;
+      const shoulders = isPushup ? true : (getPt('left_shoulder')?.score > thresh || getPt('right_shoulder')?.score > thresh);
+      const hips = isPushup ? true : (getPt('left_hip')?.score > thresh || getPt('right_hip')?.score > thresh);
+      if (!shoulders && !hips) setPositionStatus('NO BODY DETECTED');
       else if (!shoulders) setPositionStatus('⬆ SHOW UPPER BODY');
       else if (!hips) setPositionStatus('↔ STEP BACK - HIPS MISSING');
-      else if (!ankles) setPositionStatus('⬇ STEP BACK - FEET MISSING');
       else setPositionStatus(null); // all good
     };
     window.addEventListener('raw-pose', handleRawPose);
     return () => window.removeEventListener('raw-pose', handleRawPose);
-  }, []);
+  }, [activeExercise]);
 
   const handleEndWorkout = () => {
     setIsFinished(true);
@@ -436,6 +445,7 @@ const NormalWorkout = ({
 
       {gameState === 'calibration' && (
         <PositionCalibration 
+          mode={activeExercise}
           onCalibrated={() => startCountdown()} 
           onSkip={() => startCountdown()} 
         />

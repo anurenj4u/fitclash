@@ -15,6 +15,12 @@ const StrengthEndurance = ({ selectedExercises, isCameraReady, onComplete }) => 
   
   const previousRepsRef = useRef(0);
   const activeExercise = selectedExercises[0] || 'squats';
+  const boostAudioRef = useRef(null);
+
+  useEffect(() => {
+    boostAudioRef.current = new Audio('/sounds/boost.mp3');
+    boostAudioRef.current.volume = 0.4;
+  }, []);
 
   useEffect(() => {
     if (stage === 'intro') {
@@ -64,6 +70,11 @@ const StrengthEndurance = ({ selectedExercises, isCameraReady, onComplete }) => 
       if (stage === 'stage2_playing' || stage === 'stage3_playing') {
         if (eventReps > previousRepsRef.current) {
           previousRepsRef.current = eventReps;
+          
+          if (boostAudioRef.current) {
+            boostAudioRef.current.currentTime = 0;
+            boostAudioRef.current.play().catch(e => console.log("Audio play error:", e));
+          }
           setReps(r => {
             const nextReps = r + 1;
             if (stage === 'stage2_playing' && nextReps >= 30) {
@@ -115,6 +126,7 @@ const StrengthEndurance = ({ selectedExercises, isCameraReady, onComplete }) => 
   if (stage === 'calibration') {
     return (
       <PositionCalibration 
+        mode={activeExercise}
         onCalibrated={() => setStage('stage1_intro')} 
         onSkip={() => setStage('stage1_intro')} 
       />

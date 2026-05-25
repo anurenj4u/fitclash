@@ -533,7 +533,7 @@ const ReflexGame = ({ mode, isCameraReady }) => {
           backdropFilter: 'blur(15px)'
         }}>
           <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center', maxWidth: '600px', width: '90%' }}>
-            <h2 className="arcade-text" style={{ fontSize: '50px', color: 'var(--accent)', marginBottom: '10px', textShadow: '0 0 20px var(--accent)' }}>SHOOTOUT ENDED</h2>
+            <h2 className="arcade-text" style={{ fontSize: '50px', color: 'var(--accent)', marginBottom: '10px', textShadow: 'none' }}>SHOOTOUT ENDED</h2>
             <p className="hud-text" style={{ opacity: 0.6, marginBottom: '25px' }}>FANTASTIC EFFORT! YOU SHIELDED THE PITCH!</p>
 
             <div className="glass-card" style={{ marginBottom: '35px', padding: '30px 40px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '20px' }}>

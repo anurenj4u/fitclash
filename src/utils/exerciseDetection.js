@@ -3,6 +3,14 @@
 export function analyzePose(pose, mode, repStateRef, repCountRef) {
   if (!pose || !pose.keypoints) return null;
 
+  // Auto-detect exercise mode switches and reset historical tracking state
+  if (!repStateRef.currentMode || repStateRef.currentMode !== mode) {
+    repStateRef.currentMode = mode;
+    repStateRef.headYHistory = [];
+    repStateRef.squatHighestShoulderY = null;
+    repStateRef.pushupHighestShoulderY = null;
+  }
+
   const getKP = (name) => pose.keypoints.find(kp => kp.name === name);
 
   const nose = getKP('nose');
@@ -31,36 +39,81 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
   let isActive = false;
 
   if (mode === 'squats') {
-    // Squat: detect hip drop relative to shoulders using knee y-position
-    // Primary: if we have hips + knees, check hip-knee angle  
-    const hipY = ((leftHip?.y ?? 0) + (rightHip?.y ?? 0)) / 2;
-    const kneeY = ((leftKnee?.y ?? 0) + (rightKnee?.y ?? 0)) / 2;
-    const hipsOk = leftHip?.score > MIN_CONF || rightHip?.score > MIN_CONF;
-    const kneesOk = leftKnee?.score > MIN_CONF || rightKnee?.score > MIN_CONF;
+    // Unified Squat Tracker: works perfectly whether feet/legs are visible (floor mount) or not (table mount).
+    // We track stable shoulder vertical movement relative to the shoulder width.
+    if (shoulderOk && shoulderWidth > 0) {
+      if (repStateRef.squatHighestShoulderY === undefined || repStateRef.squatHighestShoulderY === null) {
+        repStateRef.squatHighestShoulderY = avgShoulderY;
+      }
+      
+      if (repStateRef.current === 'up') {
+        // Track the highest standing position (smallest Y)
+        repStateRef.squatHighestShoulderY = Math.min(repStateRef.squatHighestShoulderY, avgShoulderY);
+        // Responsive decay to slowly adapt if the user shifts backwards or steps closer
+        repStateRef.squatHighestShoulderY = repStateRef.squatHighestShoulderY * 0.95 + avgShoulderY * 0.05;
+      }
 
-    if (hipsOk && kneesOk) {
-      // Squatting: knees are much further down than hips (> 80% of shoulder width gap)
-      const hipKneeDiff = kneeY - hipY;
-      const threshold = shoulderWidth * 0.55; // squat fires when hip-knee diff < threshold
-      isActive = hipKneeDiff < threshold;
-    } else if (nose?.score > MIN_CONF) {
-      // Fallback: nose drops closer to shoulders (simpler upper-body squat approximation)
-      const headToShoulderDist = (avgShoulderY - (nose?.y ?? 0)) / shoulderWidth;
-      isActive = headToShoulderDist < 0.35; // More lenient than old 0.25
+      const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
+      // Squat active down-state trigger: shoulders must move down by at least 0.35 of shoulder width
+      isActive = movedDownDist > 0.35;
     }
 
   } else if (mode === 'pushups') {
-    // Pushup: nose drops close to or below shoulder level
-    if (nose?.score > MIN_CONF) {
-      const headToShoulderDist = (avgShoulderY - nose.y) / shoulderWidth;
-      isActive = headToShoulderDist < 0.3;
+    // Pushup: track absolute vertical shoulder movement to prevent head-bobbing cheating
+    // and adapt the "up" baseline dynamically to account for fatigue.
+    if (shoulderOk && shoulderWidth > 0) {
+      if (repStateRef.pushupHighestShoulderY === undefined || repStateRef.pushupHighestShoulderY === null) {
+        repStateRef.pushupHighestShoulderY = avgShoulderY;
+      }
+      
+      if (repStateRef.current === 'up') {
+        // Track the highest position (smallest Y). 
+        repStateRef.pushupHighestShoulderY = Math.min(repStateRef.pushupHighestShoulderY, avgShoulderY);
+        // Fast decay downwards so if they get tired and can't push up as high, the baseline adjusts
+        repStateRef.pushupHighestShoulderY = repStateRef.pushupHighestShoulderY * 0.90 + avgShoulderY * 0.10; 
+      }
+
+      const movedDownDist = (avgShoulderY - repStateRef.pushupHighestShoulderY) / shoulderWidth;
+      // Trigger pushup if shoulders drop by at least 20% of shoulder width
+      isActive = movedDownDist > 0.20; 
     }
 
   } else if (mode === 'jacks') {
-    // Jumping Jack: either hands raised above nose OR wrists above shoulders
-    const leftUp = leftWrist?.score > MIN_CONF && leftWrist.y < avgShoulderY;
-    const rightUp = rightWrist?.score > MIN_CONF && rightWrist.y < avgShoulderY;
-    isActive = leftUp || rightUp;
+    // Jumping Jack: TWO strict conditions must BOTH be true:
+    //   1) Both wrists are clearly ABOVE the top of the head (not just nose level)
+    //   2) The head is genuinely airborne — nose is significantly HIGHER than its recent standing baseline
+
+    // Estimate nose position; fall back to above-shoulder if nose not visible
+    const noseY = (nose?.score > MIN_CONF) ? nose.y : avgShoulderY - (shoulderWidth * 0.5);
+    // "Above head" target: wrists must be at least 0.3 * shoulderWidth ABOVE the nose
+    const aboveHeadThreshold = noseY - shoulderWidth * 0.3;
+
+    // Both wrists must be strictly above the head crown (lower Y = higher on screen)
+    const leftAboveHead  = leftWrist?.score  > MIN_CONF && leftWrist.y  < aboveHeadThreshold;
+    const rightAboveHead = rightWrist?.score > MIN_CONF && rightWrist.y < aboveHeadThreshold;
+    const bothHandsAboveHead = leftAboveHead && rightAboveHead;
+
+    // ---- Real jump detection via rolling baseline ----
+    // We track a rolling minimum of noseY (= the standing floor height).
+    // When the user jumps, their nose Y drops (rises on screen) well below this floor.
+    // This cleanly separates a real jump from random head tilt / camera jitter.
+    if (!repStateRef.headYHistory) repStateRef.headYHistory = [];
+    repStateRef.headYHistory.push(noseY);
+    if (repStateRef.headYHistory.length > 20) {
+      repStateRef.headYHistory.shift();
+    }
+
+    let isJumping = false;
+    if (repStateRef.headYHistory.length >= 8) {
+      // The "floor" = the highest recent noseY (user standing still, largest Y value in screen coords)
+      const standingFloorY = Math.max(...repStateRef.headYHistory);
+      // How much has the head risen ABOVE that standing floor?
+      const jumpRise = standingFloorY - noseY; // positive = head is higher than floor
+      // Must rise by at least 18% of shoulder width — clearly a real jump, not a nod/sway
+      isJumping = jumpRise > shoulderWidth * 0.18;
+    }
+
+    isActive = bothHandsAboveHead && isJumping;
 
   } else if (mode === 'highknees') {
     // High Knees: knee rises above hip level
@@ -78,19 +131,28 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
     action = 'active';
   } else {
     if (repStateRef.current === 'down') {
-      // For squats: must stand back upright (knees > hips again or head rises)
       let returnedToStart = true;
       if (mode === 'squats') {
-        const hipsOk = leftHip?.score > MIN_CONF || rightHip?.score > MIN_CONF;
-        const kneesOk = leftKnee?.score > MIN_CONF || rightKnee?.score > MIN_CONF;
-        if (hipsOk && kneesOk) {
-          const hipY = ((leftHip?.y ?? 0) + (rightHip?.y ?? 0)) / 2;
-          const kneeY = ((leftKnee?.y ?? 0) + (rightKnee?.y ?? 0)) / 2;
-          returnedToStart = (kneeY - hipY) > shoulderWidth * 0.75;
+        if (repStateRef.squatHighestShoulderY !== undefined && repStateRef.squatHighestShoulderY !== null) {
+          const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
+          // Must stand back upright (movedDownDist < 0.15 of shoulder width)
+          returnedToStart = movedDownDist < 0.15;
+        } else {
+          returnedToStart = true;
+        }
+      } else if (mode === 'pushups') {
+        if (repStateRef.pushupHighestShoulderY !== undefined && repStateRef.pushupHighestShoulderY !== null) {
+          const movedDownDist = (avgShoulderY - repStateRef.pushupHighestShoulderY) / shoulderWidth;
+          // Must push shoulders back up close to the dynamic highest point
+          returnedToStart = movedDownDist < 0.12; 
+        } else {
+          returnedToStart = true;
         }
       } else if (mode === 'jacks') {
-        const leftDown = !leftWrist || leftWrist.score < MIN_CONF || leftWrist.y > avgShoulderY + 10;
-        const rightDown = !rightWrist || rightWrist.score < MIN_CONF || rightWrist.y > avgShoulderY + 10;
+        // Hands must drop back BELOW the shoulders (rest position) to complete the rep
+        const leftDown  = !leftWrist  || leftWrist.score  < MIN_CONF || leftWrist.y  > avgShoulderY;
+        const rightDown = !rightWrist || rightWrist.score < MIN_CONF || rightWrist.y > avgShoulderY;
+
         returnedToStart = leftDown && rightDown;
       }
 

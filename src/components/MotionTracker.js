@@ -126,14 +126,15 @@ const MotionTracker = ({ mode, onReady }) => {
       if (pose.keypoints) {
         const getPt = (name) => pose.keypoints.find(k => k.name === name);
         const thresh = 0.3;
-        const ankles = (getPt('left_ankle')?.score > thresh || getPt('right_ankle')?.score > thresh);
-        const shoulders = (getPt('left_shoulder')?.score > thresh || getPt('right_shoulder')?.score > thresh);
-        const hips = (getPt('left_hip')?.score > thresh || getPt('right_hip')?.score > thresh);
+        const isPushup = modeRef.current === 'pushups';
+        // Remove ankle constraint to support table mounts
+        const ankles = true;
+        const shoulders = isPushup ? true : (getPt('left_shoulder')?.score > thresh || getPt('right_shoulder')?.score > thresh);
+        const hips = isPushup ? true : (getPt('left_hip')?.score > thresh || getPt('right_hip')?.score > thresh);
         
-        if (!shoulders && !hips && !ankles) setPositionWarning('NO BODY DETECTED');
+        if (!shoulders && !hips) setPositionWarning('NO BODY DETECTED');
         else if (!shoulders) setPositionWarning('UPPER BODY MISSING');
         else if (!hips) setPositionWarning('HIPS MISSING - STEP BACK');
-        else if (!ankles) setPositionWarning('FEET MISSING - STEP BACK');
         else setPositionWarning(null);
       } else {
         setPositionWarning(null);
