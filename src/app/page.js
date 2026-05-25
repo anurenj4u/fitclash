@@ -1030,39 +1030,9 @@ export default function Home() {
                           )}
                         </div>
 
-                        <p style={{ fontSize: '11px', opacity: isActive ? 0.85 : 0.6, color: '#fff', lineHeight: 1.4, marginBottom: '10px', height: '32px', overflow: 'hidden' }}>
+                        <p style={{ fontSize: '11px', opacity: isActive ? 0.85 : 0.6, color: '#fff', lineHeight: 1.4, marginBottom: '0px', height: '32px', overflow: 'hidden' }}>
                           {card.desc}
                         </p>
-
-                        <div style={{ 
-                          display: 'flex', 
-                          flexWrap: 'wrap',
-                          justifyContent: 'space-between', 
-                          alignItems: 'center', 
-                          borderTop: '1px solid rgba(255, 255, 255, 0.05)', 
-                          paddingTop: '12px',
-                          gap: '12px'
-                        }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '120px' }}>
-                            <span style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px' }}>TACTICAL ESTIMATION</span>
-                            <span className="arcade-text" style={{ fontSize: '12px', color: '#fff', fontWeight: 900 }}>{card.stats}</span>
-                          </div>
-                          
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', minWidth: '120px' }}>
-                            <span style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px' }}>ENERGY REQUIREMENT</span>
-                            <div style={{ display: 'flex', gap: '2px', marginTop: '2px' }}>
-                              {[...Array(5)].map((_, idx) => (
-                                <div key={idx} style={{
-                                  width: '4px',
-                                  height: '8px',
-                                  borderRadius: '1px',
-                                  background: idx < card.energy ? card.color : 'rgba(255,255,255,0.1)',
-                                  boxShadow: (isActive && idx < card.energy) ? `0 0 5px ${card.color}` : 'none'
-                                }} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
                       </motion.div>
                     );
                   })}
@@ -1082,22 +1052,6 @@ export default function Home() {
                 alignItems: 'center',
                 gap: '15px'
               }}>
-                <div style={{ fontSize: '11px', color: '#fff', opacity: 0.6, letterSpacing: '1px', fontWeight: 700 }}>
-                  30 Days Challange
-                </div>
-
-                <div style={{ fontSize: '14px', color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
-                  {difficulty.toUpperCase()} MODE: 3 EXERCISES ({difficulty === 'easy' ? 60 : difficulty === 'medium' ? 150 : 300} TOTAL REPS)
-                </div>
-
-                <div style={{ fontSize: '12px', color: '#ffffff', opacity: 0.8, marginBottom: '10px' }}>
-                  {selectedExercises.map(mode => mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase()).join(', ')}
-                </div>
-
-                <div style={{ fontSize: '11px', color: '#00f2ff', fontWeight: 900, textShadow: 'none', letterSpacing: '0.5px' }}>
-                  REST INTERVAL: {restDuration}s BETWEEN EXERCISES
-                </div>
-
                 {selectedGoal === 'FAT BURN' && showFatBurnCalendar && (
                   <div style={{
                     display: 'grid',
