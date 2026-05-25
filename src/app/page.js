@@ -831,7 +831,7 @@ export default function Home() {
 
 
         {/* Segmented Options Selector */}
-        <div style={{
+        <div className="responsive-switcher" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           background: 'rgba(5, 5, 8, 0.95)',
@@ -999,14 +999,22 @@ export default function Home() {
                           {card.desc}
                         </p>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '12px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 700 }}>TACTICAL ESTIMATION</span>
-                            <span className="arcade-text" style={{ fontSize: '13px', color: '#fff', fontWeight: 900 }}>{card.stats}</span>
+                        <div style={{ 
+                          display: 'flex', 
+                          flexWrap: 'wrap',
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          borderTop: '1px solid rgba(255, 255, 255, 0.05)', 
+                          paddingTop: '12px',
+                          gap: '12px'
+                        }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '120px' }}>
+                            <span style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px' }}>TACTICAL ESTIMATION</span>
+                            <span className="arcade-text" style={{ fontSize: '12px', color: '#fff', fontWeight: 900 }}>{card.stats}</span>
                           </div>
                           
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                            <span style={{ fontSize: '10px', opacity: 0.4, fontWeight: 700 }}>ENERGY REQUIREMENT</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', minWidth: '120px' }}>
+                            <span style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px' }}>ENERGY REQUIREMENT</span>
                             <div style={{ display: 'flex', gap: '2px', marginTop: '2px' }}>
                               {[...Array(5)].map((_, idx) => (
                                 <div key={idx} style={{
@@ -1179,7 +1187,7 @@ export default function Home() {
 
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))',
                   gap: '12px'
                 }}>
                   {[
@@ -1235,7 +1243,7 @@ export default function Home() {
                   </div>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
                     gap: '10px'
                   }}>
                     {[
@@ -1632,6 +1640,7 @@ export default function Home() {
               ].map(leader => (
                 <div 
                   key={leader.rank} 
+                  className="responsive-leaderboard-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '40px 1.5fr 1fr 1fr 80px',
@@ -1643,22 +1652,22 @@ export default function Home() {
                     boxShadow: 'none'
                   }}
                 >
-                  <span className="arcade-text" style={{ fontSize: '12px', fontWeight: 900, color: leader.rank === 1 ? '#ffd700' : leader.rank === 2 ? '#c0c0c0' : leader.isSelf ? '#39ff14' : '#fff' }}>
+                  <span className="arcade-text rank-text" style={{ fontSize: '12px', fontWeight: 900, color: leader.rank === 1 ? '#ffd700' : leader.rank === 2 ? '#c0c0c0' : leader.isSelf ? '#39ff14' : '#fff' }}>
                     #{leader.rank}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="name-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: leader.isSelf ? '#39ff14' : '#fff' }}>
                       {leader.name}
                     </span>
                     {leader.rank <= 2 && <span style={{ fontSize: '10px' }}>👑</span>}
                   </div>
-                  <span style={{ fontSize: '9px', fontWeight: 900, color: leader.isSelf ? '#39ff14' : '#00f2ff', background: leader.isSelf ? 'rgba(57, 255, 20, 0.1)' : 'rgba(0, 242, 255, 0.1)', border: `1px solid ${leader.isSelf ? '#39ff14' : 'rgba(0, 242, 255, 0.2)'}`, padding: '2px 8px', borderRadius: '4px', justifySelf: 'start', letterSpacing: '0.5px' }}>
+                  <span className="badge-text" style={{ fontSize: '9px', fontWeight: 900, color: leader.isSelf ? '#39ff14' : '#00f2ff', background: leader.isSelf ? 'rgba(57, 255, 20, 0.1)' : 'rgba(0, 242, 255, 0.1)', border: `1px solid ${leader.isSelf ? '#39ff14' : 'rgba(0, 242, 255, 0.2)'}`, padding: '2px 8px', borderRadius: '4px', justifySelf: 'start', letterSpacing: '0.5px' }}>
                     {leader.type}
                   </span>
-                  <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 700 }}>
+                  <span className="lvl-text" style={{ fontSize: '10px', opacity: 0.5, fontWeight: 700 }}>
                     LVL {leader.level}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: 900, textAlign: 'right', fontFamily: 'var(--font-gaming)' }}>
+                  <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, textAlign: 'right', fontFamily: 'var(--font-gaming)' }}>
                     {leader.xp} XP
                   </span>
                 </div>

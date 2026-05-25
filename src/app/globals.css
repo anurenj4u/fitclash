@@ -199,4 +199,47 @@ h1, h2, h3, .arcade-text {
   }
 }
 
+/* Responsive Mode Switcher & Leaderboard Row */
+@media (max-width: 600px) {
+  .responsive-switcher {
+    padding: 4px !important;
+    gap: 4px !important;
+    border-radius: 16px !important;
+  }
+  .responsive-switcher button {
+    padding: 10px 8px !important;
+    font-size: 11px !important;
+    border-radius: 12px !important;
+    gap: 6px !important;
+  }
+  .responsive-switcher button svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  .responsive-leaderboard-row {
+    grid-template-columns: 20px 1.2fr 0.8fr 45px 55px !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+  }
+  .responsive-leaderboard-row .rank-text {
+    font-size: 10px !important;
+  }
+  .responsive-leaderboard-row .name-container span {
+    font-size: 10px !important;
+  }
+  .responsive-leaderboard-row .badge-text {
+    font-size: 7px !important;
+    padding: 2px 4px !important;
+    letter-spacing: 0px !important;
+    border-radius: 3px !important;
+  }
+  .responsive-leaderboard-row .lvl-text {
+    font-size: 8px !important;
+  }
+  .responsive-leaderboard-row .xp-text {
+    font-size: 9px !important;
+  }
+}
+
 
