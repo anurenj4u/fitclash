@@ -1241,8 +1241,7 @@ export default function Home() {
                     {[
                       { id: 'squats', label: 'SQUATS', emoji: '🦵' },
                       { id: 'pushups', label: 'PUSHUPS', emoji: '💪' },
-                      { id: 'jacks', label: 'JUMPING JACKS', emoji: '🏃' },
-                      { id: 'fingers', label: 'FINGER SPRINT', emoji: '👆' }
+                      { id: 'jacks', label: 'JUMPING JACKS', emoji: '🏃' }
                     ].map(m => {
                       const isActive = exerciseMode === m.id;
                       return (
@@ -1462,125 +1461,128 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                {/* BOTTOM CONTROLS INLINED (START / MATCHMAKER) */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '20px',
+                  alignItems: 'center',
+                  marginTop: '10px',
+                  width: '100%'
+                }}>
+                  {sprintMatchType === 'ai' ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      animate={{
+                        boxShadow: [
+                          "0 0 12px rgba(57, 255, 20, 0.15)",
+                          "0 0 22px rgba(57, 255, 20, 0.35)",
+                          "0 0 12px rgba(57, 255, 20, 0.15)"
+                        ]
+                      }}
+                      transition={{
+                        boxShadow: {
+                          repeat: Infinity,
+                          duration: 2.5,
+                          ease: "easeInOut"
+                        }
+                      }}
+                      onClick={() => startOnboarding()}
+                      style={{
+                        background: 'linear-gradient(90deg, #39ff14 0%, #00ff88 100%)',
+                        color: '#000000',
+                        padding: '16px 54px',
+                        borderRadius: '30px',
+                        border: 'none',
+                        fontWeight: 900,
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-gaming)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        letterSpacing: '0.5px',
+                        transition: 'all 0.25s ease',
+                        width: '100%',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      ⚡ START SPRINT MATCH
+                    </motion.button>
+                  ) : sprintMatchType === 'online' ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      animate={{
+                        boxShadow: [
+                          "0 0 12px rgba(57, 255, 20, 0.15)",
+                          "0 0 22px rgba(57, 255, 20, 0.35)",
+                          "0 0 12px rgba(57, 255, 20, 0.15)"
+                        ]
+                      }}
+                      transition={{
+                        boxShadow: {
+                          repeat: Infinity,
+                          duration: 2.5,
+                          ease: "easeInOut"
+                        }
+                      }}
+                      onClick={() => {
+                        setMatchmakerSearching(true);
+                        setMatchmakerError(null);
+                        setMatchedOpponent(null);
+                        setShowLobbyModal(true);
+
+                        let shuffleCount = 0;
+                        const shuffleInterval = setInterval(() => {
+                          const randIdx = Math.floor(Math.random() * MOCK_OPPONENTS.length);
+                          setActiveMockOpponent(MOCK_OPPONENTS[randIdx]);
+                          shuffleCount++;
+
+                          if (shuffleCount >= 20) {
+                            clearInterval(shuffleInterval);
+                            const finalOpponent = MOCK_OPPONENTS[Math.floor(Math.random() * MOCK_OPPONENTS.length)];
+                            setMatchedOpponent(finalOpponent);
+                            setMatchmakerSearching(false);
+
+                            setTimeout(() => {
+                              setShowLobbyModal(false);
+                              setGameStarted(true);
+                            }, 1800);
+                          }
+                        }, 150);
+                      }}
+                      style={{
+                        background: 'linear-gradient(90deg, #39ff14 0%, #00ff88 100%)',
+                        color: '#000000',
+                        padding: '16px 54px',
+                        borderRadius: '30px',
+                        border: 'none',
+                        fontWeight: 900,
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-gaming)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        letterSpacing: '0.5px',
+                        transition: 'all 0.25s ease',
+                        width: '100%',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Users size={14} color="#000" /> FIND OPPONENT
+                    </motion.button>
+                  ) : (
+                    <div style={{ fontSize: '11px', opacity: 0.6, fontStyle: 'italic', fontFamily: 'var(--font-gaming)' }}>
+                      Use the controls above to create or join a private room code.
+                    </div>
+                  )}
+                </div>
               </div>
             </>
-          )}
-
-          {/* BOTTOM CONTROLS (ONLY FOR WORLD CUP SPRINT) */}
-          {playMode === 'worldcup' && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '20px',
-              alignItems: 'center',
-              marginTop: '15px'
-            }}>
-              {sprintMatchType === 'ai' ? (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  animate={{
-                    boxShadow: [
-                      "0 0 12px rgba(57, 255, 20, 0.15)",
-                      "0 0 22px rgba(57, 255, 20, 0.35)",
-                      "0 0 12px rgba(57, 255, 20, 0.15)"
-                    ]
-                  }}
-                  transition={{
-                    boxShadow: {
-                      repeat: Infinity,
-                      duration: 2.5,
-                      ease: "easeInOut"
-                    }
-                  }}
-                  onClick={() => startOnboarding()}
-                  style={{
-                    background: 'linear-gradient(90deg, #39ff14 0%, #00ff88 100%)',
-                    color: '#000000',
-                    padding: '16px 54px',
-                    borderRadius: '30px',
-                    border: 'none',
-                    fontWeight: 900,
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-gaming)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.25s ease'
-                  }}
-                >
-                  ⚡ START SPRINT MATCH
-                </motion.button>
-              ) : sprintMatchType === 'online' ? (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  animate={{
-                    boxShadow: [
-                      "0 0 12px rgba(57, 255, 20, 0.15)",
-                      "0 0 22px rgba(57, 255, 20, 0.35)",
-                      "0 0 12px rgba(57, 255, 20, 0.15)"
-                    ]
-                  }}
-                  transition={{
-                    boxShadow: {
-                      repeat: Infinity,
-                      duration: 2.5,
-                      ease: "easeInOut"
-                    }
-                  }}
-                  onClick={() => {
-                    setMatchmakerSearching(true);
-                    setMatchmakerError(null);
-                    setMatchedOpponent(null);
-                    setShowLobbyModal(true);
-
-                    let shuffleCount = 0;
-                    const shuffleInterval = setInterval(() => {
-                      const randIdx = Math.floor(Math.random() * MOCK_OPPONENTS.length);
-                      setActiveMockOpponent(MOCK_OPPONENTS[randIdx]);
-                      shuffleCount++;
-
-                      if (shuffleCount >= 20) {
-                        clearInterval(shuffleInterval);
-                        const finalOpponent = MOCK_OPPONENTS[Math.floor(Math.random() * MOCK_OPPONENTS.length)];
-                        setMatchedOpponent(finalOpponent);
-                        setMatchmakerSearching(false);
-
-                        setTimeout(() => {
-                          setShowLobbyModal(false);
-                          setGameStarted(true);
-                        }, 1800);
-                      }
-                    }, 150);
-                  }}
-                  style={{
-                    background: 'linear-gradient(90deg, #39ff14 0%, #00ff88 100%)',
-                    color: '#000000',
-                    padding: '16px 54px',
-                    borderRadius: '30px',
-                    border: 'none',
-                    fontWeight: 900,
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-gaming)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.25s ease'
-                  }}
-                >
-                  <Users size={14} color="#000" /> FIND OPPONENT
-                </motion.button>
-              ) : (
-                <div style={{ fontSize: '11px', opacity: 0.6, fontStyle: 'italic', fontFamily: 'var(--font-gaming)' }}>
-                  Use the controls above to create or join a private room code.
-                </div>
-              )}
-            </div>
           )}
 
         </div>
@@ -1760,8 +1762,7 @@ export default function Home() {
                 {[
                   { id: 'squats', label: 'SQUATS', icon: '🦵' },
                   { id: 'pushups', label: 'PUSHUPS', icon: '💪' },
-                  { id: 'jacks', label: 'JUMPING JACKS', icon: '🏃' },
-                  { id: 'fingers', label: 'FINGER SPRINT', icon: '👆' }
+                  { id: 'jacks', label: 'JUMPING JACKS', icon: '🏃' }
                 ].map(item => {
                   const isActive = selectedExercises.includes(item.id);
                   return (
@@ -2062,8 +2063,8 @@ export default function Home() {
                 [02] SELECT SPRINT WORKOUT TYPE
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
-                {['squats', 'pushups', 'jacks', 'fingers'].map(mode => {
-                  const label = mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER SPRINT' : mode.toUpperCase();
+                {['squats', 'pushups', 'jacks'].map(mode => {
+                  const label = mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase();
                   const isActive = exerciseMode === mode;
                   return (
                     <button
