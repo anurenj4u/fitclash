@@ -50,6 +50,7 @@ export default function Home() {
 
   // New Fitness custom configuration state
   const [selectedGoal, setSelectedGoal] = useState('FAT BURN');
+  const [showFatBurnCalendar, setShowFatBurnCalendar] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState(['squats', 'pushups', 'jacks']);
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
   const [restDuration, setRestDuration] = useState(120); // default 120s / 2 minutes rest time
@@ -990,7 +991,7 @@ export default function Home() {
                           background: isActive ? 'rgba(5, 5, 8, 0.95)' : 'rgba(5, 5, 8, 0.4)',
                           border: `1px solid ${isActive ? card.color : 'rgba(255, 255, 255, 0.08)'}`,
                           borderRadius: '16px',
-                          padding: '24px',
+                          padding: '16px',
                           cursor: 'pointer',
                           textAlign: 'left',
                           transition: 'all 0.3s ease',
@@ -1017,21 +1018,44 @@ export default function Home() {
                               {card.title}
                             </span>
                           </div>
-                          <div style={{
-                            fontSize: '10px',
-                            fontWeight: 900,
-                            background: isActive ? `rgba(${card.id === 'FAT BURN' ? '57, 255, 20' : '0, 242, 255'}, 0.1)` : 'rgba(255,255,255,0.05)',
-                            color: isActive ? card.color : 'rgba(255,255,255,0.5)',
-                            border: `1px solid ${isActive ? card.color : 'rgba(255,255,255,0.1)'}`,
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            letterSpacing: '0.5px'
-                          }}>
-                            {isActive ? 'ACTIVE' : 'SELECT'}
-                          </div>
+                          {isActive && card.id === 'FAT BURN' ? (
+                            <div 
+                              onClick={(e) => { e.stopPropagation(); setShowFatBurnCalendar(prev => !prev); }}
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 900,
+                                background: `rgba(57, 255, 20, 0.1)`,
+                                color: '#39ff14',
+                                border: `1px solid #39ff14`,
+                                padding: '4px 10px',
+                                borderRadius: '4px',
+                                letterSpacing: '0.5px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              📅 {showFatBurnCalendar ? 'HIDE' : 'CALENDAR'}
+                            </div>
+                          ) : (
+                            <div style={{
+                              fontSize: '10px',
+                              fontWeight: 900,
+                              background: isActive ? `rgba(0, 242, 255, 0.1)` : 'rgba(255,255,255,0.05)',
+                              color: isActive ? card.color : 'rgba(255,255,255,0.5)',
+                              border: `1px solid ${isActive ? card.color : 'rgba(255,255,255,0.1)'}`,
+                              padding: '4px 10px',
+                              borderRadius: '4px',
+                              letterSpacing: '0.5px'
+                            }}>
+                              {isActive ? 'ACTIVE' : 'SELECT'}
+                            </div>
+                          )}
                         </div>
 
-                        <p style={{ fontSize: '13px', opacity: isActive ? 0.85 : 0.6, color: '#fff', lineHeight: 1.5, marginBottom: '15px', height: '48px', overflow: 'hidden' }}>
+                        <p style={{ fontSize: '11px', opacity: isActive ? 0.85 : 0.6, color: '#fff', lineHeight: 1.4, marginBottom: '10px', height: '32px', overflow: 'hidden' }}>
                           {card.desc}
                         </p>
 
@@ -1099,7 +1123,7 @@ export default function Home() {
                   REST INTERVAL: {restDuration}s BETWEEN EXERCISES
                 </div>
 
-                {selectedGoal === 'FAT BURN' && (
+                {selectedGoal === 'FAT BURN' && showFatBurnCalendar && (
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(40px, 1fr))',
