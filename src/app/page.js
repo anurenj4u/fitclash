@@ -18,6 +18,7 @@ import {
   Zap,
   ShieldCheck,
   ChevronRight,
+  Settings,
   TrendingUp,
   Star,
   Crown,
@@ -63,6 +64,16 @@ export default function Home() {
 
   // World Cup Sprint Multiplayer / Matchmaking state
   const [sprintMatchType, setSprintMatchType] = useState('ai'); // 'ai' | 'online' | 'friend'
+
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('fitclash_user_settings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.matchType) setSprintMatchType(parsed.matchType);
+      } catch (e) {}
+    }
+  }, []);
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
   const [multiplayerRole, setMultiplayerRole] = useState(null); // 'host' | 'guest'
   const [lobbyDetails, setLobbyDetails] = useState(null);
@@ -894,6 +905,31 @@ export default function Home() {
           >
             <Trophy size={16} fill={playMode === 'worldcup' ? '#39ff14' : 'none'} color={playMode === 'worldcup' ? '#39ff14' : 'rgba(255,255,255,0.5)'} /> 1<span style={{ fontSize: '0.8em', opacity: 0.7, textTransform: 'lowercase', margin: '0 1px' }}>vs</span>1 CHALLENGE
           </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.02, translateY: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push('/profile')}
+            style={{
+              padding: '16px 24px',
+              borderRadius: '18px',
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.5)',
+              border: '1px solid transparent',
+              fontSize: '14px',
+              fontWeight: 900,
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              fontFamily: 'var(--font-gaming)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              letterSpacing: '0.5px'
+            }}
+          >
+            <Settings size={16} color="rgba(255,255,255,0.5)" /> PROFILE SETTINGS
+          </motion.button>
         </div>
 
 
@@ -1164,7 +1200,7 @@ export default function Home() {
           {/* ============================================================ */}
           {playMode === 'worldcup' && (
             <>
-              {/* MATCH TYPE SELECTOR */}
+              {/* MATCH TYPE SELECTOR REMOVED - NOW IN PROFILE SETTINGS */}
               <div style={{
                 width: '100%',
                 background: 'rgba(10, 10, 15, 0.6)',
@@ -1173,73 +1209,11 @@ export default function Home() {
                 padding: 'clamp(10px, 2vw, 16px) clamp(10px, 2.5vw, 18px)',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
               }}>
-                <p style={{
-                  textAlign: 'center',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontSize: '11px',
-                  fontWeight: 900,
-                  letterSpacing: '2.5px',
-                  marginBottom: '14px',
-                  fontFamily: 'var(--font-gaming)'
-                }}>
-                  [01] SELECT MATCH TYPE
-                </p>
-
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))',
-                  gap: '12px'
-                }}>
-                  {[
-                    { id: 'ai', label: 'PLAY WITH AI', desc: 'Standard practice' },
-                    { id: 'online', label: 'PLAY ONLINE', desc: 'Global matchmaking' },
-                    { id: 'friend', label: 'PLAY WITH FRIEND', desc: 'Private lobby code' }
-                  ].map(m => {
-                    const isActive = sprintMatchType === m.id;
-                    return (
-                      <motion.button
-                        key={m.id}
-                        whileHover={{ scale: 1.02, translateY: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          if ((m.id === 'online' || m.id === 'friend') && !user) {
-                            alert("Please log in or register to access multiplayer modes!");
-                            router.push('/login');
-                            return;
-                          }
-                          setSprintMatchType(m.id);
-                        }}
-                        style={{
-                          padding: '12px 10px',
-                          borderRadius: '12px',
-                          background: isActive ? 'rgba(57, 255, 20, 0.05)' : 'rgba(255, 255, 255, 0.01)',
-                          color: isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.7)',
-                          border: `1.5px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.08)'}`,
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          transition: 'border 0.25s, color 0.25s, background 0.25s',
-                          fontFamily: 'var(--font-gaming)',
-                          boxShadow: isActive ? '0 6px 16px rgba(0, 0, 0, 0.4)' : 'none',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <span style={{ fontSize: '11px', fontWeight: 900 }}>{m.label}</span>
-                        <span style={{ fontSize: '8px', opacity: isActive ? 0.8 : 0.5, fontWeight: 500 }}>{m.desc}</span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
                 {/* SPRINT WORKOUT TYPE SELECTOR (INLINE & OBVIOUS) */}
-                <div style={{ marginTop: '24px', width: '100%' }}>
+                <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
                     <span style={{ width: '5px', height: '5px', background: '#39ff14', borderRadius: '50%', display: 'inline-block' }} />
-                    [02] SELECT SPRINT WORKOUT TYPE (SQUATS ACTIVE BY DEFAULT 🦵)
+                    [01] SELECT SPRINT WORKOUT TYPE (SQUATS ACTIVE BY DEFAULT 🦵)
                   </div>
                   <div style={{
                     display: 'grid',
@@ -1289,7 +1263,7 @@ export default function Home() {
                 <div style={{ marginTop: '24px', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
                     <span style={{ width: '5px', height: '5px', background: '#00f2ff', borderRadius: '50%', display: 'inline-block' }} />
-                    [03] SELECT TARGET DISTANCE
+                    [02] SELECT TARGET DISTANCE
                   </div>
                   <div style={{
                     display: 'grid',

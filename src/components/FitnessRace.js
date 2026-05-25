@@ -464,7 +464,17 @@ const FitnessRace = ({
 
         this.movePlayer = () => {
           if (gameStateRef.current !== 'playing' || winnerRef.current) return;
-          const distPerRep = mode === 'jacks' ? 800 : (['pushups', 'squats'].includes(mode) ? 1500 : (mode === 'fingers' ? 100 : 800));
+          
+          let savedSettings = {};
+          try {
+            savedSettings = JSON.parse(localStorage.getItem('fitclash_user_settings') || '{}');
+          } catch(e){}
+          
+          let distPerRep = 800;
+          if (mode === 'jacks') distPerRep = (savedSettings.distanceJacks || 8) * 100;
+          else if (mode === 'squats') distPerRep = (savedSettings.distanceSquats || 12) * 100;
+          else if (mode === 'pushups') distPerRep = (savedSettings.distancePushups || 12) * 100;
+          else if (mode === 'fingers') distPerRep = 100;
           playerDistanceRef.current += distPerRep;
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
 
