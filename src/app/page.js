@@ -1227,38 +1227,138 @@ export default function Home() {
                   })}
                 </div>
 
-                {/* Match Setup button */}
-                <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
+                {/* SPRINT WORKOUT TYPE SELECTOR (INLINE & OBVIOUS) */}
+                <div style={{ marginTop: '24px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
                     <span style={{ width: '5px', height: '5px', background: '#39ff14', borderRadius: '50%', display: 'inline-block' }} />
-                    SPRINT PREFERENCES
+                    [02] SELECT SPRINT WORKOUT TYPE (SQUATS ACTIVE BY DEFAULT 🦵)
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.015, borderColor: '#39ff14', color: '#39ff14', background: 'rgba(57, 255, 20, 0.05)' }}
-                    whileTap={{ scale: 0.985 }}
-                    onClick={() => setShowSprintSetupModal(true)}
-                    style={{
-                      width: '100%',
-                      padding: '14px 24px',
-                      borderRadius: '16px',
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      fontWeight: 900,
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-gaming)',
-                      transition: 'border 0.25s, color 0.25s, background 0.25s',
-                      textAlign: 'center',
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                    gap: '10px'
+                  }}>
+                    {[
+                      { id: 'squats', label: 'SQUATS', emoji: '🦵' },
+                      { id: 'pushups', label: 'PUSHUPS', emoji: '💪' },
+                      { id: 'jacks', label: 'JUMPING JACKS', emoji: '🏃' },
+                      { id: 'fingers', label: 'FINGER SPRINT', emoji: '👆' }
+                    ].map(m => {
+                      const isActive = exerciseMode === m.id;
+                      return (
+                        <motion.button
+                          key={m.id}
+                          whileHover={{ scale: 1.02, translateY: -1 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setExerciseMode(m.id)}
+                          style={{
+                            padding: '12px 10px',
+                            borderRadius: '12px',
+                            background: isActive ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255, 255, 255, 0.01)',
+                            color: isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.7)',
+                            border: `1.5px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.08)'}`,
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            fontFamily: 'var(--font-gaming)',
+                            boxShadow: isActive ? '0 4px 12px rgba(57, 255, 20, 0.15)' : 'none',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <span style={{ fontSize: '18px' }}>{m.emoji}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.5px' }}>{m.label}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* SPRINT TARGET DISTANCE (INLINE & OBVIOUS) */}
+                <div style={{ marginTop: '24px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
+                    <span style={{ width: '5px', height: '5px', background: '#00f2ff', borderRadius: '50%', display: 'inline-block' }} />
+                    [03] SELECT TARGET DISTANCE
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '8px'
+                  }}>
+                    {[
+                      { val: 0.2, label: '200M' },
+                      { val: 0.4, label: '400M' },
+                      { val: 0.6, label: '600M' },
+                      { val: 0.8, label: '800M' },
+                      { val: 1.0, label: '1 KM' },
+                      { val: 2.0, label: '2 KM' },
+                      { val: 3.0, label: '3 KM' }
+                    ].map(preset => {
+                      const isActive = targetDistance === preset.val;
+                      return (
+                        <motion.button
+                          key={preset.val}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setTargetDistance(preset.val)}
+                          style={{
+                            background: isActive ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.01)',
+                            color: isActive ? '#00f2ff' : 'rgba(255,255,255,0.7)',
+                            border: `1.5px solid ${isActive ? '#00f2ff' : 'rgba(255,255,255,0.08)'}`,
+                            padding: "8px 4px",
+                            borderRadius: '10px',
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-gaming)',
+                            transition: 'all 0.2s ease',
+                            boxShadow: isActive ? '0 4px 12px rgba(0, 242, 255, 0.15)' : 'none'
+                          }}
+                        >
+                          {preset.label}
+                        </motion.button>
+                      );
+                    })}
+                    {/* Custom input */}
+                    <div style={{
+                      position: 'relative',
+                      background: ![0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0].includes(targetDistance) ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.01)',
+                      border: `1.5px solid ${![0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0].includes(targetDistance) ? '#00f2ff' : 'rgba(255,255,255,0.08)'}`,
+                      borderRadius: '10px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    ⚙️ MATCH SETUP ({targetDistance >= 1 ? `${targetDistance} KM` : `${targetDistance * 1000}M`}, {exerciseMode === 'jacks' ? 'JUMPING JACKS' : exerciseMode === 'fingers' ? 'FINGER SPRINT' : exerciseMode.toUpperCase()})
-                  </motion.button>
+                      padding: '0 8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <input
+                        type="number"
+                        placeholder="CUSTOM"
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (val > 0) {
+                            const cappedVal = Math.min(3000, val);
+                            setTargetDistance(cappedVal / 1000);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          width: '100%',
+                          padding: '8px 0',
+                          outline: 'none',
+                          fontFamily: 'var(--font-gaming)',
+                          textAlign: 'center'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Sub-actions for Play with Friend */}
@@ -1393,7 +1493,7 @@ export default function Home() {
                       ease: "easeInOut"
                     }
                   }}
-                  onClick={() => setShowSprintSetupModal(true)}
+                  onClick={() => startOnboarding()}
                   style={{
                     background: 'linear-gradient(90deg, #39ff14 0%, #00ff88 100%)',
                     color: '#000000',
@@ -1411,7 +1511,7 @@ export default function Home() {
                     transition: 'all 0.25s ease'
                   }}
                 >
-                  ⚙️ CONFIGURE & START
+                  ⚡ START SPRINT MATCH
                 </motion.button>
               ) : sprintMatchType === 'online' ? (
                 <motion.button
