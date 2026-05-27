@@ -1086,7 +1086,7 @@ export default function Home() {
                             background: isActive ? 'rgba(0, 242, 255, 0.08)' : 'rgba(255,255,255,0.01)',
                             color: isActive ? '#00f2ff' : 'rgba(255,255,255,0.7)',
                             border: `1.5px solid ${isActive ? '#00f2ff' : 'rgba(255,255,255,0.08)'}`,
-                            padding: "8px 4px",
+                            padding: "14px 4px",
                             borderRadius: '10px',
                             fontSize: '10px',
                             fontWeight: 800,
@@ -1131,7 +1131,7 @@ export default function Home() {
                           fontSize: '10px',
                           fontWeight: 800,
                           width: '100%',
-                          padding: '8px 0',
+                          padding: '14px 0',
                           outline: 'none',
                           fontFamily: 'var(--font-gaming)',
                           textAlign: 'center'
@@ -1439,7 +1439,7 @@ export default function Home() {
                   justifyContent: 'center',
                   gap: '20px',
                   alignItems: 'center',
-                  marginTop: '10px',
+                  marginTop: '28px',
                   width: '100%'
                 }}>
                   {sprintMatchType === 'ai' ? (
