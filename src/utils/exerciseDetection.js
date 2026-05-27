@@ -29,12 +29,26 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
 
   const MIN_CONF = 0.25;
 
-  const shoulderOk = leftShoulder?.score > MIN_CONF || rightShoulder?.score > MIN_CONF;
-  if (!shoulderOk) return null;
+  let avgShoulderY = 0;
+  let validShouldersCount = 0;
+  if (leftShoulder && leftShoulder.score > MIN_CONF) {
+    avgShoulderY += leftShoulder.y;
+    validShouldersCount++;
+  }
+  if (rightShoulder && rightShoulder.score > MIN_CONF) {
+    avgShoulderY += rightShoulder.y;
+    validShouldersCount++;
+  }
+  if (validShouldersCount === 0) return null;
+  avgShoulderY = avgShoulderY / validShouldersCount;
 
-  const avgShoulderY = ((leftShoulder?.y ?? 0) + (rightShoulder?.y ?? 0)) / 2;
-  const shoulderWidth = Math.abs((leftShoulder?.x ?? 0) - (rightShoulder?.x ?? 0));
-  if (shoulderWidth < 10) return null;
+  let shoulderWidth = 100;
+  if (leftShoulder && leftShoulder.score > MIN_CONF && rightShoulder && rightShoulder.score > MIN_CONF) {
+    shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+  } else {
+    shoulderWidth = 120;
+  }
+  if (shoulderWidth < 10) shoulderWidth = 100;
 
   // Focus optimizations solely on mobile viewports/devices to preserve working web/desktop algorithms
   const isMobile = typeof window !== 'undefined' && (window.innerWidth < 1024 || /Mobi|Android|iPhone/i.test(navigator.userAgent));
@@ -69,55 +83,57 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       const kAngles = [leftKneeAngle, rightKneeAngle].filter(a => a !== null);
       const minKnee = Math.min(...kAngles);
       const maxKnee = Math.max(...kAngles);
-      angleSaysStanding = maxKnee > 155;
-      angleSaysSquatting = minKnee < 135;
+      angleSaysStanding = maxKnee > 142;
+      angleSaysSquatting = minKnee < 140;
     } else if (hasLeftHip || hasRightHip) {
       // If ankles are clipped (table mount / low camera angle), use hip angles fallback
       const hAngles = [leftHipAngle, rightHipAngle].filter(a => a !== null);
       const minHip = Math.min(...hAngles);
       const maxHip = Math.max(...hAngles);
-      angleSaysStanding = maxHip > 150;
-      angleSaysSquatting = minHip < 125;
+      angleSaysStanding = maxHip > 138;
+      angleSaysSquatting = minHip < 130;
     }
 
     // 2. Adaptive Shoulder Displacement Tracker
-    if (shoulderOk && shoulderWidth > 0) {
-      if (repStateRef.squatHighestShoulderY === undefined || repStateRef.squatHighestShoulderY === null) {
-        repStateRef.squatHighestShoulderY = avgShoulderY;
-      }
+    if (repStateRef.squatHighestShoulderY === undefined || repStateRef.squatHighestShoulderY === null) {
+      repStateRef.squatHighestShoulderY = avgShoulderY;
+    }
 
-      // Self-Calibrating: If joint angles confirm user stood up, synchronize baseline
-      if (angleSaysStanding) {
-        repStateRef.squatHighestShoulderY = avgShoulderY;
-        if (repStateRef.current === 'down') {
-          repStateRef.current = 'up';
-          repStateRef.squatFramesInDown = 0;
-        }
-      }
-
-      if (repStateRef.current === 'up') {
-        repStateRef.squatHighestShoulderY = Math.min(repStateRef.squatHighestShoulderY, avgShoulderY);
-        repStateRef.squatHighestShoulderY = repStateRef.squatHighestShoulderY * 0.95 + avgShoulderY * 0.05;
-      }
-
-      const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
-      const shoulderSaysSquatting = movedDownDist > 0.30;
-      
-      isActive = angleSaysSquatting || shoulderSaysSquatting;
-
-      // Self-Healing: Reset stuck down-state after 40 frames (~1.3s)
+    // Self-Calibrating: If joint angles confirm user stood up, synchronize baseline
+    if (angleSaysStanding) {
+      repStateRef.squatHighestShoulderY = avgShoulderY;
       if (repStateRef.current === 'down') {
-        repStateRef.squatFramesInDown = (repStateRef.squatFramesInDown || 0) + 1;
-        if (repStateRef.squatFramesInDown > 40) {
-          repStateRef.current = 'up';
-          repStateRef.squatHighestShoulderY = avgShoulderY;
-          repStateRef.squatFramesInDown = 0;
-        }
-      } else {
+        repStateRef.current = 'up';
         repStateRef.squatFramesInDown = 0;
       }
     }
 
+    if (repStateRef.current === 'up') {
+      if (avgShoulderY < repStateRef.squatHighestShoulderY) {
+        // Instant update if they stand higher (lower Y coordinate)
+        repStateRef.squatHighestShoulderY = avgShoulderY;
+      } else {
+        // Slow drift low-pass filter: lets standing Y adapt to shifting posture or steps back
+        repStateRef.squatHighestShoulderY = repStateRef.squatHighestShoulderY * 0.99 + avgShoulderY * 0.01;
+      }
+    }
+
+    const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
+    const shoulderSaysSquatting = movedDownDist > 0.25;
+    
+    isActive = angleSaysSquatting || shoulderSaysSquatting;
+
+    // Self-Healing: Reset stuck down-state after 30 frames (~1.0s)
+    if (repStateRef.current === 'down') {
+      repStateRef.squatFramesInDown = (repStateRef.squatFramesInDown || 0) + 1;
+      if (repStateRef.squatFramesInDown > 30) {
+        repStateRef.current = 'up';
+        repStateRef.squatHighestShoulderY = avgShoulderY;
+        repStateRef.squatFramesInDown = 0;
+      }
+    } else {
+      repStateRef.squatFramesInDown = 0;
+    }
   } else if (mode === 'pushups') {
     if (isMobile) {
       // Mobile-optimized Pushup Logic with Self-Healing
