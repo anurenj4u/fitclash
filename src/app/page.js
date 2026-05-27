@@ -2934,17 +2934,17 @@ export default function Home() {
               position: 'fixed',
               bottom: '24px',
               right: '24px',
-              width: '310px',
+              width: '420px',
               background: 'rgba(5, 5, 12, 0.94)',
               border: '1.5px solid rgba(57, 255, 20, 0.4)',
               borderRadius: '16px',
-              padding: '16px 18px',
+              padding: '12px 18px',
               boxShadow: '0 12px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(57, 255, 20, 0.1)',
               zIndex: 1000,
               backdropFilter: 'blur(16px)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px',
+              gap: '6px',
               textAlign: 'left'
             }}
           >
@@ -2956,12 +2956,12 @@ export default function Home() {
               }}
               style={{
                 position: 'absolute',
-                top: '12px',
+                top: '10px',
                 right: '12px',
                 background: 'transparent',
                 border: 'none',
                 color: 'rgba(255, 255, 255, 0.5)',
-                fontSize: '16px',
+                fontSize: '18px',
                 cursor: 'pointer',
                 fontWeight: 900,
                 transition: 'color 0.2s',
@@ -2976,13 +2976,13 @@ export default function Home() {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '18px' }}>🤖</span>
-              <span className="arcade-text" style={{ fontSize: '9px', color: '#39ff14', letterSpacing: '1px' }}>
+              <span className="arcade-text" style={{ fontSize: '11px', color: '#39ff14', letterSpacing: '1.5px' }}>
                 AI COACH
               </span>
             </div>
 
             {/* Message Body */}
-            <p style={{ fontSize: '11px', color: '#fff', opacity: 0.9, lineHeight: 1.4, margin: '2px 0 6px 0' }}>
+            <p style={{ fontSize: '14px', color: '#fff', opacity: 0.95, lineHeight: 1.45, margin: '2px 0 4px 0', fontWeight: 500 }}>
               Hey champion! Try the **1vs1 Sprint** feature today! Your last highest was <strong style={{ color: '#39ff14' }}>{highestReps} reps</strong>. Try today to make a new **Personal Record (PR)**!
             </p>
 
@@ -2995,15 +2995,16 @@ export default function Home() {
                 background: 'linear-gradient(135deg, #39ff14 0%, #00f2ff 100%)',
                 color: '#000000',
                 border: 'none',
-                padding: '10px 16px',
+                padding: '11px 18px',
                 borderRadius: '20px',
                 fontWeight: 900,
-                fontSize: '10px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-gaming)',
                 textAlign: 'center',
                 boxShadow: '0 4px 12px rgba(57, 255, 20, 0.25)',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                marginTop: '2px'
               }}
             >
               CHALLENGE NOW ⚡
