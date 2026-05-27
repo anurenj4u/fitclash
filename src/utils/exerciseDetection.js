@@ -56,77 +56,32 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
   let isActive = false;
 
   if (mode === 'squats') {
-    // 1. Joint Angle Calculators for Squat Depth
-    const getAngle = (p1, p2, p3) => {
-      const theta1 = Math.atan2(p1.y - p2.y, p1.x - p2.x);
-      const theta2 = Math.atan2(p3.y - p2.y, p3.x - p2.x);
-      let angle = Math.abs((theta1 - theta2) * 180.0 / Math.PI);
-      if (angle > 180.0) angle = 360.0 - angle;
-      return angle;
-    };
-
-    const hasLeftKnee = leftHip?.score > MIN_CONF && leftKnee?.score > MIN_CONF && leftAnkle?.score > MIN_CONF;
-    const hasRightKnee = rightHip?.score > MIN_CONF && rightKnee?.score > MIN_CONF && rightAnkle?.score > MIN_CONF;
-    const leftKneeAngle = hasLeftKnee ? getAngle(leftHip, leftKnee, leftAnkle) : null;
-    const rightKneeAngle = hasRightKnee ? getAngle(rightHip, rightKnee, rightAnkle) : null;
-
-    const hasLeftHip = leftShoulder?.score > MIN_CONF && leftHip?.score > MIN_CONF && leftKnee?.score > MIN_CONF;
-    const hasRightHip = rightShoulder?.score > MIN_CONF && rightHip?.score > MIN_CONF && rightKnee?.score > MIN_CONF;
-    const leftHipAngle = hasLeftHip ? getAngle(leftShoulder, leftHip, leftKnee) : null;
-    const rightHipAngle = hasRightHip ? getAngle(rightShoulder, rightHip, rightKnee) : null;
-
-    let angleSaysStanding = false;
-    let angleSaysSquatting = false;
-
-    if (hasLeftKnee || hasRightKnee) {
-      // If ankles are fully visible, use knee angles
-      const kAngles = [leftKneeAngle, rightKneeAngle].filter(a => a !== null);
-      const minKnee = Math.min(...kAngles);
-      const maxKnee = Math.max(...kAngles);
-      angleSaysStanding = maxKnee > 142;
-      angleSaysSquatting = minKnee < 140;
-    } else if (hasLeftHip || hasRightHip) {
-      // If ankles are clipped (table mount / low camera angle), use hip angles fallback
-      const hAngles = [leftHipAngle, rightHipAngle].filter(a => a !== null);
-      const minHip = Math.min(...hAngles);
-      const maxHip = Math.max(...hAngles);
-      angleSaysStanding = maxHip > 138;
-      angleSaysSquatting = minHip < 130;
-    }
-
-    // 2. Adaptive Shoulder Displacement Tracker
+    // 1. Initialize Standing Baseline
     if (repStateRef.squatHighestShoulderY === undefined || repStateRef.squatHighestShoulderY === null) {
       repStateRef.squatHighestShoulderY = avgShoulderY;
     }
 
-    // Self-Calibrating: If joint angles confirm user stood up, synchronize baseline
-    if (angleSaysStanding) {
-      repStateRef.squatHighestShoulderY = avgShoulderY;
-      if (repStateRef.current === 'down') {
-        repStateRef.current = 'up';
-        repStateRef.squatFramesInDown = 0;
-      }
-    }
-
+    // 2. Drift standing baseline slowly when upright to adapt to user steps or posture changes
     if (repStateRef.current === 'up') {
       if (avgShoulderY < repStateRef.squatHighestShoulderY) {
-        // Instant update if they stand higher (lower Y coordinate)
+        // Stand up higher: instant calibration
         repStateRef.squatHighestShoulderY = avgShoulderY;
       } else {
-        // Slow drift low-pass filter: lets standing Y adapt to shifting posture or steps back
-        repStateRef.squatHighestShoulderY = repStateRef.squatHighestShoulderY * 0.99 + avgShoulderY * 0.01;
+        // Steps back or shifts down slightly: drift low-pass filter
+        repStateRef.squatHighestShoulderY = repStateRef.squatHighestShoulderY * 0.98 + avgShoulderY * 0.02;
       }
     }
 
+    // 3. Compute relative displacement
     const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
-    const shoulderSaysSquatting = movedDownDist > 0.25;
     
-    isActive = angleSaysSquatting || shoulderSaysSquatting;
+    // Squat trigger: user moved shoulders down by more than 26% of shoulder width
+    isActive = movedDownDist > 0.26;
 
-    // Self-Healing: Reset stuck down-state after 30 frames (~1.0s)
+    // 4. Self-Healing: Reset stuck down-state after 35 frames (~1.1 seconds)
     if (repStateRef.current === 'down') {
       repStateRef.squatFramesInDown = (repStateRef.squatFramesInDown || 0) + 1;
-      if (repStateRef.squatFramesInDown > 30) {
+      if (repStateRef.squatFramesInDown > 35) {
         repStateRef.current = 'up';
         repStateRef.squatHighestShoulderY = avgShoulderY;
         repStateRef.squatFramesInDown = 0;
@@ -279,39 +234,10 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       let returnedToStart = true;
       
       if (mode === 'squats') {
-        // Unified stand-up verification (joint angles + displacement fallback)
-        const getAngle = (p1, p2, p3) => {
-          const theta1 = Math.atan2(p1.y - p2.y, p1.x - p2.x);
-          const theta2 = Math.atan2(p3.y - p2.y, p3.x - p2.x);
-          let angle = Math.abs((theta1 - theta2) * 180.0 / Math.PI);
-          if (angle > 180.0) angle = 360.0 - angle;
-          return angle;
-        };
-
-        const hasLeftKnee = leftHip?.score > MIN_CONF && leftKnee?.score > MIN_CONF && leftAnkle?.score > MIN_CONF;
-        const hasRightKnee = rightHip?.score > MIN_CONF && rightKnee?.score > MIN_CONF && rightAnkle?.score > MIN_CONF;
-        const leftKneeAngle = hasLeftKnee ? getAngle(leftHip, leftKnee, leftAnkle) : null;
-        const rightKneeAngle = hasRightKnee ? getAngle(rightHip, rightKnee, rightAnkle) : null;
-
-        const hasLeftHip = leftShoulder?.score > MIN_CONF && leftHip?.score > MIN_CONF && leftKnee?.score > MIN_CONF;
-        const hasRightHip = rightShoulder?.score > MIN_CONF && rightHip?.score > MIN_CONF && rightKnee?.score > MIN_CONF;
-        const leftHipAngle = hasLeftHip ? getAngle(leftShoulder, leftHip, leftKnee) : null;
-        const rightHipAngle = hasRightHip ? getAngle(rightShoulder, rightHip, rightKnee) : null;
-
-        let angleSaysStanding = false;
-        if (hasLeftKnee || hasRightKnee) {
-          const kAngles = [leftKneeAngle, rightKneeAngle].filter(a => a !== null);
-          angleSaysStanding = Math.max(...kAngles) > 155;
-        } else if (hasLeftHip || hasRightHip) {
-          const hAngles = [leftHipAngle, rightHipAngle].filter(a => a !== null);
-          angleSaysStanding = Math.max(...hAngles) > 150;
-        }
-
-        if (angleSaysStanding) {
-          returnedToStart = true;
-        } else if (repStateRef.squatHighestShoulderY !== undefined && repStateRef.squatHighestShoulderY !== null) {
+        // Pure shoulder displacement stand-up check (completely immune to noisy webcam joints)
+        if (repStateRef.squatHighestShoulderY !== undefined && repStateRef.squatHighestShoulderY !== null) {
           const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
-          returnedToStart = movedDownDist < 0.15;
+          returnedToStart = movedDownDist < 0.16;
         } else {
           returnedToStart = true;
         }
