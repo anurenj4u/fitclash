@@ -93,6 +93,17 @@ export default function Home() {
   const [showPRNotification, setShowPRNotification] = useState(false);
 
   useEffect(() => {
+    if (showFatBurnCalendar) {
+      setTimeout(() => {
+        const cal = document.getElementById("fatburn-calendar");
+        if (cal) {
+          cal.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+    }
+  }, [showFatBurnCalendar]);
+
+  useEffect(() => {
     // Show PR recommendation notification after a short delay
     const hasSeenPR = sessionStorage.getItem("fitclash_seen_pr_recommendation_v1");
     if (!hasSeenPR) {
@@ -972,10 +983,6 @@ export default function Home() {
                       Fat Burn & Stamina Improvement in 30 Days
                     </h3>
                   </div>
-                  
-                  <p style={{ fontSize: '10px', opacity: 0.7, color: '#fff', lineHeight: 1.4, margin: '2px 0' }}>
-                    Maximize lipid oxidation and scale your cardiovascular thresholds through progressive interval sprints (squats, pushups, jumping jacks). The ultimate all-in-one body transformation program.
-                  </p>
 
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
                     <span style={{ fontSize: '8px', fontWeight: 900, color: '#39ff14', background: 'rgba(57,255,20,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(57,255,20,0.2)' }}>🔥 HIGH CALORIE BURN</span>
@@ -1007,7 +1014,7 @@ export default function Home() {
 
                 {/* Calendar grid */}
                 {showFatBurnCalendar && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(36px, 1fr))', gap: '5px', width: '100%', background: 'rgba(5,5,12,0.9)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(57,255,20,0.25)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
+                  <div id="fatburn-calendar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(36px, 1fr))', gap: '5px', width: '100%', background: 'rgba(5,5,12,0.9)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(57,255,20,0.25)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
                     <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '8px' }}>
                       <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>30-DAY TRANSFORMATION PROGRESS</span>
                       <span style={{ display: 'block', fontSize: '8px', opacity: 0.5 }}>COMPLETION TRACKER & STREAK SYSTEM</span>
