@@ -5,6 +5,7 @@ import FitnessRace from "@/components/FitnessRace";
 import WorkoutProgramExecutor from "@/components/WorkoutProgramExecutor";
 import MotionTracker from "@/components/MotionTracker";
 import StaminaMode from "@/components/StaminaMode";
+import FatBurnWorkout from "@/components/FatBurnWorkout";
 
 import LandscapeGuard from "@/components/LandscapeGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +18,7 @@ import {
   Trophy,
   Zap,
   ShieldCheck,
+  ChevronLeft,
   ChevronRight,
   Settings,
   TrendingUp,
@@ -49,7 +51,7 @@ export default function Home() {
   const [welcomeCountdown, setWelcomeCountdown] = useState(5);
 
   // New Fitness custom configuration state
-  const [selectedGoal, setSelectedGoal] = useState('FAT BURN');
+  const [selectedGoal, setSelectedGoal] = useState('FAT BURN & STAMINA');
   const [showFatBurnCalendar, setShowFatBurnCalendar] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState(['squats', 'pushups', 'jacks']);
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
@@ -597,23 +599,16 @@ export default function Home() {
                 setMatchedOpponent(null);
               }}
             />
-          ) : selectedGoal === 'STAMINA IMPROVEMENT' ? (
-            <StaminaMode
-              selectedExercises={selectedExercises}
+          ) : (
+            <FatBurnWorkout
+              difficulty={difficulty}
               isCameraReady={isCameraReady}
-              staminaData={progression.staminaData}
-              onSaveStaminaData={(newStaminaData) => {
-                setProgression(prev => {
-                  const updated = { ...prev, staminaData: newStaminaData };
-                  localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
-                  return updated;
-                });
-              }}
+              activeCharacter={progression.activeCharacter}
               onExerciseChange={(idx) => setActiveWorkoutExerciseIndex(idx)}
               onComplete={(stats) => {
+                setActiveWorkoutExerciseIndex(0);
                 const userWeight = userData?.weight || 70;
-                const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-
+                const scaledCalories = Math.round((stats.caloriesBurned || 0) * (userWeight / 70));
                 handleWorkoutComplete({
                   reps: stats.reps,
                   caloriesBurned: scaledCalories,
@@ -621,36 +616,10 @@ export default function Home() {
                   accuracy: stats.accuracy,
                   duration: stats.duration,
                   rank: stats.rank,
-                  isFatBurn: false
+                  isFatBurn: true
                 });
                 setGameStarted(false);
                 setIsCameraReady(false);
-              }}
-            />
-          ) : (
-            <NormalWorkout
-              selectedExercises={selectedExercises}
-              difficulty={difficulty}
-              selectedGoal={selectedGoal}
-              isCameraReady={isCameraReady}
-              restDuration={restDuration}
-              onExerciseChange={(idx) => setActiveWorkoutExerciseIndex(idx)}
-              onComplete={(stats) => {
-                setActiveWorkoutExerciseIndex(0); // reset on complete
-                const userWeight = userData?.weight || 70;
-                const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-
-                handleWorkoutComplete({
-                  reps: stats.reps,
-                  caloriesBurned: scaledCalories,
-                  xpGained: stats.xp,
-                  accuracy: stats.accuracy,
-                  duration: stats.duration,
-                  rank: stats.rank,
-                  isFatBurn: selectedGoal === 'FAT BURN'
-                });
-                setGameStarted(false);
-                setIsCameraReady(false); // Reset camera ready state on completion
               }}
             />
           )}
@@ -917,234 +886,126 @@ export default function Home() {
           {/* ============================================================ */}
           {playMode === 'normal' && (
             <>
-              {/* GOAL SELECTOR CARDS */}
-              <div style={{
-                padding: 'clamp(16px, 3vw, 28px)',
-                background: 'rgba(5, 5, 8, 0.4)',
-                border: '1px solid rgba(57, 255, 20, 0.15)',
-                borderRadius: '20px',
-                textAlign: 'left',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>[01] SELECT ATHLETE GAME MODE</span>
-                  <div style={{ background: 'rgba(57, 255, 20, 0.1)', padding: '6px 16px', borderRadius: '4px', fontSize: '12px', fontWeight: 900, color: '#39ff14', border: '1px solid rgba(57, 255, 20, 0.2)', letterSpacing: '0.5px' }}>
-                    {selectedGoal}
+              {/* UNIFIED FAT BURN & STAMINA FEATURE PANEL */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                style={{
+                  padding: '16px 20px',
+                  background: 'rgba(5, 5, 8, 0.6)',
+                  border: '1px solid rgba(57, 255, 20, 0.25)',
+                  borderRadius: '18px',
+                  textAlign: 'left',
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 16px rgba(57,255,20,0.04)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Grid bg */}
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(rgba(57,255,20,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,0.02) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+                {/* Header row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', position: 'relative' }}>
+                  <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>[01] FITNESS WORKOUT</span>
+                  <div style={{ background: 'linear-gradient(90deg, rgba(57,255,20,0.12), rgba(0,242,255,0.12))', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: 900, border: '1px solid rgba(57,255,20,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#39ff14' }}>🔥</span>
+                    <span style={{ color: '#fff' }}>&</span>
+                    <span style={{ color: '#00f2ff' }}>⚡</span>
+                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '9px' }}>COMBINED MODE</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                  {[
-                    {
-                      id: 'FAT BURN',
-                      title: 'FAT BURN',
-                      emoji: '🔥',
-                      desc: '30 Days Fat Loss Programme designed to maximize lipid oxidation and raise your heart rate.',
-                      stats: '320 KCAL AVG',
-                      energy: 5,
-                      time: '15 MINS',
-                      color: '#39ff14'
-                    },
-                    {
-                      id: 'STAMINA IMPROVEMENT',
-                      title: 'STAMINA IMPROVEMENT',
-                      emoji: '⚡',
-                      desc: 'Progressive endurance drills optimized for cardiovascular threshold scaling.',
-                      stats: '20 MIN SESS',
-                      energy: 4,
-                      time: '20 MINS',
-                      color: '#00f2ff'
-                    }
-                  ].map(card => {
-                    const isActive = selectedGoal === card.id;
-                    return (
-                      <motion.div
-                        key={card.id}
-                        whileHover={{ scale: 1.02, translateY: -2 }}
-                        onClick={() => setSelectedGoal(card.id)}
-                        style={{
-                          background: isActive ? 'rgba(5, 5, 8, 0.95)' : 'rgba(5, 5, 8, 0.4)',
-                          border: `1px solid ${isActive ? card.color : 'rgba(255, 255, 255, 0.08)'}`,
-                          borderRadius: '16px',
-                          padding: '16px',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.3s ease',
-                          boxShadow: isActive ? `0 12px 30px rgba(0, 0, 0, 0.5), 0 0 10px rgba(${card.id === 'FAT BURN' ? '57, 255, 20' : '0, 242, 255'}, 0.08)` : '0 4px 12px rgba(0, 0, 0, 0.15)',
-                          position: 'relative',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {/* Subtle grid background on active card */}
-                        {isActive && (
-                          <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            backgroundImage: `linear-gradient(rgba(${card.id === 'FAT BURN' ? '57, 255, 20' : '0, 242, 255'}, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(${card.id === 'FAT BURN' ? '57, 255, 20' : '0, 242, 255'}, 0.02) 1px, transparent 1px)`,
-                            backgroundSize: '20px 20px',
-                            pointerEvents: 'none'
-                          }} />
-                        )}
+                {/* Single merged card */}
+                <div style={{
+                  background: 'rgba(5,5,15,0.5)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0',
+                  marginBottom: '12px',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Left — Fat Burn */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', paddingRight: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <span style={{ fontSize: '18px' }}>🔥</span>
+                      <span className="arcade-text" style={{ fontSize: '12px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>FAT BURN</span>
+                    </div>
+                    <p style={{ fontSize: '9px', opacity: 0.6, color: '#fff', lineHeight: 1.4, margin: 0 }}>
+                      30-Day lipid oxidation. Maximize calorie burn.
+                    </p>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '8px', fontWeight: 900, color: '#39ff14', background: 'rgba(57,255,20,0.1)', padding: '2px 6px', borderRadius: '3px', border: '1px solid rgba(57,255,20,0.2)' }}>320 KCAL AVG</span>
+                      <span style={{ fontSize: '8px', fontWeight: 900, color: '#39ff14', background: 'rgba(57,255,20,0.1)', padding: '2px 6px', borderRadius: '3px', border: '1px solid rgba(57,255,20,0.2)' }}>15 MINS</span>
+                    </div>
+                  </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontSize: '24px' }}>{card.emoji}</span>
-                            <span className="arcade-text" style={{ fontSize: '16px', fontWeight: 900, color: isActive ? card.color : '#fff', letterSpacing: '1px' }}>
-                              {card.title}
-                            </span>
-                          </div>
-                          {isActive && card.id === 'FAT BURN' ? (
-                            <div 
-                              onClick={(e) => { e.stopPropagation(); setShowFatBurnCalendar(prev => !prev); }}
-                              style={{
-                                fontSize: '10px',
-                                fontWeight: 900,
-                                background: `rgba(57, 255, 20, 0.1)`,
-                                color: '#39ff14',
-                                border: `1px solid #39ff14`,
-                                padding: '4px 10px',
-                                borderRadius: '4px',
-                                letterSpacing: '0.5px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              📅 {showFatBurnCalendar ? 'HIDE' : 'CALENDAR'}
-                            </div>
-                          ) : (
-                            <div style={{
-                              fontSize: '10px',
-                              fontWeight: 900,
-                              background: isActive ? `rgba(0, 242, 255, 0.1)` : 'rgba(255,255,255,0.05)',
-                              color: isActive ? card.color : 'rgba(255,255,255,0.5)',
-                              border: `1px solid ${isActive ? card.color : 'rgba(255,255,255,0.1)'}`,
-                              padding: '4px 10px',
-                              borderRadius: '4px',
-                              letterSpacing: '0.5px'
-                            }}>
-                              {isActive ? 'ACTIVE' : 'SELECT'}
-                            </div>
-                          )}
-                        </div>
+                  {/* Divider */}
+                  <div style={{ width: '1px', alignSelf: 'stretch', background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.12), transparent)', flexShrink: 0 }} />
 
-                        <p style={{ fontSize: '11px', opacity: isActive ? 0.85 : 0.6, color: '#fff', lineHeight: 1.4, marginBottom: '0px', height: '32px', overflow: 'hidden' }}>
-                          {card.desc}
-                        </p>
-                      </motion.div>
-                    );
-                  })}
+                  {/* Right — Stamina */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', paddingLeft: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <span style={{ fontSize: '18px' }}>⚡</span>
+                      <span className="arcade-text" style={{ fontSize: '12px', fontWeight: 900, color: '#00f2ff', letterSpacing: '1px' }}>STAMINA</span>
+                    </div>
+                    <p style={{ fontSize: '9px', opacity: 0.6, color: '#fff', lineHeight: 1.4, margin: 0 }}>
+                      Progressive endurance for cardiovascular threshold scaling.
+                    </p>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '8px', fontWeight: 900, color: '#00f2ff', background: 'rgba(0,242,255,0.1)', padding: '2px 6px', borderRadius: '3px', border: '1px solid rgba(0,242,255,0.2)' }}>20 MIN SESS</span>
+                      <span style={{ fontSize: '8px', fontWeight: 900, color: '#00f2ff', background: 'rgba(0,242,255,0.1)', padding: '2px 6px', borderRadius: '3px', border: '1px solid rgba(0,242,255,0.2)' }}>ENDURANCE</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* SETUP BUTTON REPLACING INLINE CONFIG */}
-              <div style={{
-                width: '100%',
-                background: 'rgba(5, 5, 8, 0.4)',
-                border: '1px solid rgba(57, 255, 20, 0.15)',
-                borderRadius: '16px',
-                padding: 'clamp(20px, 5vw, 40px)',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '15px'
-              }}>
-                {selectedGoal === 'FAT BURN' && showFatBurnCalendar && (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(40px, 1fr))',
-                    gap: '6px',
-                    marginTop: '20px',
-                    width: '100%',
-                    background: 'rgba(2,2,5,0.6)',
-                    padding: '15px',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255,255,255,0.05)'
-                  }}>
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '10px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>30-DAY FAT BURN CHALLENGE</span>
-                      <span style={{ display: 'block', fontSize: '9px', opacity: 0.5 }}>COMPLETION TRACKER & STREAK SYSTEM</span>
+                {/* Calendar toggle + button row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', position: 'relative' }}>
+                  <div
+                    onClick={() => setShowFatBurnCalendar(prev => !prev)}
+                    style={{ fontSize: '9px', fontWeight: 900, background: 'rgba(57,255,20,0.08)', color: '#39ff14', border: '1px solid rgba(57,255,20,0.25)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+                  >
+                    📅 {showFatBurnCalendar ? 'HIDE' : '30-DAY CALENDAR'}
+                  </div>
+
+                  <button
+                    onClick={() => setShowSetupModal(true)}
+                    style={{ background: 'linear-gradient(135deg, #39ff14, #00f2ff)', color: '#000', padding: '8px 22px', borderRadius: '20px', border: 'none', fontWeight: 900, fontSize: '11px', cursor: 'pointer', fontFamily: 'var(--font-gaming)', boxShadow: '0 0 16px rgba(57,255,20,0.35)', transition: 'all 0.3s ease', whiteSpace: 'nowrap' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.55)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(57,255,20,0.35)'; }}
+                  >
+                    ⚙️ SETUP WORKOUT
+                  </button>
+                </div>
+
+                {/* Calendar grid */}
+                {showFatBurnCalendar && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(36px, 1fr))', gap: '5px', width: '100%', background: 'rgba(2,2,5,0.6)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '12px', position: 'relative' }}>
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>30-DAY FAT BURN CHALLENGE</span>
+                      <span style={{ display: 'block', fontSize: '8px', opacity: 0.5 }}>COMPLETION TRACKER & STREAK SYSTEM</span>
                     </div>
                     {progression.fatBurnCalendar?.map((dayObj) => {
-                      let bg = 'rgba(255,255,255,0.05)';
-                      let border = '1px solid rgba(255,255,255,0.1)';
-                      let color = '#fff';
-                      let opacity = 1;
-
-                      if (dayObj.status === 'completed') {
-                        bg = 'rgba(57, 255, 20, 0.15)';
-                        border = '1px solid #39ff14';
-                        color = '#39ff14';
-                      } else if (dayObj.status === 'current') {
-                        bg = 'rgba(0, 242, 255, 0.15)';
-                        border = '1px solid #00f2ff';
-                        color = '#00f2ff';
-                      } else if (dayObj.status === 'missed') {
-                        bg = 'rgba(255, 68, 68, 0.1)';
-                        border = '1px solid rgba(255, 68, 68, 0.3)';
-                        color = '#ff4444';
-                        opacity = 0.5;
-                      } else {
-                        opacity = 0.3;
-                      }
-
+                      let bg = 'rgba(255,255,255,0.05)', border = '1px solid rgba(255,255,255,0.1)', color = '#fff', opacity = 1;
+                      if (dayObj.status === 'completed') { bg = 'rgba(57,255,20,0.15)'; border = '1px solid #39ff14'; color = '#39ff14'; }
+                      else if (dayObj.status === 'current') { bg = 'rgba(0,242,255,0.15)'; border = '1px solid #00f2ff'; color = '#00f2ff'; }
+                      else if (dayObj.status === 'missed') { bg = 'rgba(255,68,68,0.1)'; border = '1px solid rgba(255,68,68,0.3)'; color = '#ff4444'; opacity = 0.5; }
+                      else { opacity = 0.3; }
                       return (
-                        <div key={dayObj.day} style={{
-                          background: bg,
-                          border: border,
-                          borderRadius: '6px',
-                          padding: '8px 4px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          opacity: opacity,
-                          position: 'relative'
-                        }}>
-                          <span style={{ fontSize: '8px', opacity: 0.6, fontWeight: 700 }}>DAY</span>
-                          <span style={{ fontSize: '12px', fontWeight: 900, color: color }}>{dayObj.day}</span>
-                          {dayObj.status === 'completed' && <div style={{ position: 'absolute', top: -4, right: -4, background: '#39ff14', borderRadius: '50%', width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={6} color="#000" /></div>}
+                        <div key={dayObj.day} style={{ background: bg, border, borderRadius: '5px', padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity, position: 'relative' }}>
+                          <span style={{ fontSize: '7px', opacity: 0.6, fontWeight: 700 }}>DAY</span>
+                          <span style={{ fontSize: '11px', fontWeight: 900, color }}>{dayObj.day}</span>
+                          {dayObj.status === 'completed' && <div style={{ position: 'absolute', top: -3, right: -3, background: '#39ff14', borderRadius: '50%', width: 8, height: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={5} color="#000" /></div>}
                         </div>
                       );
                     })}
                   </div>
-
                 )}
-
-                <button
-                  onClick={() => setShowSetupModal(true)}
-                  style={{
-                    background: '#39ff14',
-                    color: '#000000',
-                    padding: '14px 34px',
-                    borderRadius: '30px',
-                    border: 'none',
-                    fontWeight: 900,
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-gaming)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 0 15px rgba(57, 255, 20, 0.4)',
-                    transition: 'all 0.3s ease',
-                    marginTop: '20px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 0 25px rgba(57, 255, 20, 0.6)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(57, 255, 20, 0.4)';
-                  }}
-                >
-                  ⚙️ SETUP WORKOUT
-                </button>
-              </div>
+              </motion.div>
             </>
           )}
 
@@ -1293,6 +1154,196 @@ export default function Home() {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* [03] SELECT YOUR ATHLETE */}
+                <div className="athlete-selector-container">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: '1px', fontFamily: 'var(--font-gaming)', width: '100%', justifyContent: 'flex-start' }}>
+                    <span style={{ width: '5px', height: '5px', background: '#39ff14', borderRadius: '50%', display: 'inline-block' }} />
+                    [03] SELECT YOUR ATHLETE
+                  </div>
+                  {(() => {
+                    const athletes = [
+                      { id: 'messi', name: 'LIONEL MESSI', image: '/arg/arg1.png', country: '🇦🇷 ARG', title: 'THE PLAYMAKER', desc: 'Speedy & Agile. Elite dribbling.', color: '#00a2ff', glow: 'rgba(0, 162, 255, 0.25)', borderGlow: '#00a2ff' },
+                      { id: 'ronaldo', name: 'C. RONALDO', image: '/por/Por1.png', country: '🇵🇹 POR', title: 'THE STRIKER', desc: 'Powerful & Explosive. Unstoppable.', color: '#ff3333', glow: 'rgba(255, 51, 51, 0.25)', borderGlow: '#ff3333' },
+                      { id: 'neymar', name: 'NEYMAR JR', image: '/bra/bra1.png', country: '🇧🇷 BRA', title: 'THE ARTIST', desc: 'Skillful & Flamboyant. Creative.', color: '#ffea00', glow: 'rgba(255, 234, 0, 0.25)', borderGlow: '#ffea00' }
+                    ];
+                    
+                    const activeCharId = progression.activeCharacter === 'default' || !progression.activeCharacter ? 'ronaldo' : progression.activeCharacter;
+                    const activeIndex = athletes.findIndex(a => a.id === activeCharId);
+                    const currentAthlete = athletes[activeIndex >= 0 ? activeIndex : 1];
+                    
+                    const selectAthlete = (index) => {
+                      const athlete = athletes[index];
+                      setProgression(prev => {
+                        const updated = { ...prev, activeCharacter: athlete.id };
+                        localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+                        return updated;
+                      });
+                    };
+                    
+                    const handlePrev = () => {
+                      const nextIndex = (activeIndex - 1 + athletes.length) % athletes.length;
+                      selectAthlete(nextIndex);
+                    };
+                    
+                    const handleNext = () => {
+                      const nextIndex = (activeIndex + 1) % athletes.length;
+                      selectAthlete(nextIndex);
+                    };
+                    
+                    return (
+                      <>
+                        {/* Selector Controls (Left Arrow, Circle Avatar, Right Arrow) */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '24px',
+                          width: '100%',
+                          marginTop: '8px'
+                        }}>
+                          {/* Left Arrow Button */}
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handlePrev}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: currentAthlete.color,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '8px'
+                            }}
+                          >
+                            <ChevronLeft size={32} style={{ filter: `drop-shadow(0 0 8px ${currentAthlete.color})` }} />
+                          </motion.button>
+
+                          {/* Avatar Circle Container */}
+                          <div style={{
+                            position: 'relative',
+                            width: '90px',
+                            height: '90px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {/* Technoring Glow/Pulse */}
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+                              style={{
+                                position: 'absolute',
+                                inset: '-4px',
+                                borderRadius: '50%',
+                                border: `1.5px dashed ${currentAthlete.color}`,
+                                opacity: 0.6,
+                                boxShadow: `0 0 15px ${currentAthlete.glow}`
+                              }}
+                            />
+                            {/* Inner Circle Frame */}
+                            <div style={{
+                              width: '90px',
+                              height: '90px',
+                              borderRadius: '50%',
+                              background: 'rgba(5, 5, 8, 0.95)',
+                              border: `2px solid ${currentAthlete.color}`,
+                              overflow: 'hidden',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: `0 0 25px ${currentAthlete.glow}, inset 0 0 12px ${currentAthlete.glow}`
+                            }}>
+                              <AnimatePresence mode="wait">
+                                <motion.img
+                                  key={currentAthlete.id}
+                                  src={currentAthlete.image}
+                                  alt={currentAthlete.name}
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1.15 }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  transition={{ duration: 0.25 }}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                    marginTop: '8px'
+                                  }}
+                                />
+                              </AnimatePresence>
+                            </div>
+                          </div>
+
+                          {/* Right Arrow Button */}
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleNext}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: currentAthlete.color,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '8px'
+                            }}
+                          >
+                            <ChevronRight size={32} style={{ filter: `drop-shadow(0 0 8px ${currentAthlete.color})` }} />
+                          </motion.button>
+                        </div>
+
+                        {/* Athlete Details & Status Badge */}
+                        <div style={{
+                          textAlign: 'center',
+                          width: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginTop: '10px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 900, color: currentAthlete.color, letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
+                              {currentAthlete.name}
+                            </span>
+                            <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                              {currentAthlete.country}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '8px', fontWeight: 800, color: currentAthlete.color, opacity: 0.8, letterSpacing: '2px', fontFamily: 'var(--font-gaming)' }}>
+                            {currentAthlete.title}
+                          </div>
+
+                          <p style={{ fontSize: '10px', opacity: 0.6, maxWidth: '200px', lineHeight: 1.3, margin: '0' }}>
+                            {currentAthlete.desc}
+                          </p>
+
+                          {/* SELECT PLAYER Badge */}
+                          <div style={{
+                            background: `${currentAthlete.color}15`,
+                            border: `1.5px solid ${currentAthlete.color}`,
+                            color: currentAthlete.color,
+                            fontSize: '9px',
+                            fontWeight: 900,
+                            padding: '4px 14px',
+                            borderRadius: '20px',
+                            marginTop: '8px',
+                            letterSpacing: '1.5px',
+                            fontFamily: 'var(--font-gaming)',
+                            boxShadow: `0 0 10px ${currentAthlete.glow}`
+                          }}>
+                            SELECT PLAYER
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Sub-actions for Play with Friend */}
@@ -1653,9 +1704,9 @@ export default function Home() {
               <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '1.5px', fontWeight: 800, marginBottom: '10px' }}>[01] DIFFICULTY</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                 {[
-                  { id: 'easy', label: 'EASY', reps: '3 EXERCISES × 20 (60 TOTAL)' },
-                  { id: 'medium', label: 'MEDIUM', reps: '3 EXERCISES × 50 (150 TOTAL)' },
-                  { id: 'hard', label: 'HARD', reps: '3 EXERCISES × 100 (300 TOTAL)' }
+                  { id: 'easy',   label: 'EASY',   reps: 'Squats + Pushups + Jacks × 20 each = 600m' },
+                  { id: 'medium', label: 'MEDIUM', reps: 'Squats + Pushups + Jacks × 40 each = 1200m' },
+                  { id: 'hard',   label: 'HARD',   reps: 'Squats + Pushups + Jacks × 80 each = 2400m' }
                 ].map(diff => {
                   const isDiffActive = difficulty === diff.id;
                   return (
@@ -1688,98 +1739,38 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Exercises */}
+            {/* Fixed Exercises */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
-                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '1.5px', fontWeight: 800 }}>[02] CHOOSE 3 EXERCISES</div>
-                <div style={{ fontSize: '11px', color: selectedExercises.length === 3 ? '#39ff14' : '#ff4444', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>{selectedExercises.length}/3 SELECTED</div>
+                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '1.5px', fontWeight: 800 }}>[02] WORKOUT EXERCISES</div>
+                <div style={{ fontSize: '10px', color: '#39ff14', fontWeight: 900, background: 'rgba(57,255,20,0.1)', padding: '3px 10px', borderRadius: '4px', border: '1px solid rgba(57,255,20,0.3)' }}>FIXED ORDER</div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                 {[
-                  { id: 'squats', label: 'SQUATS', icon: '🦵' },
-                  { id: 'pushups', label: 'PUSHUPS', icon: '💪' },
-                  { id: 'jacks', label: 'JUMPING JACKS', icon: '🏃' }
-                ].map(item => {
-                  const isActive = selectedExercises.includes(item.id);
-                  return (
-                    <motion.button
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedExercises(prev => {
-                          if (prev.includes(item.id)) {
-                            if (prev.length === 1) return prev;
-                            return prev.filter(m => m !== item.id);
-                          } else {
-                            if (prev.length >= 3) return prev;
-                            return [...prev, item.id];
-                          }
-                        });
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      style={{
-                        padding: '12px 8px',
-                        borderRadius: '12px',
-                        background: isActive ? 'rgba(57, 255, 20, 0.06)' : 'rgba(255, 255, 255, 0.02)',
-                        color: isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.8)',
-                        border: `1.5px solid ${isActive ? '#39ff14' : 'rgba(255, 255, 255, 0.08)'}`,
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        transition: 'border 0.2s, color 0.2s, background 0.2s',
-                        fontFamily: 'var(--font-gaming)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        boxShadow: isActive ? '0 0 10px rgba(57, 255, 20, 0.1)' : 'none'
-                      }}
-                    >
-                      <span style={{ fontSize: '14px' }}>{item.icon}</span>
-                      <span>{item.label}</span>
-                      {isActive && <Zap size={10} fill="#39ff14" color="#39ff14" />}
-                    </motion.button>
-                  );
-                })}
+                  { id: 'squats',  label: 'SQUATS',        icon: '🦵', step: 1 },
+                  { id: 'pushups', label: 'PUSH-UPS',      icon: '💪', step: 2 },
+                  { id: 'jacks',   label: 'JUMPING JACKS', icon: '🏃', step: 3 }
+                ].map(item => (
+                  <div key={item.id} style={{
+                    padding: '12px 8px', borderRadius: '12px', textAlign: 'center',
+                    background: 'rgba(57,255,20,0.06)', border: '1.5px solid rgba(57,255,20,0.25)',
+                    color: '#39ff14', fontSize: '10px', fontWeight: 800, fontFamily: 'var(--font-gaming)'
+                  }}>
+                    <div style={{ fontSize: '9px', opacity: 0.5, marginBottom: '4px' }}>STEP {item.step}</div>
+                    <div style={{ fontSize: '18px', marginBottom: '4px' }}>{item.icon}</div>
+                    <div>{item.label}</div>
+                    <div style={{ fontSize: '9px', color: '#fff', opacity: 0.6, marginTop: '3px' }}>
+                      {difficulty === 'hard' ? 80 : difficulty === 'medium' ? 40 : 20} REPS
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-
-            {/* Rest Interval */}
-            <div>
-              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '1.5px', fontWeight: 800, marginBottom: '10px' }}>[03] REST INTERVAL BETWEEN EXERCISES</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                {[
-                  { value: 30, label: '30s' },
-                  { value: 60, label: '60s' },
-                  { value: 90, label: '90s' },
-                  { value: 120, label: '120s' }
-                ].map(opt => {
-                  const isRestActive = restDuration === opt.value;
-                  return (
-                    <motion.button
-                      key={opt.value}
-                      onClick={() => setRestDuration(opt.value)}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      style={{
-                        padding: '10px 5px',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        background: isRestActive ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255,255,255,0.02)',
-                        border: `1.5px solid ${isRestActive ? '#39ff14' : 'rgba(255,255,255,0.08)'}`,
-                        color: isRestActive ? '#39ff14' : 'rgba(255, 255, 255, 0.8)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-gaming)',
-                        fontSize: '12px',
-                        fontWeight: 900,
-                        transition: 'border 0.2s, color 0.2s, background 0.2s',
-                        boxShadow: isRestActive ? '0 0 12px rgba(57, 255, 20, 0.15)' : 'none'
-                      }}
-                    >
-                      {opt.label}
-                    </motion.button>
-                  );
-                })}
+              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,242,255,0.05)', border: '1px solid rgba(0,242,255,0.2)', borderRadius: '10px', padding: '10px 14px' }}>
+                <span style={{ fontSize: '16px' }}>⏱️</span>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#00f2ff', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>60 SECOND REST</div>
+                  <div style={{ fontSize: '9px', opacity: 0.5, marginTop: '2px' }}>Automatic rest period between each exercise</div>
+                </div>
               </div>
             </div>
 
@@ -1801,19 +1792,21 @@ export default function Home() {
                   <span style={{ color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>{difficulty.toUpperCase()}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', borderBottom: '1px dashed rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                  <span style={{ opacity: 0.5 }}>EXERCISES:</span>
-                  <span style={{ color: '#fff', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>{selectedExercises.length} / 3</span>
+                  <span style={{ opacity: 0.5 }}>REPS EACH:</span>
+                  <span style={{ color: '#fff', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
+                    {difficulty === 'hard' ? 80 : difficulty === 'medium' ? 40 : 20} REPS
+                  </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                  <span style={{ opacity: 0.5 }}>TOTAL REPS:</span>
-                  <span style={{ color: '#fff', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
-                    {selectedExercises.length * (difficulty === 'hard' ? 100 : difficulty === 'medium' ? 50 : 20)} REPS
+                  <span style={{ opacity: 0.5 }}>TOTAL DISTANCE:</span>
+                  <span style={{ color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
+                    {(difficulty === 'hard' ? 80 : difficulty === 'medium' ? 40 : 20) * 3 * 10}M
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                   <span style={{ opacity: 0.5 }}>EST. DURATION:</span>
                   <span style={{ color: '#00f2ff', fontWeight: 900, fontFamily: 'var(--font-gaming)' }}>
-                    ~{difficulty === 'hard' ? '15' : difficulty === 'medium' ? '7' : '3'} MINS
+                    ~{difficulty === 'hard' ? '20' : difficulty === 'medium' ? '12' : '6'} MINS
                   </span>
                 </div>
               </div>
@@ -1822,10 +1815,8 @@ export default function Home() {
             {/* Start Workout Button */}
             <motion.button
               onClick={() => {
-                if (selectedExercises.length === 3) {
-                  setShowSetupModal(false);
-                  startOnboarding();
-                }
+                setShowSetupModal(false);
+                startOnboarding();
               }}
               disabled={selectedExercises.length !== 3}
               whileHover={selectedExercises.length === 3 ? { scale: 1.02 } : {}}
