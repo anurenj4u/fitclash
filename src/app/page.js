@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import NormalWorkout from "@/components/NormalWorkout";
 import FitnessRace from "@/components/FitnessRace";
 import WorkoutProgramExecutor from "@/components/WorkoutProgramExecutor";
@@ -90,6 +90,32 @@ export default function Home() {
   const [showSprintSetupModal, setShowSprintSetupModal] = useState(false);
   const [matchedOpponent, setMatchedOpponent] = useState(null);
   const [activeMockOpponent, setActiveMockOpponent] = useState(null);
+  const [showPRNotification, setShowPRNotification] = useState(false);
+
+  useEffect(() => {
+    // Show PR recommendation notification after a short delay
+    const hasSeenPR = sessionStorage.getItem("fitclash_seen_pr_recommendation_v1");
+    if (!hasSeenPR) {
+      const timer = setTimeout(() => {
+        setShowPRNotification(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handlePRChallengeClick = () => {
+    sessionStorage.setItem("fitclash_seen_pr_recommendation_v1", "true");
+    setShowPRNotification(false);
+    setPlayMode('worldcup'); // switch to 1vs1 challenge
+    
+    // Smooth scroll down to the Sprint Workout Customizer section
+    setTimeout(() => {
+      const el = document.getElementById("worldcup-section");
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
 
   const MOCK_OPPONENTS = [
     { name: "Sam", avatar: "👤", flag: "🇺🇸", character: "Neymar" },
@@ -139,6 +165,18 @@ export default function Home() {
       history: []
     }
   });
+
+  const highestReps = useMemo(() => {
+    let maxReps = 34; // default fallback as requested by user
+    if (progression?.fatBurnCalendar) {
+      progression.fatBurnCalendar.forEach(day => {
+        if (day.status === 'completed' && day.reps > maxReps) {
+          maxReps = day.reps;
+        }
+      });
+    }
+    return maxReps;
+  }, [progression]);
 
   // Load progression state on mount
   useEffect(() => {
@@ -1000,7 +1038,7 @@ export default function Home() {
           {playMode === 'worldcup' && (
             <>
               {/* MATCH TYPE SELECTOR REMOVED - NOW IN PROFILE SETTINGS */}
-              <div style={{
+              <div id="worldcup-section" style={{
                 width: '100%',
                 background: 'rgba(10, 10, 15, 0.6)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2880,6 +2918,96 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Personal Record (PR) / 1vs1 Challenge recommendation chat box */}
+      <AnimatePresence>
+        {showPRNotification && (
+          <motion.div
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.8 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 120 }}
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              width: '310px',
+              background: 'rgba(5, 5, 12, 0.94)',
+              border: '1.5px solid rgba(57, 255, 20, 0.4)',
+              borderRadius: '16px',
+              padding: '16px 18px',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(57, 255, 20, 0.1)',
+              zIndex: 1000,
+              backdropFilter: 'blur(16px)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              textAlign: 'left'
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                sessionStorage.setItem("fitclash_seen_pr_recommendation_v1", "true");
+                setShowPRNotification(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontSize: '16px',
+                cursor: 'pointer',
+                fontWeight: 900,
+                transition: 'color 0.2s',
+                lineHeight: 1
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#39ff14'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
+            >
+              ×
+            </button>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>🤖</span>
+              <span className="arcade-text" style={{ fontSize: '9px', color: '#39ff14', letterSpacing: '1px' }}>
+                AI COACH
+              </span>
+            </div>
+
+            {/* Message Body */}
+            <p style={{ fontSize: '11px', color: '#fff', opacity: 0.9, lineHeight: 1.4, margin: '2px 0 6px 0' }}>
+              Hey champion! Try the **1vs1 Sprint** feature today! Your last highest was <strong style={{ color: '#39ff14' }}>{highestReps} reps</strong>. Try today to make a new **Personal Record (PR)**!
+            </p>
+
+            {/* CTA action button */}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handlePRChallengeClick}
+              style={{
+                background: 'linear-gradient(135deg, #39ff14 0%, #00f2ff 100%)',
+                color: '#000000',
+                border: 'none',
+                padding: '10px 16px',
+                borderRadius: '20px',
+                fontWeight: 900,
+                fontSize: '10px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-gaming)',
+                textAlign: 'center',
+                boxShadow: '0 4px 12px rgba(57, 255, 20, 0.25)',
+                letterSpacing: '0.5px'
+              }}
+            >
+              CHALLENGE NOW ⚡
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
