@@ -2982,8 +2982,8 @@ export default function Home() {
             </div>
 
             {/* Message Body */}
-            <p style={{ fontSize: '14px', color: '#fff', opacity: 0.95, lineHeight: 1.45, margin: '2px 0 4px 0', fontWeight: 500 }}>
-              Hey champion! Try the **1vs1 Sprint** feature today! Your last highest was <strong style={{ color: '#39ff14' }}>{highestReps} reps</strong>. Try today to make a new **Personal Record (PR)**!
+            <p style={{ fontSize: '14px', color: '#fff', opacity: 0.95, lineHeight: 1.45, margin: '2px 0 4px 0', fontWeight: 700 }}>
+              Your highest PR is <strong style={{ color: '#39ff14' }}>{highestReps} reps</strong>. Beat it today! ⚡
             </p>
 
             {/* CTA action button */}
