@@ -59,6 +59,21 @@ const FitnessRace = ({
   const [repsCount, setRepsCount] = useState(0);
   const [remainingDist, setRemainingDist] = useState(targetKm * 1000);
   const [activeOverlayModal, setActiveOverlayModal] = useState(null); // null, 'quit_confirm', 'performance_summary'
+  const [motivationMessage, setMotivationMessage] = useState("");
+  const [motivationKey, setMotivationKey] = useState(0);
+  const motivationTimeoutRef = useRef(null);
+  const lastDistanceMilestoneRef = useRef(null);
+
+  const triggerMotivationToast = (text) => {
+    setMotivationMessage(text);
+    setMotivationKey(prev => prev + 1);
+    if (motivationTimeoutRef.current) {
+      clearTimeout(motivationTimeoutRef.current);
+    }
+    motivationTimeoutRef.current = setTimeout(() => {
+      setMotivationMessage("");
+    }, 2000);
+  };
   const [comparisonDetails, setComparisonDetails] = useState({
     current: 0,
     previous: 0,
@@ -561,6 +576,8 @@ const FitnessRace = ({
           gameStateRef.current = 'ready';
           setGameStateDisplay('ready');
           last100mThresholdRef.current = 0;
+          lastDistanceMilestoneRef.current = null;
+          setMotivationMessage("");
 
           if (ai && ai.anims) {
             ai.play(aiAnimKey);
@@ -794,6 +811,61 @@ const FitnessRace = ({
     return () => { exitFullscreen(); };
   }, []);
 
+  // Trigger motivational toasts during gameplay reps
+  useEffect(() => {
+    if (repsCount === 0 || gameStateDisplay !== 'playing' || winnerRef.current) return;
+
+    // Check if we are inside a milestone toast window (to avoid clashing)
+    const isMilestoneActive = (remainingDist <= 305 && remainingDist >= 295) ||
+                              (remainingDist <= 205 && remainingDist >= 195) ||
+                              (remainingDist <= 105 && remainingDist >= 95) ||
+                              (remainingDist <= 55 && remainingDist >= 45);
+
+    if (!isMilestoneActive) {
+      const phrases = [
+        "PUSH HARDER! ⚡",
+        "KEEP IT UP! 🔥",
+        "UNSTOPPABLE! 🏆",
+        "YOU GOT THIS! 💪",
+        "SPEED UP! 🚀",
+        "CRUSH IT! 💥",
+        "NICE FORM! 🎯",
+        "GREAT WORK! 🌟",
+        "DON'T STOP! 🛑"
+      ];
+      const randomPhrase = phrases[repsCount % phrases.length];
+      triggerMotivationToast(randomPhrase);
+    }
+  }, [repsCount]);
+
+  // Trigger milestone toasts based on remaining distance
+  useEffect(() => {
+    if (gameStateDisplay !== 'playing' || winnerRef.current) {
+      lastDistanceMilestoneRef.current = null;
+      return;
+    }
+
+    const milestones = [300, 200, 100, 50];
+    for (const m of milestones) {
+      if (remainingDist <= m) {
+        if (lastDistanceMilestoneRef.current === null || lastDistanceMilestoneRef.current > m) {
+          lastDistanceMilestoneRef.current = m;
+          triggerMotivationToast(`${m} M LEFT! 🚀`);
+          break;
+        }
+      }
+    }
+  }, [remainingDist, gameStateDisplay]);
+
+  // Clean up motivation timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (motivationTimeoutRef.current) {
+        clearTimeout(motivationTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const localPlayerLabel = role === 'host'
     ? (lobbyData?.hostEmail?.split('@')[0]?.toUpperCase() || 'YOU')
     : (lobbyData?.guestEmail?.split('@')[0]?.toUpperCase() || 'YOU');
@@ -965,6 +1037,44 @@ const FitnessRace = ({
         </div>
       )}
 
+      {/* Motivational Toaster */}
+      {combo <= 1 && motivationMessage && (
+        <motion.div
+          key={motivationKey}
+          initial={{ opacity: 0, y: -15, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -15, scale: 0.8 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          style={{
+            position: 'absolute',
+            top: 'clamp(90px, 13vh, 120px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 11,
+            background: 'linear-gradient(90deg, rgba(57, 255, 20, 0.95) 0%, rgba(0, 242, 255, 0.95) 100%)',
+            border: '1.5px solid #fff',
+            borderRadius: '20px',
+            padding: '8px 24px',
+            boxShadow: '0 0 25px rgba(57, 255, 20, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5)',
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="arcade-text" style={{
+            fontSize: 'clamp(13px, 2.2vw, 20px)',
+            color: '#000',
+            fontWeight: 900,
+            letterSpacing: '1px',
+            textShadow: 'none',
+            margin: 0
+          }}>
+            {motivationMessage}
+          </span>
+        </motion.div>
+      )}
+
       {/* WAITING – loading overlay */}
       {gameStateDisplay === 'waiting' && (
         <div style={{
@@ -994,72 +1104,402 @@ const FitnessRace = ({
       )}
 
       {/* READY */}
-      {gameStateDisplay === 'ready' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 95, backdropFilter: 'blur(10px)', padding: '20px' }}>
-          <h2 className="arcade-text" style={{ fontSize: 'clamp(20px, 5vw, 40px)', marginBottom: 'clamp(15px, 4vh, 30px)', textAlign: 'center' }}>
-            {roomId ? 'MULTIPLAYER LOBBY' : 'TRACKER'} <span style={{ color: 'var(--accent)' }}>READY</span>
-          </h2>
+      {gameStateDisplay === 'ready' && (() => {
+        // Define character profiles for the cards
+        const characterProfiles = {
+          messi: {
+            name: 'LIONEL MESSI',
+            image: '/arg/arg1.png',
+            color: '#00a2ff',
+            glow: 'rgba(0, 162, 255, 0.25)',
+            borderGlow: '#00a2ff',
+            country: '🇦🇷 ARG',
+            title: 'THE PLAYMAKER'
+          },
+          ronaldo: {
+            name: 'C. RONALDO',
+            image: '/por/Por1.png',
+            color: '#ff3333',
+            glow: 'rgba(255, 51, 51, 0.25)',
+            borderGlow: '#ff3333',
+            country: '🇵🇹 POR',
+            title: 'THE STRIKER'
+          },
+          neymar: {
+            name: 'NEYMAR JR',
+            image: '/bra/bra1.png',
+            color: '#ffea00',
+            glow: 'rgba(255, 234, 0, 0.25)',
+            borderGlow: '#ffea00',
+            country: '🇧🇷 BRA',
+            title: 'THE ARTIST'
+          }
+        };
 
-          {roomId ? (
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="glass-card" style={{ padding: '20px 30px', display: 'flex', gap: '20px', alignItems: 'center', background: 'rgba(5, 5, 8, 0.8)' }}>
-                <div>
-                  <p style={{ opacity: 0.5, fontSize: '10px', fontWeight: 800 }}>YOUR CAMERA</p>
-                  <p style={{ color: '#39ff14', fontWeight: 900, fontSize: '14px' }}>CONNECTED 🎥</p>
-                </div>
-                <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '30px' }} />
-                <div>
-                  <p style={{ opacity: 0.5, fontSize: '10px', fontWeight: 800 }}>OPPONENT CAMERA</p>
-                  {lobbyData?.guestUid === 'simulated_ai_pro' || lobbyData?.guestCameraReady ? (
-                    <p style={{ color: '#39ff14', fontWeight: 900, fontSize: '14px' }}>CONNECTED 🎥</p>
-                  ) : (
-                    <p style={{ color: '#ff3333', fontWeight: 900, fontSize: '14px', animation: 'pulse 1.5s infinite' }}>WAITING... 📷</p>
-                  )}
-                </div>
-              </div>
+        const playerKey = (charKey === 'neymar' || charKey === 'brazil')
+          ? 'neymar'
+          : (charKey === 'messi' || charKey === 'argentina')
+            ? 'messi'
+            : 'ronaldo';
+        const playerProfile = characterProfiles[playerKey];
 
-              {role === 'host' ? (
-                <button
-                  className="glow-btn pulse-glow"
-                  disabled={!(lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro'))}
-                  onClick={async () => {
-                    enterFullscreen();
-                    const roomRef = doc(db, "sprint_rooms", roomId);
-                    await updateDoc(roomRef, {
-                      status: 'countdown',
-                      updatedAt: serverTimestamp()
-                    });
-                  }}
+        const oppLabelLower = opponentPlayerLabel.toLowerCase();
+        const oppKey = oppLabelLower.includes('neymar') || oppLabelLower.includes('bra')
+          ? 'neymar'
+          : oppLabelLower.includes('messi') || oppLabelLower.includes('arg') || oppLabelLower.includes('leo')
+            ? 'messi'
+            : oppLabelLower.includes('ronaldo') || oppLabelLower.includes('por') || oppLabelLower.includes('cr7')
+              ? 'ronaldo'
+              : defaultOpponentName.toLowerCase();
+        const oppProfile = characterProfiles[oppKey] || characterProfiles.messi;
+
+        const isOpponentReady = !roomId || lobbyData?.guestUid === 'simulated_ai_pro' || lobbyData?.guestCameraReady;
+
+        return (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(2, 2, 5, 0.95)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 95,
+            backdropFilter: 'blur(16px)',
+            padding: '20px'
+          }}>
+            {/* Background grid lines for retro gaming feel */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+              pointerEvents: 'none',
+              zIndex: 1
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px' }}>
+              <h2 className="arcade-text animate-pulse" style={{
+                fontSize: 'clamp(20px, 4.5vw, 36px)',
+                marginBottom: 'clamp(20px, 4vh, 40px)',
+                textAlign: 'center',
+                color: '#fff',
+                letterSpacing: '2px',
+                textShadow: '0 0 10px rgba(255,255,255,0.1)'
+              }}>
+                MATCHUP <span style={{ color: 'var(--accent)' }}>READY</span>
+              </h2>
+
+              {/* Player side-by-side cards */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'clamp(15px, 5vw, 45px)',
+                width: '100%',
+                marginBottom: 'clamp(25px, 5vh, 45px)',
+                flexWrap: 'wrap'
+              }}>
+                {/* YOUR PLAYER CARD */}
+                <motion.div
+                  initial={{ x: -60, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.1 }}
                   style={{
-                    padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)',
-                    fontSize: 'clamp(16px, 4vw, 24px)',
-                    cursor: (lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro')) ? 'pointer' : 'not-allowed',
-                    opacity: (lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro')) ? 1 : 0.5
+                    width: 'clamp(150px, 26vw, 210px)',
+                    background: 'rgba(5, 5, 8, 0.9)',
+                    border: `2px solid ${playerProfile.borderGlow}`,
+                    boxShadow: `0 0 35px ${playerProfile.glow}`,
+                    borderRadius: '24px',
+                    padding: '24px 16px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '14px',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                 >
-                  START SYNCED RACE ⚡
-                </button>
-              ) : (
-                <div style={{
-                  padding: '16px 40px',
-                  borderRadius: '30px',
-                  background: 'rgba(57, 255, 20, 0.05)',
-                  border: '1px solid rgba(57, 255, 20, 0.2)',
-                  color: '#39ff14',
-                  fontSize: '14px',
-                  fontWeight: 800,
-                  fontFamily: 'var(--font-gaming)',
-                  animation: 'pulse 2s infinite'
-                }}>
-                  WAITING FOR HOST TO TRIGGER START...
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    background: playerProfile.color,
+                    color: '#000',
+                    fontSize: '9px',
+                    fontWeight: 900,
+                    padding: '4px 10px',
+                    borderRadius: '0 0 0 12px',
+                    fontFamily: 'var(--font-gaming)'
+                  }}>
+                    {playerProfile.country}
+                  </div>
+                  
+                  <div style={{
+                    width: 'clamp(80px, 12vw, 110px)',
+                    height: 'clamp(80px, 12vw, 110px)',
+                    borderRadius: '50%',
+                    border: `3px solid ${playerProfile.color}`,
+                    overflow: 'hidden',
+                    background: 'rgba(255,255,255,0.03)',
+                    boxShadow: `0 0 20px ${playerProfile.glow}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <img
+                      src={playerProfile.image}
+                      alt={playerProfile.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        transform: 'scale(1.2) translateY(2px)',
+                        filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.6))'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', color: '#fff', display: 'block', marginBottom: '2px' }}>
+                      {localPlayerLabel}
+                    </span>
+                    <h3 className="arcade-text" style={{ fontSize: 'clamp(13px, 2.2vw, 18px)', margin: 0, color: '#fff', letterSpacing: '0.5px' }}>
+                      {playerProfile.name}
+                    </h3>
+                    <span style={{ fontSize: '9px', opacity: 0.8, fontWeight: 900, letterSpacing: '1px', color: playerProfile.color, display: 'block', marginTop: '3px' }}>
+                      {playerProfile.title}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(57, 255, 20, 0.08)',
+                    border: '1.5px solid rgba(57, 255, 20, 0.4)',
+                    borderRadius: '12px',
+                    padding: '6px 14px',
+                    color: '#39ff14',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontFamily: 'var(--font-gaming)',
+                    boxShadow: '0 0 10px rgba(57, 255, 20, 0.1)'
+                  }}>
+                    <span className="animate-ping" style={{ width: '6px', height: '6px', background: '#39ff14', borderRadius: '50%', display: 'inline-block' }} />
+                    READY TO RACE
+                  </div>
+                </motion.div>
+
+                {/* VS LOGO AND EFFECTS */}
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 150, delay: 0.25 }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2,
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #15151a 0%, #08080a 100%)',
+                    border: '2px solid rgba(255,255,255,0.15)',
+                    boxShadow: '0 0 25px rgba(255,255,255,0.15), inset 0 0 10px rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}>
+                    <span className="arcade-text" style={{ fontSize: '22px', color: '#fff', fontStyle: 'italic', fontWeight: 900, textShadow: '0 0 12px rgba(255,255,255,0.6)' }}>
+                      VS
+                    </span>
+                    
+                    {/* Retro line extensions */}
+                    <div style={{
+                      position: 'absolute',
+                      width: '80px',
+                      height: '1px',
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+                      left: '-95px',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }} />
+                    <div style={{
+                      position: 'absolute',
+                      width: '80px',
+                      height: '1px',
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+                      right: '-95px',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }} />
+                  </div>
+                </motion.div>
+
+                {/* OPPONENT CARD */}
+                <motion.div
+                  initial={{ x: 60, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.1 }}
+                  style={{
+                    width: 'clamp(150px, 26vw, 210px)',
+                    background: 'rgba(5, 5, 8, 0.9)',
+                    border: `2px solid ${oppProfile.borderGlow}`,
+                    boxShadow: `0 0 35px ${oppProfile.glow}`,
+                    borderRadius: '24px',
+                    padding: '24px 16px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '14px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    background: oppProfile.color,
+                    color: '#000',
+                    fontSize: '9px',
+                    fontWeight: 900,
+                    padding: '4px 10px',
+                    borderRadius: '0 0 0 12px',
+                    fontFamily: 'var(--font-gaming)'
+                  }}>
+                    {oppProfile.country}
+                  </div>
+
+                  <div style={{
+                    width: 'clamp(80px, 12vw, 110px)',
+                    height: 'clamp(80px, 12vw, 110px)',
+                    borderRadius: '50%',
+                    border: `3px solid ${oppProfile.color}`,
+                    overflow: 'hidden',
+                    background: 'rgba(255,255,255,0.03)',
+                    boxShadow: `0 0 20px ${oppProfile.glow}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <img
+                      src={oppProfile.image}
+                      alt={oppProfile.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        transform: 'scale(1.2) translateY(2px)',
+                        filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.6))'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', color: '#fff', display: 'block', marginBottom: '2px' }}>
+                      {opponentPlayerLabel}
+                    </span>
+                    <h3 className="arcade-text" style={{ fontSize: 'clamp(13px, 2.2vw, 18px)', margin: 0, color: '#fff', letterSpacing: '0.5px' }}>
+                      {oppProfile.name}
+                    </h3>
+                    <span style={{ fontSize: '9px', opacity: 0.8, fontWeight: 900, letterSpacing: '1px', color: oppProfile.color, display: 'block', marginTop: '3px' }}>
+                      {oppProfile.title}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    background: isOpponentReady ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255, 51, 51, 0.08)',
+                    border: isOpponentReady ? '1.5px solid rgba(57, 255, 20, 0.4)' : '1.5px solid rgba(255, 51, 51, 0.4)',
+                    borderRadius: '12px',
+                    padding: '6px 14px',
+                    color: isOpponentReady ? '#39ff14' : '#ff3333',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontFamily: 'var(--font-gaming)',
+                    boxShadow: isOpponentReady ? '0 0 10px rgba(57, 255, 20, 0.1)' : '0 0 10px rgba(255, 51, 51, 0.1)'
+                  }}>
+                    <span className={isOpponentReady ? 'animate-ping' : 'animate-pulse'} style={{
+                      width: '6px',
+                      height: '6px',
+                      background: isOpponentReady ? '#39ff14' : '#ff3333',
+                      borderRadius: '50%',
+                      display: 'inline-block'
+                    }} />
+                    {isOpponentReady ? 'READY TO RACE' : 'CONNECTING CAMERA...'}
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* ACTION AREA below cards */}
+              {roomId ? (
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', alignItems: 'center' }}>
+                  {role === 'host' ? (
+                    <button
+                      className="glow-btn pulse-glow"
+                      disabled={!(lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro'))}
+                      onClick={async () => {
+                        enterFullscreen();
+                        const roomRef = doc(db, "sprint_rooms", roomId);
+                        await updateDoc(roomRef, {
+                          status: 'countdown',
+                          updatedAt: serverTimestamp()
+                        });
+                      }}
+                      style={{
+                        padding: 'clamp(12px, 2.5vh, 20px) clamp(30px, 8vw, 60px)',
+                        fontSize: 'clamp(14px, 3.5vw, 20px)',
+                        cursor: (lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro')) ? 'pointer' : 'not-allowed',
+                        opacity: (lobbyData?.hostCameraReady && (lobbyData?.guestCameraReady || lobbyData?.guestUid === 'simulated_ai_pro')) ? 1 : 0.5
+                      }}
+                    >
+                      START SYNCED RACE ⚡
+                    </button>
+                  ) : (
+                    <div style={{
+                      padding: '14px 36px',
+                      borderRadius: '30px',
+                      background: 'rgba(57, 255, 20, 0.05)',
+                      border: '1px solid rgba(57, 255, 20, 0.2)',
+                      color: '#39ff14',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      fontFamily: 'var(--font-gaming)',
+                      animation: 'pulse 2s infinite',
+                      letterSpacing: '1px'
+                    }}>
+                      WAITING FOR HOST TO TRIGGER START...
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <button
+                  className="glow-btn pulse-glow"
+                  onClick={() => triggerStartRace()}
+                  style={{
+                    padding: 'clamp(12px, 2.5vh, 20px) clamp(30px, 8vw, 60px)',
+                    fontSize: 'clamp(14px, 3.5vw, 20px)'
+                  }}
+                >
+                  START RACE ⚡
+                </button>
               )}
             </div>
-          ) : (
-            <button className="glow-btn pulse-glow" onClick={() => triggerStartRace()} style={{ padding: 'clamp(12px, 3vh, 25px) clamp(30px, 8vw, 60px)', fontSize: 'clamp(16px, 4vw, 24px)' }}>START RACE ⚡</button>
-          )}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* COUNTDOWN */}
       {gameStateDisplay === 'countdown' && (
