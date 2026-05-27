@@ -259,15 +259,24 @@ const FitnessRace = ({
         this.load.image('football', '/football.png');
         this.load.image('spark', 'https://labs.phaser.io/assets/particles/blue.png');
 
-        // Load all 6 Neymar running frames
-        for (let i = 1; i <= 6; i++) {
-          this.load.image(`neymarRun${i}`, `/neymar/neymar${i}.png`);
-        }
+        // Load Messi running frames (1, 2, 3, 4, 6) from /arg
+        const messiFrames = [1, 2, 3, 4, 6];
+        messiFrames.forEach(f => {
+          this.load.image(`messiRun${f}`, `/arg/arg${f}.png`);
+        });
 
-        // Load all 6 Ronaldo running frames
-        for (let i = 1; i <= 6; i++) {
-          this.load.image(`ronaldoRun${i}`, `/ronaldo/ronaldooo${i}.png`);
-        }
+        // Load Neymar running frames (1, 2, 3, 4, 6) from /bra
+        const neymarFrames = [1, 2, 3, 4, 6];
+        neymarFrames.forEach(f => {
+          this.load.image(`neymarRun${f}`, `/bra/bra${f}.png`);
+        });
+
+        // Load Ronaldo running frames (1, 2, 3, 4, 6) from /por
+        const ronaldoFrames = [1, 2, 3, 4, 6];
+        ronaldoFrames.forEach(f => {
+          const filename = f === 1 ? 'Por1.png' : `por${f}.png`;
+          this.load.image(`ronaldoRun${f}`, `/por/${filename}`);
+        });
       }
 
       function buildStadium(W, H) {
@@ -397,12 +406,12 @@ const FitnessRace = ({
         buildStadium(W, H);
 
         // Strip black backgrounds from all animation frames
-        for (let i = 1; i <= 6; i++) {
-          removeBlackBackground(this, `neymarRun${i}`);
-        }
-        for (let i = 1; i <= 6; i++) {
-          removeBlackBackground(this, `ronaldoRun${i}`);
-        }
+        const framesToClean = [1, 2, 3, 4, 6];
+        framesToClean.forEach(f => {
+          removeBlackBackground(this, `messiRun${f}`);
+          removeBlackBackground(this, `neymarRun${f}`);
+          removeBlackBackground(this, `ronaldoRun${f}`);
+        });
 
         trailParticles = this.add.particles(0, 0, 'spark', {
           speed: 100,
@@ -414,7 +423,21 @@ const FitnessRace = ({
         });
         trailParticles.setDepth(5);
 
-        // Neymar (AI) running animation
+        // Messi running animation
+        this.anims.create({
+          key: 'messi_run',
+          frames: [
+            { key: 'messiRun1_clean' },
+            { key: 'messiRun2_clean' },
+            { key: 'messiRun3_clean' },
+            { key: 'messiRun4_clean' },
+            { key: 'messiRun6_clean' }
+          ],
+          frameRate: 10,
+          repeat: -1
+        });
+
+        // Neymar running animation
         this.anims.create({
           key: 'neymar_run',
           frames: [
@@ -422,37 +445,63 @@ const FitnessRace = ({
             { key: 'neymarRun2_clean' },
             { key: 'neymarRun3_clean' },
             { key: 'neymarRun4_clean' },
-            { key: 'neymarRun5_clean' },
             { key: 'neymarRun6_clean' }
           ],
           frameRate: 10,
           repeat: -1
         });
 
-        // Ronaldo (Player) running animation
+        // Ronaldo running animation
         this.anims.create({
-          key: 'player_run',
+          key: 'ronaldo_run',
           frames: [
             { key: 'ronaldoRun1_clean' },
             { key: 'ronaldoRun2_clean' },
             { key: 'ronaldoRun3_clean' },
             { key: 'ronaldoRun4_clean' },
-            { key: 'ronaldoRun5_clean' },
             { key: 'ronaldoRun6_clean' }
           ],
           frameRate: 10,
           repeat: -1
         });
 
-        // AI = Neymar
-        ai = this.add.sprite(playerStartX, getTrackY(H), 'neymarRun1_clean');
-        ai.setScale(spr * 1.35);
+        const charKey = (activeCharacter || 'ronaldo').toLowerCase();
+        let playerAnimKey = 'ronaldo_run';
+        let playerStartFrame = 'ronaldoRun1_clean';
+        
+        let aiAnimKey = 'neymar_run';
+        let aiStartFrame = 'neymarRun1_clean';
+
+        if (charKey === 'messi' || charKey === 'argentina') {
+          playerAnimKey = 'messi_run';
+          playerStartFrame = 'messiRun1_clean';
+          
+          aiAnimKey = 'ronaldo_run';
+          aiStartFrame = 'ronaldoRun1_clean';
+        } else if (charKey === 'neymar' || charKey === 'brazil') {
+          playerAnimKey = 'neymar_run';
+          playerStartFrame = 'neymarRun1_clean';
+          
+          aiAnimKey = 'messi_run';
+          aiStartFrame = 'messiRun1_clean';
+        } else {
+          // ronaldo
+          playerAnimKey = 'ronaldo_run';
+          playerStartFrame = 'ronaldoRun1_clean';
+          
+          aiAnimKey = 'messi_run';
+          aiStartFrame = 'messiRun1_clean';
+        }
+
+        // AI
+        ai = this.add.sprite(playerStartX, getTrackY(H), aiStartFrame);
+        ai.setScale(spr * 2.7);
         ai.setDepth(8);
-        ai.play('neymar_run');
+        ai.play(aiAnimKey);
         ai.anims.pause();
 
-        // Player = Ronaldo
-        player = this.add.sprite(playerStartX, getTrackY(H), 'ronaldoRun1_clean');
+        // Player
+        player = this.add.sprite(playerStartX, getTrackY(H), playerStartFrame);
 
         let baseScale = 2.7;
         if (activeCharacter === 'ronaldo_elite') {
@@ -461,7 +510,7 @@ const FitnessRace = ({
         }
         player.setScale(spr * baseScale);
         player.setDepth(9);
-        player.play('player_run');
+        player.play(playerAnimKey);
         player.anims.pause();
 
         ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 72, 'football');
@@ -514,15 +563,15 @@ const FitnessRace = ({
           last100mThresholdRef.current = 0;
 
           if (ai && ai.anims) {
-            ai.play('neymar_run');
+            ai.play(aiAnimKey);
             ai.anims.pause();
-            ai.setTexture('neymarRun1_clean');
+            ai.setTexture(aiStartFrame);
           }
 
           if (player && player.anims) {
-            player.play('player_run');
+            player.play(playerAnimKey);
             player.anims.pause();
-            player.setTexture('ronaldoRun1_clean');
+            player.setTexture(playerStartFrame);
 
             let bScale = 2.7;
             if (activeCharacter === 'ronaldo_elite') {
@@ -749,11 +798,19 @@ const FitnessRace = ({
     ? (lobbyData?.hostEmail?.split('@')[0]?.toUpperCase() || 'YOU')
     : (lobbyData?.guestEmail?.split('@')[0]?.toUpperCase() || 'YOU');
 
+  const charKey = (activeCharacter || 'ronaldo').toLowerCase();
+  let defaultOpponentName = 'NEYMAR';
+  if (charKey === 'neymar' || charKey === 'brazil') {
+    defaultOpponentName = 'MESSI';
+  } else if (charKey === 'messi' || charKey === 'argentina') {
+    defaultOpponentName = 'RONALDO';
+  }
+
   const opponentPlayerLabel = opponentName
     ? opponentName.toUpperCase()
     : (role === 'host'
-      ? (lobbyData?.guestEmail?.split('@')[0]?.toUpperCase() || (sprintMatchType === 'online' ? 'CR7_PRO_BOT' : 'NEYMAR'))
-      : (lobbyData?.hostEmail?.split('@')[0]?.toUpperCase() || 'NEYMAR'));
+      ? (lobbyData?.guestEmail?.split('@')[0]?.toUpperCase() || (sprintMatchType === 'online' ? 'CR7_PRO_BOT' : defaultOpponentName))
+      : (lobbyData?.hostEmail?.split('@')[0]?.toUpperCase() || defaultOpponentName));
 
   const formatRemainingDistance = (meters) => {
     if (meters >= 1000) {

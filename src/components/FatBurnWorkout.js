@@ -30,9 +30,8 @@ const calcCalories = (totalReps, difficulty) => {
 };
 
 /* ─── Running Track Component ───────────────────────────────── */
-const RunningTrack = ({ progressPercent, characterImg, exerciseIndex, isRunning, currentExercise }) => {
+const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunning, currentExercise }) => {
   const runnerPos = Math.min(progressPercent, 100);
-  const frameRef = useRef(0);
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
@@ -42,6 +41,16 @@ const RunningTrack = ({ progressPercent, characterImg, exerciseIndex, isRunning,
     }, 120);
     return () => clearInterval(interval);
   }, [isRunning]);
+
+  const charKey = (activeCharacter || 'ronaldo').toLowerCase();
+  let frames = ['/por/Por1.png', '/por/por2.png', '/por/por3.png', '/por/por4.png', '/por/por6.png'];
+  if (charKey === 'messi' || charKey === 'argentina') {
+    frames = ['/arg/arg1.png', '/arg/arg2.png', '/arg/arg3.png', '/arg/arg4.png', '/arg/arg6.png'];
+  } else if (charKey === 'neymar' || charKey === 'brazil') {
+    frames = ['/bra/bra1.png', '/bra/bra2.png', '/bra/bra3.png', '/bra/bra4.png', '/bra/bra6.png'];
+  }
+
+  const currentFrameImg = isRunning ? frames[frame] : frames[0];
 
   return (
     <div style={{
@@ -142,31 +151,17 @@ const RunningTrack = ({ progressPercent, characterImg, exerciseIndex, isRunning,
           transform: 'translateX(-50%)'
         }}
       >
-        {characterImg ? (
-          <img
-            src={characterImg}
-            alt="Player"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              imageRendering: 'pixelated',
-              filter: isRunning ? 'drop-shadow(0 0 6px rgba(57,255,20,0.6))' : 'none'
-            }}
-          />
-        ) : (
-          <div style={{
+        <img
+          src={currentFrameImg}
+          alt="Player"
+          style={{
             width: '100%',
             height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 'clamp(32px, 7vw, 52px)',
-            filter: isRunning ? 'drop-shadow(0 0 8px rgba(57,255,20,0.8))' : 'none'
-          }}>
-            🏃
-          </div>
-        )}
+            objectFit: 'contain',
+            imageRendering: 'pixelated',
+            filter: isRunning ? 'drop-shadow(0 0 6px rgba(57,255,20,0.6))' : 'none'
+          }}
+        />
 
         {/* Running dust effect */}
         {isRunning && (
@@ -655,7 +650,7 @@ const FatBurnWorkout = ({
           <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
             <RunningTrack
               progressPercent={progressPercent}
-              characterImg={characterImg}
+              activeCharacter={activeCharacter}
               exerciseIndex={exIndex}
               isRunning={isRunning}
               currentExercise={currentExercise}
