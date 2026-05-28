@@ -1071,60 +1071,40 @@ const FitnessRace = ({
         </div>
       )}
 
-      {/* Combo counter — top-center slot */}
-      {combo > 1 && (
-        <div style={{
-          position: 'absolute',
-          top: 'clamp(52px, 10vh, 90px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 12,
-          textAlign: 'center',
-          pointerEvents: 'none'
-        }}>
-          <div className="arcade-text" style={{
-            fontSize: 'clamp(14px, 3.5vw, 34px)',
-            color: 'var(--accent)',
-            textShadow: '0 0 12px rgba(57,255,20,0.6)',
-            whiteSpace: 'nowrap'
-          }}>{combo}X COMBO</div>
-        </div>
-      )}
-
-      {/* Motivational Toaster — always below combo slot */}
+      {/* Motivational Toaster — left column, below the HUD cards */}
       {motivationMessage && (
         <motion.div
           key={motivationKey}
-          initial={{ opacity: 0, y: -12, scale: 0.85 }}
+          initial={{ opacity: 0, y: 10, scale: 0.88 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -12, scale: 0.85 }}
-          transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+          exit={{ opacity: 0, y: 10, scale: 0.88 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 20 }}
           style={{
             position: 'absolute',
-            top: combo > 1 ? 'clamp(90px, 17vh, 150px)' : 'clamp(52px, 10vh, 90px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            bottom: 'clamp(8px, 2vh, 24px)',
+            left: 'clamp(6px, 2vw, 24px)',
+            width: 'clamp(100px, 18vw, 200px)',
             zIndex: 11,
             background: 'linear-gradient(90deg, rgba(57, 255, 20, 0.95) 0%, rgba(0, 242, 255, 0.95) 100%)',
             border: '1.5px solid #fff',
-            borderRadius: '20px',
-            padding: 'clamp(5px, 1vh, 8px) clamp(12px, 3vw, 24px)',
-            boxShadow: '0 0 20px rgba(57, 255, 20, 0.55), inset 0 0 8px rgba(255, 255, 255, 0.4)',
+            borderRadius: '16px',
+            padding: 'clamp(6px, 1.2vh, 10px) clamp(8px, 1.5vw, 14px)',
+            boxShadow: '0 0 18px rgba(57, 255, 20, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3)',
             pointerEvents: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'top 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            whiteSpace: 'nowrap'
+            textAlign: 'center'
           }}
         >
           <span className="arcade-text" style={{
-            fontSize: 'clamp(11px, 2.5vw, 18px)',
+            fontSize: 'clamp(9px, 2vw, 14px)',
             color: '#000',
             fontWeight: 900,
-            letterSpacing: '0.5px',
+            letterSpacing: '0.3px',
             textShadow: 'none',
-            margin: 0
+            margin: 0,
+            lineHeight: 1.3
           }}>
             {motivationMessage}
           </span>

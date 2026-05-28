@@ -75,13 +75,14 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
     // 3. Compute relative displacement
     const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
     
-    // Squat trigger: user moved shoulders down by more than 26% of shoulder width
-    isActive = movedDownDist > 0.26;
+    // Squat trigger: require shoulders to drop at least 46% of shoulder-width.
+    // This demands ~80% of a full squat depth – prevents shallow knee-bends from counting.
+    isActive = movedDownDist > 0.46;
 
-    // 4. Self-Healing: Reset stuck down-state after 35 frames (~1.1 seconds)
+    // 4. Self-Healing: Reset stuck down-state after 50 frames (~1.65s) to handle very slow squats
     if (repStateRef.current === 'down') {
       repStateRef.squatFramesInDown = (repStateRef.squatFramesInDown || 0) + 1;
-      if (repStateRef.squatFramesInDown > 35) {
+      if (repStateRef.squatFramesInDown > 50) {
         repStateRef.current = 'up';
         repStateRef.squatHighestShoulderY = avgShoulderY;
         repStateRef.squatFramesInDown = 0;
@@ -236,10 +237,11 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       let returnedToStart = true;
       
       if (mode === 'squats') {
-        // Pure shoulder displacement stand-up check (completely immune to noisy webcam joints)
+        // Rep counts when shoulders rise back to within 28% of shoulder-width from baseline
+        // Hysteresis band: trigger at 0.46, release at 0.28
         if (repStateRef.squatHighestShoulderY !== undefined && repStateRef.squatHighestShoulderY !== null) {
           const movedDownDist = (avgShoulderY - repStateRef.squatHighestShoulderY) / shoulderWidth;
-          returnedToStart = movedDownDist < 0.16;
+          returnedToStart = movedDownDist < 0.28;
         } else {
           returnedToStart = true;
         }
