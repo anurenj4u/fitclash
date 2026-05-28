@@ -45,9 +45,11 @@ const FitnessRace = ({
   sprintMatchType = 'ai',
   opponentName = null,
   onComplete,
-  onQuit
+  onQuit,
+  onSaveStats
 }) => {
   const gameRef = useRef(null);
+  const hasSavedStatsRef = useRef(false);
   const boostAudioRef = useRef(null);
   const refereeAudioRef = useRef(null);
   const crowdAudioRef = useRef(null);
@@ -159,6 +161,19 @@ const FitnessRace = ({
         }
       } catch (e) {
         console.error("Error saving reps to localStorage:", e);
+      }
+    }
+
+    if (!hasSavedStatsRef.current) {
+      hasSavedStatsRef.current = true;
+      const finalCalories = finalReps * 0.45 + (isQuit ? 0 : targetKm * 10);
+      const finalXp = finalReps * 6 + (isQuit ? 0 : targetKm * 50);
+      if (onSaveStats) {
+        onSaveStats({
+          reps: finalReps,
+          calories: finalCalories,
+          xp: finalXp
+        });
       }
     }
 
@@ -555,8 +570,9 @@ const FitnessRace = ({
         player.play(playerAnimKey);
         player.anims.pause();
 
-        ball = this.add.sprite(playerStartX + 50, getTrackY(H) + 72, 'football');
-        ball.setScale(spr * 0.26);
+        const ballOffsetY = spr * 260;
+        ball = this.add.sprite(playerStartX + (spr * 160), getTrackY(H) + ballOffsetY, 'football');
+        ball.setScale(spr * 0.52);
         ball.setDepth(10);
 
         leaderArrow = this.add.graphics().setDepth(20);
@@ -596,6 +612,7 @@ const FitnessRace = ({
         };
 
         this.restart = () => {
+          hasSavedStatsRef.current = false;
           playerDistanceRef.current = 0;
           aiDistanceRef.current = 0;
           winnerRef.current = null;
@@ -698,8 +715,9 @@ const FitnessRace = ({
         ai.y = trackY + Math.sin(time * 0.012 + 1) * 5;
 
         const leader = playerDistanceRef.current >= aiDistanceRef.current ? player : ai;
-        ball.x = leader.x + 40;
-        ball.y = leader.y + 72;
+        const bOffsetY = spr * 260;
+        ball.x = leader.x + (spr * 160);
+        ball.y = leader.y + bOffsetY;
 
         leaderArrow.x = leader.x;
         leaderArrow.y = leader.y - 80;
@@ -1639,7 +1657,7 @@ const FitnessRace = ({
           justifyContent: 'center',
           zIndex: 300,
           backdropFilter: 'blur(16px)',
-          padding: '20px'
+          padding: 'clamp(10px, 3vw, 20px)'
         }}>
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -1648,9 +1666,11 @@ const FitnessRace = ({
               background: 'linear-gradient(135deg, rgba(22, 22, 28, 0.96) 0%, rgba(10, 10, 14, 0.98) 100%)',
               border: `1.5px solid ${comparisonDetails.status === 'improved' ? '#39ff14' : comparisonDetails.status === 'less' ? '#ff3366' : 'rgba(255, 255, 255, 0.15)'}`,
               borderRadius: '28px',
-              padding: 'clamp(20px, 4vh, 40px) clamp(20px, 5vw, 50px)',
+              padding: 'clamp(15px, 3vh, 30px) clamp(12px, 4vw, 35px)',
               width: '100%',
-              maxWidth: '520px',
+              maxWidth: '480px',
+              maxHeight: '92dvh',
+              overflowY: 'auto',
               textAlign: 'center',
               boxShadow: `0 20px 40px rgba(0,0,0,0.6), 0 0 30px ${comparisonDetails.status === 'improved' ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255,255,255,0.03)'}`
             }}
@@ -1778,10 +1798,10 @@ const FitnessRace = ({
                   : 'linear-gradient(90deg, #ffffff 0%, #e0e0e0 100%)',
                 color: '#000',
                 border: 'none',
-                padding: '14px clamp(30px, 8vw, 60px)',
+                padding: '12px clamp(20px, 6vw, 40px)',
                 borderRadius: '30px',
                 fontWeight: 900,
-                fontSize: '14px',
+                fontSize: 'clamp(12px, 3vw, 14px)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-gaming)',
                 letterSpacing: '1px'

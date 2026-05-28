@@ -637,15 +637,16 @@ export default function Home() {
               role={multiplayerRole}
               sprintMatchType={sprintMatchType}
               opponentName={matchedOpponent ? matchedOpponent.name : null}
-              onComplete={(stats) => {
+              onSaveStats={(stats) => {
                 const userWeight = userData?.weight || 70;
                 const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-                
                 handleWorkoutComplete({ 
                   reps: stats.reps || 0, 
                   caloriesBurned: scaledCalories, 
                   xpGained: stats.xp || 0 
                 });
+              }}
+              onComplete={(stats) => {
                 setGameStarted(false);
                 setIsCameraReady(false); // Reset camera ready state on completion
                 setMultiplayerRoomId(null);
@@ -653,14 +654,6 @@ export default function Home() {
                 setMatchedOpponent(null);
               }}
               onQuit={(stats) => {
-                const userWeight = userData?.weight || 70;
-                const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
-                
-                handleWorkoutComplete({ 
-                  reps: stats.reps || 0, 
-                  caloriesBurned: scaledCalories, 
-                  xpGained: stats.xp || 0 
-                });
                 setGameStarted(false);
                 setIsCameraReady(false); // Reset camera ready state on completion
                 setMultiplayerRoomId(null);
