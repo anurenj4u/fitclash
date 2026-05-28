@@ -289,10 +289,10 @@ const FitnessRace = ({
         const h = window.innerHeight;
         // On mobile portrait/landscape – use the shorter dimension as reference
         const minDim = Math.min(w, h);
-        if (minDim < 400) return 0.07;   // very small phones
-        if (w < 480) return 0.09;         // phones portrait
-        if (w < 768) return 0.13;         // tablets / phones landscape
-        return 0.24;
+        if (minDim < 400) return 0.14;   // very small phones (2x)
+        if (w < 480) return 0.18;         // phones portrait (2x)
+        if (w < 768) return 0.26;         // tablets / phones landscape (2x)
+        return 0.24;                      // desktop unchanged
       };
 
       const getTrackY = h => h - Math.round(h * 0.25);
