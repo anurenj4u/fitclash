@@ -286,9 +286,13 @@ const FitnessRace = ({
 
       const getScale = () => {
         const w = window.innerWidth;
-        if (w < 480) return 0.12;
-        if (w < 768) return 0.17;
-        return 0.27;
+        const h = window.innerHeight;
+        // On mobile portrait/landscape – use the shorter dimension as reference
+        const minDim = Math.min(w, h);
+        if (minDim < 400) return 0.07;   // very small phones
+        if (w < 480) return 0.09;         // phones portrait
+        if (w < 768) return 0.13;         // tablets / phones landscape
+        return 0.24;
       };
 
       const getTrackY = h => h - Math.round(h * 0.25);
@@ -1010,101 +1014,115 @@ const FitnessRace = ({
       {gameStateDisplay === 'playing' && (
         <div style={{
           position: 'absolute',
-          left: 'clamp(10px, 3vw, 30px)',
-          top: '52%',
+          left: 'clamp(6px, 2vw, 24px)',
+          top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 10,
           display: 'flex',
           flexDirection: 'column',
-          gap: 'clamp(10px, 2.5vh, 20px)',
-          width: 'clamp(160px, 24vw, 240px)'
+          gap: 'clamp(6px, 1.5vh, 16px)',
+          width: 'clamp(100px, 18vw, 200px)'
         }}>
-          {/* Distance Remaining Badge (Right) - Placed Above */}
+          {/* Distance Remaining Badge */}
           <div className="glass-card hud-right-card" style={{
             background: 'rgba(5, 5, 8, 0.85)',
             border: '1px solid rgba(0, 242, 255, 0.3)',
-            boxShadow: '0 0 30px rgba(0, 242, 255, 0.15)',
-            borderRadius: '20px',
-            padding: 'clamp(10px, 1.8vh, 20px) clamp(12px, 2.5vw, 24px)',
+            boxShadow: '0 0 20px rgba(0, 242, 255, 0.12)',
+            borderRadius: '14px',
+            padding: 'clamp(6px, 1.2vh, 14px) clamp(8px, 1.8vw, 18px)',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px'
+            gap: '3px'
           }}>
-            <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--secondary)' }}>DISTANCE TO GO</span>
-            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
+            <span style={{ fontSize: 'clamp(7px, 1.2vw, 9px)', opacity: 0.6, fontWeight: 900, letterSpacing: '1px', color: 'var(--secondary)' }}>DISTANCE TO GO</span>
+            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(7px, 1.1vw, 9px)', margin: 0, opacity: 0.8 }}>
               TARGET: {targetKm} KM
             </h3>
-            <div className="arcade-text" style={{ fontSize: 'clamp(20px, 4vw, 36px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
+            <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3.5vw, 32px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
               {formatRemainingDistance(remainingDist)}
             </div>
-            <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REMAINING</span>
+            <span style={{ fontSize: 'clamp(7px, 1.1vw, 9px)', fontWeight: 800, opacity: 0.5, letterSpacing: '0.5px' }}>REMAINING</span>
           </div>
 
-          {/* Rep Count Badge (Left) - Placed Below */}
+          {/* Rep Count Badge */}
           <div className="glass-card hud-left-card" style={{
             background: 'rgba(5, 5, 8, 0.85)',
             border: '1px solid rgba(57, 255, 20, 0.3)',
-            boxShadow: '0 0 30px rgba(57, 255, 20, 0.15)',
-            borderRadius: '20px',
-            padding: 'clamp(10px, 1.8vh, 20px) clamp(12px, 2.5vw, 24px)',
+            boxShadow: '0 0 20px rgba(57, 255, 20, 0.12)',
+            borderRadius: '14px',
+            padding: 'clamp(6px, 1.2vh, 14px) clamp(8px, 1.8vw, 18px)',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px'
+            gap: '3px'
           }}>
-            <span style={{ fontSize: '9px', opacity: 0.6, fontWeight: 900, letterSpacing: '2px', color: 'var(--accent)' }}>SENSORS LIVE</span>
-            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', margin: 0, opacity: 0.8 }}>
-              {mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase()}
+            <span style={{ fontSize: 'clamp(7px, 1.2vw, 9px)', opacity: 0.6, fontWeight: 900, letterSpacing: '1px', color: 'var(--accent)' }}>SENSORS LIVE</span>
+            <h3 className="arcade-text animate-pulse" style={{ fontSize: 'clamp(7px, 1.1vw, 9px)', margin: 0, opacity: 0.8 }}>
+              {mode === 'jacks' ? 'JUMPING JACKS' : mode === 'pushups' ? 'PUSH UPS' : mode === 'squats' ? 'SQUATS' : mode.toUpperCase()}
             </h3>
-            <div className="arcade-text" style={{ fontSize: 'clamp(24px, 5vw, 42px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
+            <div className="arcade-text" style={{ fontSize: 'clamp(20px, 4.5vw, 38px)', color: '#fff', fontWeight: 900, lineHeight: 1 }}>
               {repsCount}
             </div>
-            <span style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, letterSpacing: '1px' }}>REPS completed</span>
+            <span style={{ fontSize: 'clamp(7px, 1.1vw, 9px)', fontWeight: 800, opacity: 0.5, letterSpacing: '0.5px' }}>REPS done</span>
           </div>
         </div>
       )}
 
-      {/* Combo */}
+      {/* Combo counter — top-center slot */}
       {combo > 1 && (
-        <div style={{ position: 'absolute', top: 'clamp(65px, 18vh, 150px)', left: '50%', transform: 'translateX(-50%)', zIndex: 11, textAlign: 'center', pointerEvents: 'none' }}>
-          <div className="arcade-text" style={{ fontSize: 'clamp(18px, 4vw, 40px)', color: 'var(--accent)', textShadow: 'none' }}>{combo}X COMBO</div>
+        <div style={{
+          position: 'absolute',
+          top: 'clamp(52px, 10vh, 90px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 12,
+          textAlign: 'center',
+          pointerEvents: 'none'
+        }}>
+          <div className="arcade-text" style={{
+            fontSize: 'clamp(14px, 3.5vw, 34px)',
+            color: 'var(--accent)',
+            textShadow: '0 0 12px rgba(57,255,20,0.6)',
+            whiteSpace: 'nowrap'
+          }}>{combo}X COMBO</div>
         </div>
       )}
 
-      {/* Motivational Toaster */}
+      {/* Motivational Toaster — always below combo slot */}
       {motivationMessage && (
         <motion.div
           key={motivationKey}
-          initial={{ opacity: 0, y: -15, scale: 0.8 }}
+          initial={{ opacity: 0, y: -12, scale: 0.85 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -15, scale: 0.8 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          exit={{ opacity: 0, y: -12, scale: 0.85 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 18 }}
           style={{
             position: 'absolute',
-            top: combo > 1 ? 'clamp(115px, 20vh, 180px)' : 'clamp(90px, 13vh, 120px)',
+            top: combo > 1 ? 'clamp(90px, 17vh, 150px)' : 'clamp(52px, 10vh, 90px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 11,
             background: 'linear-gradient(90deg, rgba(57, 255, 20, 0.95) 0%, rgba(0, 242, 255, 0.95) 100%)',
             border: '1.5px solid #fff',
             borderRadius: '20px',
-            padding: '8px 24px',
-            boxShadow: '0 0 25px rgba(57, 255, 20, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5)',
+            padding: 'clamp(5px, 1vh, 8px) clamp(12px, 3vw, 24px)',
+            boxShadow: '0 0 20px rgba(57, 255, 20, 0.55), inset 0 0 8px rgba(255, 255, 255, 0.4)',
             pointerEvents: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'top 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            transition: 'top 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            whiteSpace: 'nowrap'
           }}
         >
           <span className="arcade-text" style={{
-            fontSize: 'clamp(13px, 2.2vw, 20px)',
+            fontSize: 'clamp(11px, 2.5vw, 18px)',
             color: '#000',
             fontWeight: 900,
-            letterSpacing: '1px',
+            letterSpacing: '0.5px',
             textShadow: 'none',
             margin: 0
           }}>
