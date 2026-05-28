@@ -2973,22 +2973,26 @@ export default function Home() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 100, scale: 0.8 }}
             transition={{ type: 'spring', damping: 20, stiffness: 120 }}
-            style={{
+          style={{
               position: 'fixed',
-              bottom: '24px',
-              right: '24px',
-              width: '420px',
-              background: 'rgba(5, 5, 12, 0.94)',
+              bottom: '20px',
+              right: '12px',
+              left: '12px',
+              width: 'auto',
+              maxWidth: '420px',
+              marginLeft: 'auto',
+              background: 'rgba(5, 5, 12, 0.96)',
               border: '1.5px solid rgba(57, 255, 20, 0.4)',
               borderRadius: '16px',
-              padding: '12px 18px',
+              padding: '14px 16px',
               boxShadow: '0 12px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(57, 255, 20, 0.1)',
               zIndex: 1000,
               backdropFilter: 'blur(16px)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
-              textAlign: 'left'
+              gap: '8px',
+              textAlign: 'left',
+              boxSizing: 'border-box'
             }}
           >
             {/* Close Button */}
@@ -3025,7 +3029,7 @@ export default function Home() {
             </div>
 
             {/* Message Body */}
-            <p style={{ fontSize: '14px', color: '#fff', opacity: 0.95, lineHeight: 1.45, margin: '2px 0 4px 0', fontWeight: 700 }}>
+            <p style={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: '#fff', opacity: 0.95, lineHeight: 1.5, margin: '2px 0 4px 0', fontWeight: 700 }}>
               Your highest PR is <strong style={{ color: '#39ff14' }}>{highestReps} reps</strong>. Beat it today! ⚡
             </p>
 
@@ -3038,13 +3042,14 @@ export default function Home() {
                 background: 'linear-gradient(135deg, #39ff14 0%, #00f2ff 100%)',
                 color: '#000000',
                 border: 'none',
-                padding: '11px 18px',
+                padding: 'clamp(10px, 2.5vw, 13px) 18px',
                 borderRadius: '20px',
                 fontWeight: 900,
-                fontSize: '12px',
+                fontSize: 'clamp(11px, 3vw, 13px)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-gaming)',
                 textAlign: 'center',
+                width: '100%',
                 boxShadow: '0 4px 12px rgba(57, 255, 20, 0.25)',
                 letterSpacing: '0.5px',
                 marginTop: '2px'
