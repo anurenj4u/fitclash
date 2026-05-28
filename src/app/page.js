@@ -1005,9 +1005,9 @@ export default function Home() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: 900, color: '#39ff14', background: 'rgba(57,255,20,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(57,255,20,0.2)' }}>🔥 HIGH CALORIE BURN</span>
-                    <span style={{ fontSize: '8px', fontWeight: 900, color: '#00f2ff', background: 'rgba(0,242,255,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(0,242,255,0.2)' }}>⚡ CARDIO ENDURANCE</span>
-                    <span style={{ fontSize: '8px', fontWeight: 900, color: '#ffd700', background: 'rgba(255,215,0,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,215,0,0.2)' }}>📅 30-DAY TIMELINE</span>
+                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#39ff14', background: 'rgba(57,255,20,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(57,255,20,0.2)' }}>🔥 HIGH CALORIE BURN</span>
+                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#00f2ff', background: 'rgba(0,242,255,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(0,242,255,0.2)' }}>⚡ CARDIO ENDURANCE</span>
+                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#ffd700', background: 'rgba(255,215,0,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,215,0,0.2)' }}>📅 30-DAY TIMELINE</span>
                   </div>
                 </div>
               </motion.div>
