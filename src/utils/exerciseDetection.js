@@ -90,46 +90,48 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       repStateRef.squatFramesInDown = 0;
     }
   } else if (mode === 'pushups') {
-    if (isMobile) {
-      // Mobile-optimized Pushup Logic with Self-Healing
-      if (shoulderOk && shoulderWidth > 0) {
-        if (repStateRef.pushupHighestShoulderY === undefined || repStateRef.pushupHighestShoulderY === null) {
+    // Push-up detection uses shoulder Y drop when user goes from plank-high (arms extended)
+    // to plank-low (chest near floor). Camera is usually side-on or angled from above.
+    // shoulderOk was previously undefined – this is the root cause of tracking failure.
+    const shoulderOk = validShouldersCount > 0;
+
+    if (shoulderOk && shoulderWidth > 0) {
+      // 1. Initialize the "up" (arms extended) baseline
+      if (repStateRef.pushupHighestShoulderY === undefined || repStateRef.pushupHighestShoulderY === null) {
+        repStateRef.pushupHighestShoulderY = avgShoulderY;
+      }
+
+      // 2. Only update the baseline (highest = lowest Y value = highest on screen) when
+      //    the user is in the 'up' state (arms extended, shoulders highest).
+      //    This prevents the baseline from following the user down during a pushup.
+      if (repStateRef.current === 'up') {
+        if (avgShoulderY < repStateRef.pushupHighestShoulderY) {
+          // Shoulders moved higher (smaller Y) → snap baseline up immediately
           repStateRef.pushupHighestShoulderY = avgShoulderY;
-        }
-        
-        if (repStateRef.current === 'up') {
-          repStateRef.pushupHighestShoulderY = Math.min(repStateRef.pushupHighestShoulderY, avgShoulderY);
-          repStateRef.pushupHighestShoulderY = repStateRef.pushupHighestShoulderY * 0.90 + avgShoulderY * 0.10; 
-        }
-
-        const movedDownDist = (avgShoulderY - repStateRef.pushupHighestShoulderY) / shoulderWidth;
-        isActive = movedDownDist > 0.20; 
-
-        if (repStateRef.current === 'down') {
-          repStateRef.pushupFramesInDown = (repStateRef.pushupFramesInDown || 0) + 1;
-          if (repStateRef.pushupFramesInDown > 45) {
-            repStateRef.current = 'up';
-            repStateRef.pushupHighestShoulderY = avgShoulderY;
-            repStateRef.pushupFramesInDown = 0;
-          }
         } else {
-          repStateRef.pushupFramesInDown = 0;
+          // Drift slowly upward to adapt to minor posture shifts
+          repStateRef.pushupHighestShoulderY = repStateRef.pushupHighestShoulderY * 0.95 + avgShoulderY * 0.05;
         }
       }
-    } else {
-      // Original Web/Desktop Pushup Logic
-      if (shoulderOk && shoulderWidth > 0) {
-        if (repStateRef.pushupHighestShoulderY === undefined || repStateRef.pushupHighestShoulderY === null) {
-          repStateRef.pushupHighestShoulderY = avgShoulderY;
-        }
-        
-        if (repStateRef.current === 'up') {
-          repStateRef.pushupHighestShoulderY = Math.min(repStateRef.pushupHighestShoulderY, avgShoulderY);
-          repStateRef.pushupHighestShoulderY = repStateRef.pushupHighestShoulderY * 0.90 + avgShoulderY * 0.10; 
-        }
 
-        const movedDownDist = (avgShoulderY - repStateRef.pushupHighestShoulderY) / shoulderWidth;
-        isActive = movedDownDist > 0.20; 
+      // 3. Compute how far shoulders have dropped relative to the "up" baseline
+      //    Positive = shoulders dropped down (pushup lowering phase)
+      const movedDownDist = (avgShoulderY - repStateRef.pushupHighestShoulderY) / shoulderWidth;
+
+      // 4. Trigger "down" when shoulders drop more than 22% of shoulder-width
+      //    (works for side-view, top-down, and slightly angled camera positions)
+      isActive = movedDownDist > 0.22;
+
+      // 5. Self-healing: prevent getting permanently stuck in 'down' state
+      if (repStateRef.current === 'down') {
+        repStateRef.pushupFramesInDown = (repStateRef.pushupFramesInDown || 0) + 1;
+        if (repStateRef.pushupFramesInDown > 40) {
+          repStateRef.current = 'up';
+          repStateRef.pushupHighestShoulderY = avgShoulderY;
+          repStateRef.pushupFramesInDown = 0;
+        }
+      } else {
+        repStateRef.pushupFramesInDown = 0;
       }
     }
 
@@ -245,7 +247,9 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       } else if (mode === 'pushups') {
         if (repStateRef.pushupHighestShoulderY !== undefined && repStateRef.pushupHighestShoulderY !== null) {
           const movedDownDist = (avgShoulderY - repStateRef.pushupHighestShoulderY) / shoulderWidth;
-          returnedToStart = movedDownDist < 0.12; 
+          // Rep counts when shoulders return to within 14% of shoulder-width from baseline
+          // (hysteresis band: trigger at 0.22, release at 0.14)
+          returnedToStart = movedDownDist < 0.14;
         } else {
           returnedToStart = true;
         }
