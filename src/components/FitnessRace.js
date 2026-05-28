@@ -63,6 +63,20 @@ const FitnessRace = ({
   const [motivationKey, setMotivationKey] = useState(0);
   const motivationTimeoutRef = useRef(null);
   const lastDistanceMilestoneRef = useRef(null);
+  const [personalBestReps, setPersonalBestReps] = useState(34);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const highestObj = JSON.parse(localStorage.getItem("fitclash_highest_pr") || "{}");
+        const prevRepsObj = JSON.parse(localStorage.getItem("fitclash_previous_reps") || "{}");
+        const pb = highestObj[mode] || prevRepsObj[mode] || 34;
+        setPersonalBestReps(pb);
+      } catch (e) {
+        console.error("Error loading PB reps:", e);
+      }
+    }
+  }, [mode]);
 
   const triggerMotivationToast = (text) => {
     setMotivationMessage(text);
@@ -134,6 +148,15 @@ const FitnessRace = ({
       try {
         prevRepsObj[mode] = finalReps;
         localStorage.setItem("fitclash_previous_reps", JSON.stringify(prevRepsObj));
+
+        // Update the highest PR
+        const highestObj = JSON.parse(localStorage.getItem("fitclash_highest_pr") || "{}");
+        const currentHighest = highestObj[mode] !== undefined ? highestObj[mode] : 34;
+        if (finalReps > currentHighest) {
+          highestObj[mode] = finalReps;
+          localStorage.setItem("fitclash_highest_pr", JSON.stringify(highestObj));
+          setPersonalBestReps(finalReps);
+        }
       } catch (e) {
         console.error("Error saving reps to localStorage:", e);
       }
@@ -822,19 +845,33 @@ const FitnessRace = ({
                               (remainingDist <= 55 && remainingDist >= 45);
 
     if (!isMilestoneActive) {
-      const phrases = [
-        "PUSH HARDER! ⚡",
-        "KEEP IT UP! 🔥",
-        "UNSTOPPABLE! 🏆",
-        "YOU GOT THIS! 💪",
-        "SPEED UP! 🚀",
-        "CRUSH IT! 💥",
-        "NICE FORM! 🎯",
-        "GREAT WORK! 🌟",
-        "DON'T STOP! 🛑"
-      ];
-      const randomPhrase = phrases[repsCount % phrases.length];
-      triggerMotivationToast(randomPhrase);
+      const repsToBreakPR = personalBestReps - repsCount;
+      let selectedPhrase = "";
+
+      if (repsToBreakPR > 0 && repsToBreakPR <= 10) {
+        selectedPhrase = `${repsToBreakPR} MORE TO BREAK PR! 🏆`;
+      } else if (repsToBreakPR === 0) {
+        selectedPhrase = "PR EQUALED! NEXT REP CREATES NEW PR! 🌟";
+      } else if (repsToBreakPR < 0) {
+        selectedPhrase = `NEW PR: +${Math.abs(repsToBreakPR)} REPS! 👑`;
+      } else {
+        const remainingMeters = Math.max(1, Math.round(remainingDist));
+        const phrases = [
+          "PUSH HARDER! ⚡",
+          "KEEP IT UP! 🔥",
+          `${remainingMeters}M LEFT! 🚀`,
+          "UNSTOPPABLE! 🏆",
+          "YOU GOT THIS! 💪",
+          "SPEED UP! 🚀",
+          "CRUSH IT! 💥",
+          "NICE FORM! 🎯",
+          "GREAT WORK! 🌟",
+          "DON'T STOP! 🛑"
+        ];
+        selectedPhrase = phrases[repsCount % phrases.length];
+      }
+
+      triggerMotivationToast(selectedPhrase);
     }
   }, [repsCount]);
 
@@ -1038,7 +1075,7 @@ const FitnessRace = ({
       )}
 
       {/* Motivational Toaster */}
-      {combo <= 1 && motivationMessage && (
+      {motivationMessage && (
         <motion.div
           key={motivationKey}
           initial={{ opacity: 0, y: -15, scale: 0.8 }}
@@ -1047,7 +1084,7 @@ const FitnessRace = ({
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
           style={{
             position: 'absolute',
-            top: 'clamp(90px, 13vh, 120px)',
+            top: combo > 1 ? 'clamp(115px, 20vh, 180px)' : 'clamp(90px, 13vh, 120px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 11,
@@ -1059,7 +1096,8 @@ const FitnessRace = ({
             pointerEvents: 'none',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            transition: 'top 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
           <span className="arcade-text" style={{

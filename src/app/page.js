@@ -186,8 +186,28 @@ export default function Home() {
         }
       });
     }
+    if (typeof window !== 'undefined') {
+      try {
+        const highestObj = JSON.parse(localStorage.getItem("fitclash_highest_pr") || "{}");
+        Object.values(highestObj).forEach(val => {
+          const num = Number(val);
+          if (!isNaN(num) && num > maxReps) {
+            maxReps = num;
+          }
+        });
+        const prevRepsObj = JSON.parse(localStorage.getItem("fitclash_previous_reps") || "{}");
+        Object.values(prevRepsObj).forEach(val => {
+          const num = Number(val);
+          if (!isNaN(num) && num > maxReps) {
+            maxReps = num;
+          }
+        });
+      } catch (e) {
+        console.error("Error reading PRs inside highestReps:", e);
+      }
+    }
     return maxReps;
-  }, [progression]);
+  }, [progression, gameStarted]);
 
   // Load progression state on mount
   useEffect(() => {
@@ -993,23 +1013,13 @@ export default function Home() {
               </motion.div>
 
               {/* OUTSIDE BUTTON ROW & CALENDAR */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginTop: '-18px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
-                  <div
-                    onClick={() => setShowFatBurnCalendar(prev => !prev)}
-                    style={{ fontSize: '9px', fontWeight: 900, background: 'rgba(57,255,20,0.08)', color: '#39ff14', border: '1px solid rgba(57,255,20,0.25)', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
-                  >
-                    📅 {showFatBurnCalendar ? 'HIDE CALENDAR' : '30-DAY CALENDAR'}
-                  </div>
-
-                  <button
-                    onClick={() => setShowSetupModal(true)}
-                    style={{ background: 'linear-gradient(135deg, #39ff14, #00f2ff)', color: '#000', padding: '10px 28px', borderRadius: '20px', border: 'none', fontWeight: 900, fontSize: '11px', cursor: 'pointer', fontFamily: 'var(--font-gaming)', boxShadow: '0 0 16px rgba(57,255,20,0.35)', transition: 'all 0.3s ease', whiteSpace: 'nowrap' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(57,255,20,0.5)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(57, 255, 20, 0.35)'; }}
-                  >
-                    ⚙️ SETUP WORKOUT
-                  </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginTop: '16px', alignItems: 'center' }}>
+                {/* 30-Day Calendar Toggle Button */}
+                <div
+                  onClick={() => setShowFatBurnCalendar(prev => !prev)}
+                  style={{ fontSize: '10px', fontWeight: 900, background: 'rgba(57,255,20,0.08)', color: '#39ff14', border: '1px solid rgba(57,255,20,0.25)', padding: '8px 18px', borderRadius: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+                >
+                  📅 {showFatBurnCalendar ? 'HIDE CALENDAR' : '30-DAY PLAN CALENDAR'}
                 </div>
 
                 {/* Calendar grid */}
@@ -1035,6 +1045,32 @@ export default function Home() {
                     })}
                   </div>
                 )}
+
+                {/* Match Setup Button: Placed at the Bottom Center below the Card */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowSetupModal(true)}
+                  style={{
+                    background: 'linear-gradient(135deg, #39ff14, #00f2ff)',
+                    color: '#000',
+                    padding: '12px 42px',
+                    borderRadius: '24px',
+                    border: 'none',
+                    fontWeight: 900,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-gaming)',
+                    boxShadow: '0 0 20px rgba(57,255,20,0.4)',
+                    transition: 'all 0.3s ease',
+                    whiteSpace: 'nowrap',
+                    marginTop: '8px'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.6)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.4)'; }}
+                >
+                  ⚙️ SETUP WORKOUT
+                </motion.button>
               </div>
             </>
           )}
