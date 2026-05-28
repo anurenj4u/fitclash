@@ -294,7 +294,7 @@ const FitnessRace = ({
         scene: { preload, create, update }
       };
 
-      let player, ai, ball, leaderArrow, scene;
+      let player, ai, ball, leaderArrow, scene, spr;
       let skyBg, groundLayer, stadiumLights, trailParticles;
       let mountains, clouds = [];
       const playerStartX = 200;
@@ -425,7 +425,7 @@ const FitnessRace = ({
         scene = this;
         const W = this.scale.width;
         const H = this.scale.height;
-        const spr = getScale();
+        spr = getScale();
 
         // Helper to remove solid black background from PNG textures at runtime
         function removeBlackBackground(sceneRef, textureKey) {
