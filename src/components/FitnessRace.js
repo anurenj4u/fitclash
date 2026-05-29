@@ -33,6 +33,13 @@ const exitFullscreen = () => {
   }
 };
 
+const getCalorieMultiplier = (exerciseMode) => {
+  if (exerciseMode === 'squats' || exerciseMode === 'squat') return 0.5;
+  if (exerciseMode === 'pushups' || exerciseMode === 'pushup') return 0.4;
+  if (exerciseMode === 'jacks' || exerciseMode === 'jumping_jacks' || exerciseMode === 'jumping jack') return 0.2;
+  return 0.45;
+};
+
 const FitnessRace = ({
   mode,
   targetKm = 1,
@@ -166,7 +173,7 @@ const FitnessRace = ({
 
     if (!hasSavedStatsRef.current) {
       hasSavedStatsRef.current = true;
-      const finalCalories = finalReps * 0.45 + (isQuit ? 0 : targetKm * 10);
+      const finalCalories = finalReps * getCalorieMultiplier(mode) + (isQuit ? 0 : targetKm * 10);
       const finalXp = finalReps * 6 + (isQuit ? 0 : targetKm * 50);
       if (onSaveStats) {
         onSaveStats({
@@ -964,9 +971,9 @@ const FitnessRace = ({
             } else {
               exitFullscreen();
               if (onQuit) {
-                onQuit({ reps: repsCount, calories: repsCount * 0.45, xp: repsCount * 6 });
+                onQuit({ reps: repsCount, calories: repsCount * getCalorieMultiplier(mode), xp: repsCount * 6 });
               } else if (onComplete) {
-                onComplete({ reps: repsCount, calories: repsCount * 0.45, xp: repsCount * 6 });
+                onComplete({ reps: repsCount, calories: repsCount * getCalorieMultiplier(mode), xp: repsCount * 6 });
               }
             }
           }}
@@ -1275,20 +1282,6 @@ const FitnessRace = ({
                     overflow: 'hidden'
                   }}
                 >
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    background: playerProfile.color,
-                    color: '#000',
-                    fontSize: '9px',
-                    fontWeight: 900,
-                    padding: '4px 10px',
-                    borderRadius: '0 0 0 12px',
-                    fontFamily: 'var(--font-gaming)'
-                  }}>
-                    {playerProfile.country}
-                  </div>
                   
                   <div style={{
                     width: 'clamp(80px, 12vw, 110px)',
@@ -1319,9 +1312,6 @@ const FitnessRace = ({
                     <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', color: '#fff', display: 'block', marginBottom: '2px' }}>
                       {localPlayerLabel}
                     </span>
-                    <h3 className="arcade-text" style={{ fontSize: 'clamp(13px, 2.2vw, 18px)', margin: 0, color: '#fff', letterSpacing: '0.5px' }}>
-                      {playerProfile.name}
-                    </h3>
                     <span style={{ fontSize: '9px', opacity: 0.8, fontWeight: 900, letterSpacing: '1px', color: playerProfile.color, display: 'block', marginTop: '3px' }}>
                       {playerProfile.title}
                     </span>
@@ -1420,21 +1410,6 @@ const FitnessRace = ({
                   }}
                 >
                   <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    background: oppProfile.color,
-                    color: '#000',
-                    fontSize: '9px',
-                    fontWeight: 900,
-                    padding: '4px 10px',
-                    borderRadius: '0 0 0 12px',
-                    fontFamily: 'var(--font-gaming)'
-                  }}>
-                    {oppProfile.country}
-                  </div>
-
-                  <div style={{
                     width: 'clamp(80px, 12vw, 110px)',
                     height: 'clamp(80px, 12vw, 110px)',
                     borderRadius: '50%',
@@ -1463,9 +1438,6 @@ const FitnessRace = ({
                     <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', color: '#fff', display: 'block', marginBottom: '2px' }}>
                       {opponentPlayerLabel}
                     </span>
-                    <h3 className="arcade-text" style={{ fontSize: 'clamp(13px, 2.2vw, 18px)', margin: 0, color: '#fff', letterSpacing: '0.5px' }}>
-                      {oppProfile.name}
-                    </h3>
                     <span style={{ fontSize: '9px', opacity: 0.8, fontWeight: 900, letterSpacing: '1px', color: oppProfile.color, display: 'block', marginTop: '3px' }}>
                       {oppProfile.title}
                     </span>
@@ -1781,7 +1753,7 @@ const FitnessRace = ({
                 exitFullscreen();
                 const finalStats = {
                   reps: comparisonDetails.current,
-                  calories: comparisonDetails.current * 0.45 + (comparisonDetails.isQuit ? 0 : targetKm * 10),
+                  calories: comparisonDetails.current * getCalorieMultiplier(mode) + (comparisonDetails.isQuit ? 0 : targetKm * 10),
                   xp: comparisonDetails.current * 6 + (comparisonDetails.isQuit ? 0 : targetKm * 50)
                 };
                 if (comparisonDetails.isQuit) {

@@ -150,7 +150,8 @@ const StrengthEndurance = ({ selectedExercises, isCameraReady, onComplete }) => 
 
   if (stage === 'finished') {
     const durationSecs = Math.floor((Date.now() - startTime) / 1000);
-    const finalCalories = Math.round(reps * 0.45 + 50); // bonus for holds
+    const multiplier = (activeExercise === 'squats' ? 0.5 : (activeExercise === 'pushups' ? 0.4 : (activeExercise === 'jacks' ? 0.2 : 0.45)));
+    const finalCalories = Math.round(reps * multiplier + 50); // bonus for holds
     const xpEarned = 500; // Flat large XP for surviving gauntlet
     
     return (

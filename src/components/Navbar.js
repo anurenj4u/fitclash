@@ -87,7 +87,7 @@ export default function Navbar() {
       
       {/* Desktop Menu */}
       <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }} className="desktop-menu">
-        {(userData?.isPremium ? ['ABOUT', 'CONTACT'] : ['ABOUT', 'CONTACT', 'PREMIUM']).map((item) => {
+        {(userData?.isPremium ? ['ABOUT', 'BLOG', 'CONTACT'] : ['ABOUT', 'BLOG', 'CONTACT', 'PREMIUM']).map((item) => {
           const href = `/${item.toLowerCase()}`;
           const active = isActive(href);
           return (
@@ -259,7 +259,7 @@ export default function Navbar() {
               zIndex: 999
             }}
           >
-            {(userData?.isPremium ? ['ABOUT', 'CONTACT'] : ['ABOUT', 'CONTACT', 'PREMIUM']).map((item) => (
+            {(userData?.isPremium ? ['ABOUT', 'BLOG', 'CONTACT'] : ['ABOUT', 'BLOG', 'CONTACT', 'PREMIUM']).map((item) => (
               <Link 
                 key={item}
                 href={`/${item.toLowerCase()}`} 

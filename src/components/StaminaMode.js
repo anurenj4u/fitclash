@@ -186,7 +186,8 @@ const StaminaMode = ({ selectedExercises, isCameraReady, onComplete, staminaData
   }
 
   if (gameState === 'finished') {
-    const finalCalories = Math.round(reps * 0.45 + 10);
+    const multiplier = (activeExercise === 'squats' ? 0.5 : (activeExercise === 'pushups' ? 0.4 : (activeExercise === 'jacks' ? 0.2 : 0.45)));
+    const finalCalories = Math.round(reps * multiplier + 10);
     const xpEarned = reps * 15; // More XP for stamina
     
     return (

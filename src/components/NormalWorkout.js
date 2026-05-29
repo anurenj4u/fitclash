@@ -216,7 +216,31 @@ const NormalWorkout = ({
   const progressPercent = Math.min((currentDistanceMeters / totalTargetMeters) * 100, 100);
 
   if (isFinished) {
-    const finalCalories = Math.round(reps * 0.45 + 10);
+    const getCalorieMultiplier = (exercise) => {
+      if (exercise === 'squats' || exercise === 'squat') return 0.5;
+      if (exercise === 'pushups' || exercise === 'pushup') return 0.4;
+      if (exercise === 'jacks' || exercise === 'jumping_jacks' || exercise === 'jumping jack') return 0.2;
+      return 0.45;
+    };
+
+    let calculatedCals = 0;
+    const numEx = selectedExercises.length;
+    for (let i = 0; i < numEx; i++) {
+      const ex = selectedExercises[i];
+      let repsForEx = 0;
+      if (reps >= (i + 1) * targetRepsPerExercise) {
+        repsForEx = targetRepsPerExercise;
+      } else if (reps > i * targetRepsPerExercise) {
+        repsForEx = reps - i * targetRepsPerExercise;
+      }
+      calculatedCals += repsForEx * getCalorieMultiplier(ex);
+    }
+    if (reps > targetRepsNeeded) {
+      const excess = reps - targetRepsNeeded;
+      const lastEx = selectedExercises[numEx - 1];
+      calculatedCals += excess * getCalorieMultiplier(lastEx);
+    }
+    const finalCalories = Math.round(calculatedCals + 10);
     const xpEarned = reps * 10 + (difficulty === 'hard' ? 200 : 50);
     const score = (accuracy * 0.4) + (reps * 0.4) - (durationSecs * 0.2);
     let rank = 'C RANK';

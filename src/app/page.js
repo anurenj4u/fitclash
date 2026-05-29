@@ -30,7 +30,8 @@ import {
   Award,
   Flame,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Edit2
 } from "lucide-react";
 import { doc, updateDoc, increment, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -60,6 +61,10 @@ export default function Home() {
 
   // Tracks which exercise is currently active inside NormalWorkout for the MotionTracker mode
   const [activeWorkoutExerciseIndex, setActiveWorkoutExerciseIndex] = useState(0);
+
+  const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
+  const [weightInput, setWeightInput] = useState(70);
+  const [selectedCalorieGoal, setSelectedCalorieGoal] = useState(100);
 
   // Workout Programs state
   const [activeProgram, setActiveProgram] = useState(null);
@@ -146,6 +151,7 @@ export default function Home() {
     level: 5,
     calories: 0,
     caloriesToday: 0,
+    calorieGoal: 100,
     workoutStreak: 7,
     totalWorkouts: 24,
     gamesToday: 0,
@@ -209,6 +215,62 @@ export default function Home() {
     return maxReps;
   }, [progression, gameStarted]);
 
+  // Dynamic Esports Leaderboard State
+  const [leaderboard, setLeaderboard] = useState([
+    { rank: 1, name: 'CR7_CHAMP', type: 'CARDIO MASTER', level: 25, xp: 15200, flag: "🇵🇹", avatar: "👑", isSelf: false, activeStatus: "🔴 OFFLINE", activity: "Resting" },
+    { rank: 2, name: 'NEYMAR_JR', type: 'PRO ATHLETE', level: 20, xp: 12450, flag: "🇧🇷", avatar: "⚽", isSelf: false, activeStatus: "🟢 LIVE", activity: "HIIT Workout" },
+    { rank: 3, name: 'YOU (ATHLETE)', type: 'SPRINTER', level: 5, xp: 930, flag: "🏆", avatar: "👤", isSelf: true, activeStatus: "🟢 ONLINE", activity: "Active Hub" },
+    { rank: 4, name: 'JORDAN_CARDIO', type: 'RUNNER', level: 4, xp: 380, flag: "🇺🇸", avatar: "🏃", isSelf: false, activeStatus: "🟢 LIVE", activity: "Sprint Match" },
+    { rank: 5, name: 'ALEX_SQUAD', type: 'BEGINNER', level: 3, xp: 290, flag: "🇬🇧", avatar: "💪", isSelf: false, activeStatus: "🟢 LIVE", activity: "Fat Burn" }
+  ]);
+
+  // Sync self state & simulate live other players XP updates
+  useEffect(() => {
+    // Initial sync
+    setLeaderboard(prev => {
+      const nextList = prev.map(p => {
+        if (p.isSelf) {
+          const selfXp = 450 + Math.round((Number(progression.caloriesToday) || 0) * 6);
+          return { ...p, level: progression.level, xp: selfXp };
+        }
+        return p;
+      });
+      return [...nextList].sort((a, b) => b.xp - a.xp).map((p, idx) => ({ ...p, rank: idx + 1 }));
+    });
+
+    const interval = setInterval(() => {
+      setLeaderboard(prev => {
+        const nextList = prev.map(player => {
+          if (player.isSelf) {
+            const selfXp = 450 + Math.round((Number(progression.caloriesToday) || 0) * 6);
+            return { ...player, level: progression.level, xp: selfXp };
+          }
+          // Randomly update active other players
+          if (player.activeStatus.includes("LIVE") && Math.random() > 0.4) {
+            const addedXp = Math.floor(Math.random() * 8) + 4; // +4 to +11 XP
+            return {
+              ...player,
+              xp: player.xp + addedXp,
+              justGained: addedXp
+            };
+          }
+          return player;
+        });
+
+        // Dynamic sort by XP
+        const sorted = [...nextList].sort((a, b) => b.xp - a.xp);
+        return sorted.map((p, idx) => ({ ...p, rank: idx + 1 }));
+      });
+
+      // Clear dynamic "+XP" gains after 2.5 seconds
+      setTimeout(() => {
+        setLeaderboard(prev => prev.map(p => ({ ...p, justGained: null })));
+      }, 2500);
+    }, 11000); // Check/update every 11 seconds
+
+    return () => clearInterval(interval);
+  }, [progression]);
+
   // Load progression state on mount
   useEffect(() => {
     setMounted(true);
@@ -230,6 +292,7 @@ export default function Home() {
             ...parsed,
             dailyMissions: parsed.dailyMissions || prev.dailyMissions,
             fatBurnCalendar: parsed.fatBurnCalendar || prev.fatBurnCalendar,
+            calorieGoal: parsed.calorieGoal !== undefined ? parsed.calorieGoal : prev.calorieGoal,
             staminaData: {
               ...prev.staminaData,
               ...(parsed.staminaData || {})
@@ -262,6 +325,9 @@ export default function Home() {
   // Sync progression state from Firebase to local state when available (prevent older server stats from reverting fresh local sessions)
   useEffect(() => {
     if (userData) {
+      if (userData.weight !== undefined) {
+        setWeightInput(userData.weight);
+      }
       setProgression(prev => {
         let changed = false;
         const updated = { ...prev };
@@ -278,6 +344,10 @@ export default function Home() {
           updated.gamesToday = userData.gamesToday;
           changed = true;
         }
+        if (userData.calorieGoal !== undefined && userData.calorieGoal !== prev.calorieGoal) {
+          updated.calorieGoal = userData.calorieGoal;
+          changed = true;
+        }
 
         if (changed) {
           localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
@@ -287,6 +357,13 @@ export default function Home() {
       });
     }
   }, [userData]);
+
+  // Synchronize modal selection with current goal when opened
+  useEffect(() => {
+    if (showWeightGoalModal) {
+      setSelectedCalorieGoal(progression.calorieGoal || 100);
+    }
+  }, [showWeightGoalModal, progression.calorieGoal]);
 
   // Onboarding welcome Countdown Timer
   useEffect(() => {
@@ -437,6 +514,27 @@ export default function Home() {
     }
   };
 
+  const handleSaveCalorieGoal = async (weight, newGoal) => {
+    setProgression(prev => {
+      const updated = {
+        ...prev,
+        calorieGoal: newGoal,
+      };
+      localStorage.setItem("clashOfCardioProgression", JSON.stringify(updated));
+      return updated;
+    });
+
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, {
+        weight: Number(weight),
+        calorieGoal: Number(newGoal)
+      }).catch(e => console.error("Firestore sync error:", e));
+    }
+    
+    setShowWeightGoalModal(false);
+  };
+
   // Callback on single workout complete
   const handleWorkoutComplete = (results) => {
     setProgression(prev => {
@@ -501,7 +599,7 @@ export default function Home() {
         ...(results.isFatBurn ? { fatBurnCalendar: newFatBurnCalendar } : {}),
         dailyMissions: prev.dailyMissions.map(m => {
           if (m.id === 1) return { ...m, completed: true };
-          if (m.id === 2 && updatedCaloriesToday >= 100) return { ...m, completed: true };
+          if (m.id === 2 && updatedCaloriesToday >= (prev.calorieGoal || 100)) return { ...m, completed: true };
           if (m.id === 3 && results.programName) return { ...m, completed: true };
           return m;
         })
@@ -806,7 +904,7 @@ export default function Home() {
           marginBottom: '25px',
           color: '#e2e8f0'
         }}>
-          Turn cardio into competition. Control state-of-the-art workouts with your body and train inside a real-time responsive fitness game.
+          Transform your fitness through competitive cardio challenges and real-time workouts.
         </p>
 
         {/* Floating High-Tech Calories Counter Card */}
@@ -845,7 +943,7 @@ export default function Home() {
                 strokeWidth="3"
                 fill="transparent"
                 strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - Math.min(100, (Number(progression.caloriesToday) || 0)) / 100)}`}
+                strokeDashoffset={`${2 * Math.PI * 20 * (1 - Math.min((progression.calorieGoal || 100), (Number(progression.caloriesToday) || 0)) / (progression.calorieGoal || 100))}`}
                 style={{
                   filter: 'drop-shadow(0 0 2px #39ff14)',
                   transition: 'stroke-dashoffset 1s ease'
@@ -866,8 +964,42 @@ export default function Home() {
               <span style={{ color: '#39ff14' }}>{Number(progression.caloriesToday) || 0}</span> 
               <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 800 }}>KCAL Today</span>
             </span>
-            <div style={{ fontSize: '8px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px', marginTop: '2px' }}>
-              DAILY TARGET: 100 KCAL ({Math.min(100, Math.round(((Number(progression.caloriesToday) || 0) / 100) * 100))}% COMPLETED)
+            <div style={{ fontSize: '8px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>DAILY TARGET: {progression.calorieGoal || 100} KCAL ({Math.min(100, Math.round(((Number(progression.caloriesToday) || 0) / (progression.calorieGoal || 100)) * 100))}% COMPLETED)</span>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowWeightGoalModal(true);
+                }}
+                style={{
+                  background: 'rgba(57, 255, 20, 0.1)',
+                  border: '1px solid rgba(57, 255, 20, 0.3)',
+                  borderRadius: '4px',
+                  width: '18px',
+                  height: '18px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#39ff14',
+                  transition: 'all 0.2s ease',
+                  padding: 0,
+                  boxShadow: '0 0 4px rgba(57, 255, 20, 0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#39ff14';
+                  e.currentTarget.style.color = '#000';
+                  e.currentTarget.style.boxShadow = '0 0 8px #39ff14';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                  e.currentTarget.style.color = '#39ff14';
+                  e.currentTarget.style.boxShadow = '0 0 4px rgba(57, 255, 20, 0.2)';
+                }}
+                title="Edit Target"
+              >
+                <Edit2 size={10} />
+              </button>
             </div>
           </div>
         </div>
@@ -983,37 +1115,122 @@ export default function Home() {
                   background: 'rgba(5,5,15,0.5)',
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: '12px',
-                  padding: '14px 16px',
+                  padding: '16px 20px',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '20px',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  flexWrap: 'wrap'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '20px' }}>🏋️</span>
-                    <h3 className="arcade-text" style={{ fontSize: '13px', fontWeight: 900, color: '#ffd700', letterSpacing: '0.5px', margin: 0, textShadow: '0 0 8px rgba(255,215,0,0.3)' }}>
-                      Fat Burn & Stamina Improvement in 30 Days
-                    </h3>
+                  {/* Left content: text & badges & calendar button inside the card */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '240px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '24px' }}>🏋️</span>
+                      <h3 className="arcade-text" style={{ fontSize: '17px', fontWeight: 600, color: '#ffd700', letterSpacing: '0.5px', margin: 0, textShadow: '0 0 8px rgba(255,215,0,0.3)' }}>
+                        Fat Burn & Stamina Improvement in 30 Days
+                      </h3>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
+                      <span style={{ fontSize: '11px', color: '#39ff14', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        🔥 HIGH CALORIE BURN
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#00f2ff', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        ⚡ CARDIO ENDURANCE
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#ffd700', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        📅 30-DAY TIMELINE
+                      </span>
+                    </div>
+
+                    {/* Moved Calendar Toggle Button Inside the Card */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowFatBurnCalendar(prev => !prev)}
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: 900,
+                          background: 'rgba(57,255,20,0.08)',
+                          color: '#39ff14',
+                          border: '1px solid rgba(57,255,20,0.25)',
+                          padding: '6px 14px',
+                          borderRadius: '16px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 10px rgba(57,255,20,0.05)'
+                        }}
+                      >
+                        📅 {showFatBurnCalendar ? 'HIDE CALENDAR' : '30-DAY PLAN CALENDAR'}
+                      </motion.div>
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#39ff14', background: 'rgba(57,255,20,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(57,255,20,0.2)' }}>🔥 HIGH CALORIE BURN</span>
-                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#00f2ff', background: 'rgba(0,242,255,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(0,242,255,0.2)' }}>⚡ CARDIO ENDURANCE</span>
-                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#ffd700', background: 'rgba(255,215,0,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,215,0,0.2)' }}>📅 30-DAY TIMELINE</span>
+                  {/* Right content: Transformation images with arrow */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '16px',
+                    padding: '8px 16px',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    minWidth: '220px'
+                  }}>
+                    {/* Fatboy character */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <img
+                        src="/fatboy.png"
+                        alt="Fatboy"
+                        style={{
+                          width: '75px',
+                          height: '95px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 4px 8px rgba(255, 68, 68, 0.25))'
+                        }}
+                      />
+                      <span style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, letterSpacing: '0.5px', color: '#ff4444' }}>DAY 1</span>
+                    </div>
+
+                    {/* Transition arrow */}
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <span style={{ fontSize: '24px', color: '#39ff14', fontWeight: 'bold', filter: 'drop-shadow(0 0 6px #39ff14)' }}>➔</span>
+                    </motion.div>
+
+                    {/* Fitboy character */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <img
+                        src="/fitboy.png"
+                        alt="Fitboy"
+                        style={{
+                          width: '75px',
+                          height: '95px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 4px 12px rgba(57, 255, 20, 0.35))'
+                        }}
+                      />
+                      <span style={{ fontSize: '8px', color: '#39ff14', fontWeight: 900, letterSpacing: '0.5px' }}>DAY 30</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
 
               {/* OUTSIDE BUTTON ROW & CALENDAR */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginTop: '16px', alignItems: 'center' }}>
-                {/* 30-Day Calendar Toggle Button */}
-                <div
-                  onClick={() => setShowFatBurnCalendar(prev => !prev)}
-                  style={{ fontSize: '10px', fontWeight: 900, background: 'rgba(57,255,20,0.08)', color: '#39ff14', border: '1px solid rgba(57,255,20,0.25)', padding: '8px 18px', borderRadius: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
-                >
-                  📅 {showFatBurnCalendar ? 'HIDE CALENDAR' : '30-DAY PLAN CALENDAR'}
-                </div>
+
 
                 {/* Calendar grid */}
                 {showFatBurnCalendar && (
@@ -1366,14 +1583,6 @@ export default function Home() {
                           gap: '6px',
                           marginTop: '10px'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 900, color: currentAthlete.color, letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
-                              {currentAthlete.name}
-                            </span>
-                            <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                              {currentAthlete.country}
-                            </span>
-                          </div>
 
                           <div style={{ fontSize: '8px', fontWeight: 800, color: currentAthlete.color, opacity: 0.8, letterSpacing: '2px', fontFamily: 'var(--font-gaming)' }}>
                             {currentAthlete.title}
@@ -1660,53 +1869,112 @@ export default function Home() {
             flexDirection: 'column',
             gap: '15px'
           }}>
-            <div>
-              <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', display: 'block', color: '#fff' }}>GLOBAL CARDIO TIERS</span>
-              <span className="arcade-text" style={{ fontSize: '18px', color: '#fff', fontWeight: 900 }}>
-                ESPORTS FITNESS LEADERBOARD
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', display: 'block', color: '#fff' }}>GLOBAL CARDIO TIERS</span>
+                <span className="arcade-text" style={{ fontSize: '18px', color: '#fff', fontWeight: 900 }}>
+                  ESPORTS FITNESS LEADERBOARD
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(57, 255, 20, 0.05)', border: '1px solid rgba(57, 255, 20, 0.2)', padding: '4px 10px', borderRadius: '20px', marginBottom: '4px' }}>
+                <span style={{ width: '6px', height: '6px', background: '#39ff14', borderRadius: '50%', boxShadow: '0 0 6px #39ff14', animation: 'pulse 1.2s infinite' }} />
+                <span style={{ fontSize: '8px', color: '#39ff14', fontWeight: 900, letterSpacing: '1.5px', fontFamily: 'var(--font-gaming)' }}>LIVE MULTIPLAYER NETWORK</span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                { rank: 1, name: 'CR7_CHAMP', type: 'CARDIO MASTER', level: 25, xp: 15200, isSelf: false },
-                { rank: 2, name: 'NEYMAR_JR', type: 'PRO ATHLETE', level: 20, xp: 12450, isSelf: false },
-                { rank: 3, name: 'YOU (ATHLETE)', type: 'SPRINTER', level: progression.level, xp: 450 + Math.round((Number(progression.caloriesToday) || 0) * 6), isSelf: true },
-                { rank: 4, name: 'JORDAN_CARDIO', type: 'RUNNER', level: 4, xp: 380, isSelf: false },
-                { rank: 5, name: 'ALEX_SQUAD', type: 'BEGINNER', level: 3, xp: 290, isSelf: false }
-              ].map(leader => (
+              {leaderboard.map(leader => (
                 <div 
-                  key={leader.rank} 
+                  key={leader.name} 
                   className="responsive-leaderboard-row"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px 1.5fr 1fr 1fr 80px',
+                    gridTemplateColumns: '40px 1.8fr 1.2fr 0.8fr 110px',
                     alignItems: 'center',
                     background: leader.isSelf ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255, 255, 255, 0.01)',
                     border: `1.5px solid ${leader.isSelf ? '#39ff14' : 'rgba(255, 255, 255, 0.04)'}`,
                     borderRadius: '12px',
                     padding: '10px 16px',
-                    boxShadow: 'none'
+                    boxShadow: 'none',
+                    position: 'relative'
                   }}
                 >
                   <span className="arcade-text rank-text" style={{ fontSize: '12px', fontWeight: 900, color: leader.rank === 1 ? '#ffd700' : leader.rank === 2 ? '#c0c0c0' : leader.isSelf ? '#39ff14' : '#fff' }}>
                     #{leader.rank}
                   </span>
+                  
+                  {/* Flag, Avatar & Name */}
                   <div className="name-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: leader.isSelf ? '#39ff14' : '#fff' }}>
+                    <span style={{ fontSize: '13px' }}>{leader.flag}</span>
+                    <span style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      border: `1px solid ${leader.isSelf ? '#39ff14' : 'rgba(255,255,255,0.1)'}`
+                    }}>
+                      {leader.avatar}
+                    </span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: leader.isSelf ? '#39ff14' : '#fff', letterSpacing: '0.5px' }}>
                       {leader.name}
                     </span>
-                    {leader.rank <= 2 && <span style={{ fontSize: '10px' }}>👑</span>}
+                    {leader.rank <= 2 && <span style={{ fontSize: '10px', animation: 'bounce 1s infinite' }}>👑</span>}
                   </div>
-                  <span className="badge-text" style={{ fontSize: '9px', fontWeight: 900, color: leader.isSelf ? '#39ff14' : '#00f2ff', background: leader.isSelf ? 'rgba(57, 255, 20, 0.1)' : 'rgba(0, 242, 255, 0.1)', border: `1px solid ${leader.isSelf ? '#39ff14' : 'rgba(0, 242, 255, 0.2)'}`, padding: '2px 8px', borderRadius: '4px', justifySelf: 'start', letterSpacing: '0.5px' }}>
+
+                  {/* Active telemetry activity */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: leader.activeStatus.includes("LIVE") || leader.activeStatus.includes("ONLINE") ? '#39ff14' : '#ff4444',
+                      boxShadow: leader.activeStatus.includes("LIVE") || leader.activeStatus.includes("ONLINE") ? '0 0 6px #39ff14' : 'none',
+                      animation: leader.activeStatus.includes("LIVE") || leader.activeStatus.includes("ONLINE") ? 'pulse 1.2s infinite' : 'none'
+                    }} />
+                    <span style={{ fontSize: '8px', fontWeight: 900, letterSpacing: '0.5px', color: leader.activeStatus.includes("LIVE") || leader.activeStatus.includes("ONLINE") ? '#39ff14' : 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>
+                      {leader.activity}
+                    </span>
+                  </div>
+
+                  <span className="badge-text" style={{ fontSize: '9px', fontWeight: 900, color: leader.isSelf ? '#39ff14' : '#00f2ff', background: leader.isSelf ? 'rgba(57, 255, 20, 0.1)' : 'rgba(0, 242, 255, 0.1)', border: `1px solid ${leader.isSelf ? '#39ff14' : 'rgba(0, 242, 255, 0.2)'}`, padding: '2px 8px', borderRadius: '4px', justifySelf: 'start', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
                     {leader.type}
                   </span>
-                  <span className="lvl-text" style={{ fontSize: '10px', opacity: 0.5, fontWeight: 700 }}>
-                    LVL {leader.level}
-                  </span>
-                  <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, textAlign: 'right', fontFamily: 'var(--font-gaming)' }}>
-                    {leader.xp} XP
-                  </span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', position: 'relative' }}>
+                    <span className="lvl-text" style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700 }}>
+                      LV {leader.level}
+                    </span>
+                    <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, fontFamily: 'var(--font-gaming)', minWidth: '65px', textAlign: 'right' }}>
+                      {leader.xp} <span style={{ fontSize: '8px', opacity: 0.6 }}>XP</span>
+                    </span>
+                    
+                    {/* Live update floating badge */}
+                    <AnimatePresence>
+                      {leader.justGained && (
+                        <motion.span
+                          initial={{ opacity: 0, y: 10, scale: 0.7 }}
+                          animate={{ opacity: 1, y: -20, scale: 1 }}
+                          exit={{ opacity: 0, y: -35 }}
+                          transition={{ duration: 1.8 }}
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            color: '#39ff14',
+                            fontWeight: 900,
+                            fontSize: '9px',
+                            textShadow: '0 0 6px rgba(57,255,20,0.8)',
+                            fontFamily: 'var(--font-gaming)'
+                          }}
+                        >
+                          +{leader.justGained} XP
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2568,6 +2836,241 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showWeightGoalModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(5, 5, 8, 0.95)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(20px)',
+              padding: '20px',
+              overflowY: 'auto'
+            }}
+          >
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              style={{
+                width: '100%',
+                maxWidth: '520px',
+                background: 'rgba(10, 10, 18, 0.98)',
+                border: '2px solid rgba(57, 255, 20, 0.25)',
+                boxShadow: '0 0 50px rgba(57, 255, 20, 0.15)',
+                borderRadius: '24px',
+                padding: '30px',
+                position: 'relative',
+                color: '#fff',
+                fontFamily: 'var(--font-gaming)',
+                boxSizing: 'border-box'
+              }}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowWeightGoalModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#fff',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ff3366'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              >
+                <X size={16} />
+              </button>
+
+              {/* Title */}
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <Flame size={32} color="#39ff14" style={{ filter: 'drop-shadow(0 0 10px #39ff14)', marginBottom: '12px' }} />
+                <h3 className="arcade-text" style={{ fontSize: '20px', color: '#fff', margin: 0, letterSpacing: '1px' }}>
+                  CALORIE GOAL TUNER
+                </h3>
+                <p style={{ fontSize: '9px', color: '#39ff14', opacity: 0.8, marginTop: '6px', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                  Dynamic Cardio Target Suggestions
+                </p>
+              </div>
+
+              {/* Body */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* Weight Input Box */}
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  textAlign: 'left'
+                }}>
+                  <label style={{ fontSize: '9px', color: '#888', fontWeight: 800, letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
+                    ENTER YOUR WEIGHT (KG)
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <input 
+                      type="number"
+                      value={weightInput}
+                      onChange={(e) => {
+                        const val = Math.max(30, Math.min(250, Number(e.target.value) || 70));
+                        setWeightInput(val);
+                      }}
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.5)',
+                        border: '1.5px solid rgba(57, 255, 20, 0.3)',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
+                        fontSize: '18px',
+                        color: '#fff',
+                        fontWeight: 900,
+                        width: '100px',
+                        outline: 'none',
+                        textAlign: 'center',
+                        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.5)'
+                      }}
+                    />
+                    <div style={{ fontSize: '11px', opacity: 0.6, lineHeight: 1.4 }}>
+                      Your weight scale calibrates the exact mechanical friction burn.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suggestions Grid */}
+                <div>
+                  <span style={{ fontSize: '9px', color: '#888', fontWeight: 800, letterSpacing: '1px', display: 'block', marginBottom: '10px', textAlign: 'left' }}>
+                    PERSONALIZED DAILY GOAL SUGGESTIONS
+                  </span>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {[
+                      { goal: 50, label: '50 KCAL', desc: 'Starter Target', tag: weightInput < 60 ? 'RECOMMENDED' : 'LIGHT TARGET' },
+                      { goal: 100, label: '100 KCAL', desc: 'Standard Target', tag: (weightInput >= 60 && weightInput <= 80) ? 'RECOMMENDED' : 'ACTIVE TARGET' },
+                      { goal: 150, label: '150 KCAL', desc: 'Athlete Target', tag: weightInput > 80 ? 'RECOMMENDED' : 'HIGH INTENSITY' }
+                    ].map((opt) => {
+                      const isSelected = selectedCalorieGoal === opt.goal;
+                      // Dynamic reps calculations
+                      const weightFactor = weightInput / 70;
+                      const squatReps = Math.round(opt.goal / (0.5 * weightFactor));
+                      const pushupReps = Math.round(opt.goal / (0.4 * weightFactor));
+                      const jackReps = Math.round(opt.goal / (0.2 * weightFactor));
+
+                      return (
+                        <div 
+                          key={opt.goal}
+                          onClick={() => setSelectedCalorieGoal(opt.goal)}
+                          style={{
+                            background: isSelected ? 'rgba(57, 255, 20, 0.04)' : 'rgba(255, 255, 255, 0.01)',
+                            border: isSelected ? '2px solid #39ff14' : '1.5px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '16px',
+                            padding: '14px 18px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: isSelected ? '0 0 15px rgba(57, 255, 20, 0.15)' : 'none',
+                            textAlign: 'left'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) e.currentTarget.style.borderColor = 'rgba(57, 255, 20, 0.5)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <div>
+                              <span className="arcade-text" style={{ fontSize: '14px', color: isSelected ? '#39ff14' : '#fff' }}>
+                                {opt.label}
+                              </span>
+                              <span style={{ fontSize: '9px', opacity: 0.5, marginLeft: '8px' }}>{opt.desc}</span>
+                            </div>
+                            <span style={{
+                              fontSize: '7px',
+                              background: isSelected ? '#39ff14' : 'rgba(255,255,255,0.08)',
+                              color: isSelected ? '#000' : '#888',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontWeight: 900,
+                              letterSpacing: '1px'
+                            }}>
+                              {opt.tag}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', fontSize: '8px', opacity: 0.7 }}>
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '6px' }}>
+                              <span style={{ display: 'block', color: '#ff6b6b', fontWeight: 800 }}>🦵 SQUATS</span>
+                              <span style={{ fontSize: '10px', fontWeight: 900 }}>~{squatReps} reps</span>
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '6px' }}>
+                              <span style={{ display: 'block', color: '#4dabf7', fontWeight: 800 }}>💪 PUSH-UPS</span>
+                              <span style={{ fontSize: '10px', fontWeight: 900 }}>~{pushupReps} reps</span>
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '6px' }}>
+                              <span style={{ display: 'block', color: '#ffd43b', fontWeight: 800 }}>🏃 JACKS</span>
+                              <span style={{ fontSize: '10px', fontWeight: 900 }}>~{jackReps} reps</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <button
+                  onClick={() => {
+                    handleSaveCalorieGoal(weightInput, selectedCalorieGoal);
+                  }}
+                  style={{
+                    width: '100%',
+                    background: '#39ff14',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '30px',
+                    padding: '14px',
+                    fontSize: '12px',
+                    fontWeight: 900,
+                    letterSpacing: '1.5px',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-gaming)',
+                    boxShadow: '0 0 20px rgba(57, 255, 20, 0.4)',
+                    transition: 'all 0.2s',
+                    marginTop: '8px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 30px #39ff14';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.4)';
+                    e.currentTarget.style.transform = 'none';
+                  }}
+                >
+                  SAVE & APPLY TARGET GOAL 🚀
+                </button>
+                
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -24,9 +24,12 @@ const exitFullscreen = () => {
 };
 
 /* ─── Calorie formula ───────────────────────────────────────── */
-const calcCalories = (totalReps, difficulty) => {
-  const base = { easy: 0.55, medium: 0.85, hard: 1.2 }[difficulty] || 0.55;
-  return Math.round(totalReps * base + 8);
+const calcCalories = (repsPerEx) => {
+  if (!repsPerEx || !Array.isArray(repsPerEx)) return 0;
+  const squatsCal = (repsPerEx[0] || 0) * 0.5;
+  const pushupsCal = (repsPerEx[1] || 0) * 0.4;
+  const jacksCal = (repsPerEx[2] || 0) * 0.2;
+  return Math.round(squatsCal + pushupsCal + jacksCal);
 };
 
 /* ─── Running Track Component ───────────────────────────────── */
@@ -404,7 +407,7 @@ const FatBurnWorkout = ({
 
   /* ──── FINISHED SCREEN ──── */
   if (phase === 'finished') {
-    const calories = calcCalories(totalReps, difficulty);
+    const calories = calcCalories(repsPerEx);
     const xp = totalReps * 12 + (difficulty === 'hard' ? 300 : difficulty === 'medium' ? 150 : 80);
     const score = (accuracy * 0.4) + (totalReps * 0.5) - (duration * 0.1);
     let rank = 'C RANK', rankColor = '#aaa';
@@ -706,7 +709,7 @@ const FatBurnWorkout = ({
               {[
                 { label: 'DISTANCE', value: `${currentDistanceM}m`, color: '#39ff14' },
                 { label: 'TOTAL REPS', value: `${totalReps}/${totalRepsNeeded}`, color: '#fff' },
-                { label: 'CALORIES', value: `${calcCalories(totalReps, difficulty)} KCAL`, color: '#ff6b6b' },
+                { label: 'CALORIES', value: `${calcCalories(repsPerEx)} KCAL`, color: '#ff6b6b' },
               ].map(s => (
                 <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
                   <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 700 }}>{s.label}</span>
