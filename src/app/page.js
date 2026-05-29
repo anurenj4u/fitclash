@@ -215,54 +215,54 @@ export default function Home() {
     return maxReps;
   }, [progression, gameStarted]);
 
-  // Dynamic Esports Leaderboard State
+  // Dynamic Esports Leaderboard State (Ranked by Calories Today)
   const [leaderboard, setLeaderboard] = useState([
-    { rank: 1, name: 'CR7_CHAMP', type: 'CARDIO MASTER', level: 25, xp: 15200, flag: "🇵🇹", avatar: "👑", isSelf: false, activeStatus: "🔴 OFFLINE", activity: "Resting" },
-    { rank: 2, name: 'NEYMAR_JR', type: 'PRO ATHLETE', level: 20, xp: 12450, flag: "🇧🇷", avatar: "⚽", isSelf: false, activeStatus: "🟢 LIVE", activity: "HIIT Workout" },
-    { rank: 3, name: 'YOU (ATHLETE)', type: 'SPRINTER', level: 5, xp: 930, flag: "🏆", avatar: "👤", isSelf: true, activeStatus: "🟢 ONLINE", activity: "Active Hub" },
-    { rank: 4, name: 'JORDAN_CARDIO', type: 'RUNNER', level: 4, xp: 380, flag: "🇺🇸", avatar: "🏃", isSelf: false, activeStatus: "🟢 LIVE", activity: "Sprint Match" },
-    { rank: 5, name: 'ALEX_SQUAD', type: 'BEGINNER', level: 3, xp: 290, flag: "🇬🇧", avatar: "💪", isSelf: false, activeStatus: "🟢 LIVE", activity: "Fat Burn" }
+    { rank: 1, name: 'CR7_CHAMP', type: 'CARDIO MASTER', level: 25, calories: 650, flag: "🇵🇹", avatar: "👑", isSelf: false, activeStatus: "🔴 OFFLINE", activity: "Resting" },
+    { rank: 2, name: 'NEYMAR_JR', type: 'PRO ATHLETE', level: 20, calories: 520, flag: "🇧🇷", avatar: "⚽", isSelf: false, activeStatus: "🟢 LIVE", activity: "HIIT Workout" },
+    { rank: 3, name: 'YOU (ATHLETE)', type: 'SPRINTER', level: 5, calories: 0, flag: "🏆", avatar: "👤", isSelf: true, activeStatus: "🟢 ONLINE", activity: "Active Hub" },
+    { rank: 4, name: 'JORDAN_CARDIO', type: 'RUNNER', level: 4, calories: 180, flag: "🇺🇸", avatar: "🏃", isSelf: false, activeStatus: "🟢 LIVE", activity: "Sprint Match" },
+    { rank: 5, name: 'ALEX_SQUAD', type: 'BEGINNER', level: 3, calories: 110, flag: "🇬🇧", avatar: "💪", isSelf: false, activeStatus: "🟢 LIVE", activity: "Fat Burn" }
   ]);
 
-  // Sync self state & simulate live other players XP updates
+  // Sync self state & simulate live other players calorie updates
   useEffect(() => {
     // Initial sync
     setLeaderboard(prev => {
       const nextList = prev.map(p => {
         if (p.isSelf) {
-          const selfXp = 450 + Math.round((Number(progression.caloriesToday) || 0) * 6);
-          return { ...p, level: progression.level, xp: selfXp };
+          const selfCalories = Math.round(Number(progression.caloriesToday) || 0);
+          return { ...p, level: progression.level, calories: selfCalories };
         }
         return p;
       });
-      return [...nextList].sort((a, b) => b.xp - a.xp).map((p, idx) => ({ ...p, rank: idx + 1 }));
+      return [...nextList].sort((a, b) => b.calories - a.calories).map((p, idx) => ({ ...p, rank: idx + 1 }));
     });
 
     const interval = setInterval(() => {
       setLeaderboard(prev => {
         const nextList = prev.map(player => {
           if (player.isSelf) {
-            const selfXp = 450 + Math.round((Number(progression.caloriesToday) || 0) * 6);
-            return { ...player, level: progression.level, xp: selfXp };
+            const selfCalories = Math.round(Number(progression.caloriesToday) || 0);
+            return { ...player, level: progression.level, calories: selfCalories };
           }
           // Randomly update active other players
           if (player.activeStatus.includes("LIVE") && Math.random() > 0.4) {
-            const addedXp = Math.floor(Math.random() * 8) + 4; // +4 to +11 XP
+            const addedCalories = Math.floor(Math.random() * 3) + 1; // +1 to +3 Calories
             return {
               ...player,
-              xp: player.xp + addedXp,
-              justGained: addedXp
+              calories: (player.calories || 0) + addedCalories,
+              justGained: addedCalories
             };
           }
           return player;
         });
 
-        // Dynamic sort by XP
-        const sorted = [...nextList].sort((a, b) => b.xp - a.xp);
+        // Dynamic sort by calories today
+        const sorted = [...nextList].sort((a, b) => b.calories - a.calories);
         return sorted.map((p, idx) => ({ ...p, rank: idx + 1 }));
       });
 
-      // Clear dynamic "+XP" gains after 2.5 seconds
+      // Clear dynamic gains after 2.5 seconds
       setTimeout(() => {
         setLeaderboard(prev => prev.map(p => ({ ...p, justGained: null })));
       }, 2500);
@@ -1948,8 +1948,8 @@ export default function Home() {
                     <span className="lvl-text" style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700 }}>
                       LV {leader.level}
                     </span>
-                    <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, fontFamily: 'var(--font-gaming)', minWidth: '65px', textAlign: 'right' }}>
-                      {leader.xp} <span style={{ fontSize: '8px', opacity: 0.6 }}>XP</span>
+                    <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, fontFamily: 'var(--font-gaming)', minWidth: '75px', textAlign: 'right' }}>
+                      {leader.calories} <span style={{ fontSize: '8px', opacity: 0.6 }}>KCAL</span>
                     </span>
                     
                     {/* Live update floating badge */}
@@ -1970,7 +1970,7 @@ export default function Home() {
                             fontFamily: 'var(--font-gaming)'
                           }}
                         >
-                          +{leader.justGained} XP
+                          +{leader.justGained} KCAL
                         </motion.span>
                       )}
                     </AnimatePresence>
