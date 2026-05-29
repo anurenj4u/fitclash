@@ -71,6 +71,22 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       return null;
     }
 
+    // Prevent Jumping Jacks and Pushups by checking if wrists/elbows go above shoulders.
+    // In a squat, hands/elbows generally stay below shoulder level.
+    // In Jumping Jacks, wrists go above shoulders. In Pushups, elbows go above shoulders at the bottom.
+    if (leftWrist && leftWrist.score > MIN_CONF && leftShoulder && leftShoulder.score > MIN_CONF) {
+      if (leftWrist.y < leftShoulder.y) return null;
+    }
+    if (rightWrist && rightWrist.score > MIN_CONF && rightShoulder && rightShoulder.score > MIN_CONF) {
+      if (rightWrist.y < rightShoulder.y) return null;
+    }
+    if (leftElbow && leftElbow.score > MIN_CONF && leftShoulder && leftShoulder.score > MIN_CONF) {
+      if (leftElbow.y < leftShoulder.y) return null;
+    }
+    if (rightElbow && rightElbow.score > MIN_CONF && rightShoulder && rightShoulder.score > MIN_CONF) {
+      if (rightElbow.y < rightShoulder.y) return null;
+    }
+
     // 1. Initialize Standing Baseline
     if (repStateRef.squatHighestShoulderY === undefined || repStateRef.squatHighestShoulderY === null) {
       repStateRef.squatHighestShoulderY = avgShoulderY;
