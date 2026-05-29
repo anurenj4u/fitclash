@@ -1903,7 +1903,7 @@ export default function Home() {
                     #{leader.rank}
                   </span>
                   
-                  {/* Flag, Avatar & Name */}
+                  {/* Flag, Avatar & Name stacked with Level */}
                   <div className="name-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '13px' }}>{leader.flag}</span>
                     <span style={{
@@ -1919,9 +1919,14 @@ export default function Home() {
                     }}>
                       {leader.avatar}
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: leader.isSelf ? '#39ff14' : '#fff', letterSpacing: '0.5px' }}>
-                      {leader.name}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: leader.isSelf ? '#39ff14' : '#fff', letterSpacing: '0.5px', lineHeight: 1.1 }}>
+                        {leader.name}
+                      </span>
+                      <span className="lvl-text" style={{ fontSize: '8px', opacity: 0.4, fontWeight: 700, marginTop: '1px' }}>
+                        LV {leader.level}
+                      </span>
+                    </div>
                     {leader.rank <= 2 && <span style={{ fontSize: '10px', animation: 'bounce 1s infinite' }}>👑</span>}
                   </div>
 
@@ -1944,11 +1949,8 @@ export default function Home() {
                     {leader.type}
                   </span>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', position: 'relative' }}>
-                    <span className="lvl-text" style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700 }}>
-                      LV {leader.level}
-                    </span>
-                    <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, fontFamily: 'var(--font-gaming)', minWidth: '75px', textAlign: 'right' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', position: 'relative' }}>
+                    <span className="xp-text" style={{ fontSize: '11px', fontWeight: 900, fontFamily: 'var(--font-gaming)', textAlign: 'right' }}>
                       {leader.calories} <span style={{ fontSize: '8px', opacity: 0.6 }}>KCAL</span>
                     </span>
                     
