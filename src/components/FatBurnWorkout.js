@@ -215,27 +215,17 @@ const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunni
         background: 'rgba(5,5,15,0.85)',
         border: '1.5px solid rgba(57,255,20,0.35)',
         borderRadius: '20px',
-        padding: '6px 18px',
+        padding: '10px 24px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '4px',
         backdropFilter: 'blur(8px)',
         boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)',
         zIndex: 15
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px' }}>{EXERCISE_ICONS[currentExercise]}</span>
-          <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', fontFamily: 'var(--font-gaming)', letterSpacing: '1px' }}>
-            {EXERCISE_LABELS[currentExercise]}
-          </span>
-          {isRunning && (
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 6px #39ff14', animation: 'pulse 1s infinite' }} />
-          )}
-        </div>
         {currentReps !== undefined && (
-          <div className="arcade-text" style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', letterSpacing: '1px', lineHeight: 1.1 }}>
-            {currentReps} <span style={{ fontSize: '9px', opacity: 0.5 }}>/ {targetReps} REPS</span>
+          <div className="arcade-text" style={{ fontSize: '24px', fontWeight: 900, color: '#ffffff', letterSpacing: '2px', lineHeight: 1.1 }}>
+            {currentReps} <span style={{ fontSize: '14px', opacity: 0.5 }}>/ {targetReps}</span>
           </div>
         )}
       </div>
@@ -794,22 +784,23 @@ const FatBurnWorkout = ({
             {feedbackMsg && (
               <motion.div
                 key={feedbackKey}
-                initial={{ opacity: 0, scale: 0.7, y: 30 }}
-                animate={{ opacity: 1, scale: 1.15, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
+                initial={{ opacity: 0, scale: 0.7, x: "-50%", y: 30 }}
+                animate={{ opacity: 1, scale: 1.15, x: "-50%", y: 0 }}
+                exit={{ opacity: 0, x: "-50%", y: -30 }}
                 transition={{ duration: 0.8 }}
                 style={{
                   position: 'absolute',
                   top: '30%',
                   left: '50%',
-                  transform: 'translate(-50%, -50%)',
                   color: '#00f2ff',
                   textShadow: '0 0 15px rgba(0, 242, 255, 0.8)',
                   fontWeight: 900,
                   fontSize: '22px',
                   fontFamily: 'var(--font-gaming)',
                   pointerEvents: 'none',
-                  zIndex: 35
+                  zIndex: 35,
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center'
                 }}
               >
                 {feedbackMsg}
