@@ -32,8 +32,8 @@ const calcCalories = (repsPerEx) => {
   return Math.round(squatsCal + pushupsCal + jacksCal);
 };
 
-/* ─── Running Track Component ───────────────────────────────── */
-const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunning, currentExercise }) => {
+/* ─── Running Track Component (Side-scrolling perspective road) ─── */
+const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunning, currentExercise, currentReps, targetReps }) => {
   const runnerPos = Math.min(progressPercent, 100);
   const [frame, setFrame] = useState(0);
 
@@ -60,7 +60,7 @@ const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunni
       width: '100%',
       height: '100%',
       position: 'relative',
-      background: 'linear-gradient(180deg, #0a0a14 0%, #050510 60%, #0d0d20 100%)',
+      background: 'linear-gradient(180deg, #06060c 0%, #030308 50%, #0a0a14 100%)',
       overflow: 'hidden'
     }}>
       {/* Stars */}
@@ -70,88 +70,98 @@ const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunni
           width: i % 3 === 0 ? '2px' : '1px',
           height: i % 3 === 0 ? '2px' : '1px',
           background: '#fff',
-          opacity: 0.3 + Math.random() * 0.4,
-          top: `${Math.random() * 50}%`,
+          opacity: 0.2 + Math.random() * 0.4,
+          top: `${Math.random() * 45}%`,
           left: `${Math.random() * 100}%`,
           borderRadius: '50%'
         }} />
       ))}
 
-      {/* Ground */}
+      {/* Solid Road Track (similar to 1v1 Phaser layout) */}
       <div style={{
         position: 'absolute',
-        bottom: '22%',
-        left: 0, right: 0,
-        height: '3px',
-        background: 'rgba(57,255,20,0.3)',
-        boxShadow: '0 0 10px rgba(57,255,20,0.4)'
+        bottom: 0, left: 0, right: 0,
+        height: '24%',
+        background: '#1d1e22',
+        borderTop: '5px solid #39ff14', // Glowing green/cyan borders
+        boxShadow: '0 -4px 20px rgba(57, 255, 20, 0.25)',
+        zIndex: 5
       }} />
 
-      {/* Track lane markers */}
-      {[...Array(8)].map((_, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          bottom: '22%',
-          left: `${i * 14}%`,
-          width: '8%',
-          height: '2px',
-          background: 'rgba(255,255,255,0.08)'
-        }} />
-      ))}
+      {/* Track center dash marks */}
+      <div style={{
+        position: 'absolute',
+        bottom: '10%',
+        left: 0, right: 0,
+        height: '4px',
+        backgroundImage: 'linear-gradient(90deg, #ffffff 50%, transparent 50%)',
+        backgroundSize: '100px 100%',
+        opacity: 0.45,
+        zIndex: 6
+      }} />
 
-      {/* Distance markers */}
+      {/* Track bottom edge boundary */}
+      <div style={{
+        position: 'absolute',
+        bottom: '15px',
+        left: 0, right: 0,
+        height: '3px',
+        background: 'rgba(255, 255, 255, 0.08)',
+        zIndex: 6
+      }} />
+
+      {/* Distance progress percentage markers */}
       {[0, 25, 50, 75, 100].map(pct => (
         <div key={pct} style={{
           position: 'absolute',
-          bottom: '24%',
+          bottom: '26%',
           left: `${pct}%`,
           transform: 'translateX(-50%)',
-          fontSize: '8px',
-          color: 'rgba(255,255,255,0.3)',
+          fontSize: '9px',
+          color: 'rgba(255, 255, 255, 0.35)',
           fontFamily: 'var(--font-gaming)',
-          fontWeight: 900
+          fontWeight: 900,
+          zIndex: 6
         }}>{pct}%</div>
       ))}
 
       {/* Finish line */}
       <div style={{
         position: 'absolute',
-        right: '5%',
-        bottom: '15%',
-        width: '3px',
-        height: '12%',
-        background: 'repeating-linear-gradient(180deg, #fff 0px, #fff 4px, #000 4px, #000 8px)',
-        opacity: 0.8
+        right: '6%',
+        bottom: '2%',
+        width: '10px',
+        height: '20%',
+        background: 'repeating-linear-gradient(180deg, #ffffff 0px, #ffffff 6px, #000000 6px, #000000 12px)',
+        opacity: 0.9,
+        zIndex: 7,
+        borderLeft: '2px solid #ffffff',
+        borderRight: '2px solid #ffffff'
       }} />
       <div style={{
         position: 'absolute',
-        right: '3%',
-        bottom: '27%',
+        right: '4%',
+        bottom: '26%',
         fontSize: '10px',
         color: '#ffd700',
         fontFamily: 'var(--font-gaming)',
-        fontWeight: 900
+        fontWeight: 900,
+        zIndex: 7,
+        letterSpacing: '1px',
+        textShadow: '0 0 8px rgba(255, 215, 0, 0.4)'
       }}>FINISH</div>
 
-      {/* Ground shadow / road */}
-      <div style={{
-        position: 'absolute',
-        bottom: '15%',
-        left: 0, right: 0,
-        height: '8%',
-        background: 'linear-gradient(180deg, rgba(20,20,35,0.8) 0%, rgba(10,10,20,0.95) 100%)'
-      }} />
-
-      {/* Player character */}
+      {/* Player character centered on our solid road */}
       <motion.div
         animate={{ left: `${5 + (runnerPos / 100) * 85}%` }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
         style={{
           position: 'absolute',
-          bottom: '22%',
-          width: 'clamp(40px, 8vw, 64px)',
-          height: 'clamp(60px, 12vw, 96px)',
-          transform: 'translateX(-50%)'
+          bottom: '8%',
+          width: 'clamp(46px, 9vw, 76px)',
+          height: 'clamp(68px, 13vw, 106px)',
+          transform: 'translateX(-50%)',
+          zIndex: 8
         }}
       >
         <img
@@ -162,7 +172,7 @@ const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunni
             height: '100%',
             objectFit: 'contain',
             imageRendering: 'pixelated',
-            filter: isRunning ? 'drop-shadow(0 0 6px rgba(57,255,20,0.6))' : 'none'
+            filter: isRunning ? 'drop-shadow(0 0 8px rgba(57,255,20,0.65))' : 'none'
           }}
         />
 
@@ -170,57 +180,68 @@ const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunni
         {isRunning && (
           <div style={{
             position: 'absolute',
-            bottom: '-8px',
+            bottom: '-4px',
             left: '50%',
             transform: 'translateX(-50%)',
-            width: '30px',
-            height: '8px',
-            background: 'radial-gradient(ellipse, rgba(57,255,20,0.4) 0%, transparent 70%)',
+            width: '32px',
+            height: '6px',
+            background: 'radial-gradient(ellipse, rgba(57,255,20,0.45) 0%, transparent 70%)',
             borderRadius: '50%'
           }} />
         )}
       </motion.div>
 
-      {/* Current exercise badge */}
+      {/* Current exercise badge with integrated sky-level reps counter */}
       <div style={{
         position: 'absolute',
         top: '12px',
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'rgba(5,5,15,0.85)',
-        border: '1px solid rgba(57,255,20,0.4)',
+        border: '1.5px solid rgba(57,255,20,0.35)',
         borderRadius: '20px',
-        padding: '6px 16px',
+        padding: '6px 18px',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        gap: '8px',
-        backdropFilter: 'blur(8px)'
+        gap: '4px',
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)',
+        zIndex: 15
       }}>
-        <span style={{ fontSize: '16px' }}>{EXERCISE_ICONS[currentExercise]}</span>
-        <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', fontFamily: 'var(--font-gaming)', letterSpacing: '1px' }}>
-          {EXERCISE_LABELS[currentExercise]}
-        </span>
-        {isRunning && (
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 6px #39ff14', animation: 'pulse 1s infinite' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '16px' }}>{EXERCISE_ICONS[currentExercise]}</span>
+          <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', fontFamily: 'var(--font-gaming)', letterSpacing: '1px' }}>
+            {EXERCISE_LABELS[currentExercise]}
+          </span>
+          {isRunning && (
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 6px #39ff14', animation: 'pulse 1s infinite' }} />
+          )}
+        </div>
+        {currentReps !== undefined && (
+          <div className="arcade-text" style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', letterSpacing: '1px', lineHeight: 1.1 }}>
+            {currentReps} <span style={{ fontSize: '9px', opacity: 0.5 }}>/ {targetReps} REPS</span>
+          </div>
         )}
       </div>
 
-      {/* Progress track bar */}
+      {/* Sky Progress track bar */}
       <div style={{
         position: 'absolute',
-        top: '52px',
+        top: '60px',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '70%',
-        height: '4px',
-        background: 'rgba(255,255,255,0.08)',
-        borderRadius: '2px',
-        overflow: 'hidden'
+        width: '60%',
+        height: '3px',
+        background: 'rgba(255,255,255,0.06)',
+        borderRadius: '1.5px',
+        overflow: 'hidden',
+        zIndex: 10
       }}>
         <motion.div
           animate={{ width: `${runnerPos}%` }}
           transition={{ duration: 0.4 }}
-          style={{ height: '100%', background: 'linear-gradient(90deg, #39ff14, #00f2ff)', boxShadow: '0 0 8px rgba(57,255,20,0.6)', borderRadius: '2px' }}
+          style={{ height: '100%', background: 'linear-gradient(90deg, #39ff14, #00f2ff)', boxShadow: '0 0 6px rgba(57,255,20,0.5)', borderRadius: '1.5px' }}
         />
       </div>
     </div>
@@ -657,127 +678,128 @@ const FatBurnWorkout = ({
               exerciseIndex={exIndex}
               isRunning={isRunning}
               currentExercise={currentExercise}
+              currentReps={thisExReps}
+              targetReps={targetRepsPerExercise}
             />
           </div>
 
-          {/* HUD — top left: workout queue */}
+          {/* HUD — top left: decreased size workout queue */}
           <div style={{
-            position: 'absolute', top: '12px', left: '12px', zIndex: 30,
-            background: 'rgba(5,5,15,0.88)', border: '1px solid rgba(57,255,20,0.25)',
-            borderRadius: '12px', padding: '12px 14px', minWidth: '160px',
-            backdropFilter: 'blur(12px)'
+            position: 'absolute', top: '10px', left: '10px', zIndex: 30,
+            background: 'rgba(5,5,15,0.85)', border: '1px solid rgba(57,255,20,0.2)',
+            borderRadius: '10px', padding: '6px 10px', minWidth: '120px',
+            backdropFilter: 'blur(8px)'
           }}>
-            <div style={{ fontSize: '9px', opacity: 0.5, letterSpacing: '1.5px', fontWeight: 900, marginBottom: '10px', fontFamily: 'var(--font-gaming)' }}>WORKOUT QUEUE</div>
+            <div style={{ fontSize: '7.5px', opacity: 0.5, letterSpacing: '1px', fontWeight: 900, marginBottom: '6px', fontFamily: 'var(--font-gaming)' }}>QUEUE</div>
             {EXERCISES.map((ex, i) => {
               const isDone = i < exIndex;
               const isNow = i === exIndex;
               return (
                 <div key={ex} style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '6px 8px', borderRadius: '6px', marginBottom: '4px',
-                  background: isNow ? 'rgba(57,255,20,0.1)' : 'transparent',
-                  border: isNow ? '1px solid rgba(57,255,20,0.4)' : '1px solid transparent',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '3px 5px', borderRadius: '4px', marginBottom: '2px',
+                  background: isNow ? 'rgba(57,255,20,0.08)' : 'transparent',
+                  border: isNow ? '1px solid rgba(57,255,20,0.25)' : '1px solid transparent',
                   opacity: isDone ? 0.35 : 1
                 }}>
                   <div style={{
-                    width: '16px', height: '16px', borderRadius: '50%',
-                    background: isDone ? '#39ff14' : isNow ? '#39ff14' : 'rgba(255,255,255,0.1)',
+                    width: '12px', height: '12px', borderRadius: '50%',
+                    background: isDone ? '#39ff14' : isNow ? '#39ff14' : 'rgba(255,255,255,0.08)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '8px', color: isDone || isNow ? '#000' : '#fff', fontWeight: 900
+                    fontSize: '7px', color: isDone || isNow ? '#000' : '#fff', fontWeight: 900
                   }}>
                     {isDone ? '✓' : i + 1}
                   </div>
                   <div>
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: isNow ? '#39ff14' : '#fff', fontFamily: 'var(--font-gaming)' }}>{EXERCISE_LABELS[ex]}</div>
-                    <div style={{ fontSize: '8px', opacity: 0.6 }}>{repsPerEx[i]}/{targetRepsPerExercise}</div>
+                    <div style={{ fontSize: '8.5px', fontWeight: 800, color: isNow ? '#39ff14' : '#fff', fontFamily: 'var(--font-gaming)', lineHeight: 1.1 }}>{EXERCISE_LABELS[ex]}</div>
+                    <div style={{ fontSize: '7.5px', opacity: 0.6, lineHeight: 1 }}>{repsPerEx[i]}/{targetRepsPerExercise}</div>
                   </div>
-                  {isNow && <div style={{ marginLeft: 'auto', fontSize: '7px', color: '#39ff14', border: '1px solid #39ff14', padding: '1px 4px', borderRadius: '3px', fontWeight: 900 }}>NOW</div>}
+                  {isNow && <div style={{ marginLeft: 'auto', fontSize: '6px', color: '#39ff14', border: '1px solid rgba(57,255,20,0.4)', padding: '0.5px 3px', borderRadius: '2px', fontWeight: 900 }}>NOW</div>}
                 </div>
               );
             })}
           </div>
 
-          {/* HUD — top right: stats */}
+          {/* HUD — top right: compact live stats */}
           <div style={{
-            position: 'absolute', top: '12px', right: '12px', zIndex: 30,
-            background: 'rgba(5,5,15,0.88)', border: '1px solid rgba(57,255,20,0.25)',
-            borderRadius: '12px', padding: '12px 14px',
-            backdropFilter: 'blur(12px)', textAlign: 'right'
+            position: 'absolute', top: '10px', right: '10px', zIndex: 30,
+            background: 'rgba(5,5,15,0.85)', border: '1px solid rgba(57,255,20,0.2)',
+            borderRadius: '10px', padding: '6px 10px', minWidth: '120px',
+            backdropFilter: 'blur(8px)', textAlign: 'right'
           }}>
-            <div style={{ fontSize: '9px', opacity: 0.4, letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-gaming)' }}>LIVE STATS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontSize: '7.5px', opacity: 0.5, letterSpacing: '1px', marginBottom: '6px', fontFamily: 'var(--font-gaming)' }}>LIVE STATS</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {[
-                { label: 'DISTANCE', value: `${currentDistanceM}m`, color: '#39ff14' },
-                { label: 'TOTAL REPS', value: `${totalReps}/${totalRepsNeeded}`, color: '#fff' },
+                { label: 'DIST', value: `${currentDistanceM}m`, color: '#39ff14' },
+                { label: 'REPS', value: `${totalReps}/${totalRepsNeeded}`, color: '#fff' },
                 { label: 'CALORIES', value: `${calcCalories(repsPerEx)} KCAL`, color: '#ff6b6b' },
               ].map(s => (
-                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 700 }}>{s.label}</span>
-                  <span className="arcade-text" style={{ fontSize: '12px', color: s.color, fontWeight: 900 }}>{s.value}</span>
+                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '7.5px', opacity: 0.5, fontWeight: 700 }}>{s.label}</span>
+                  <span className="arcade-text" style={{ fontSize: '10px', color: s.color, fontWeight: 900 }}>{s.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* HUD — bottom: exercise counter */}
-          {phase === 'exercise' && (
-            <div style={{
-              position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)',
-              width: '90%', maxWidth: '520px', zIndex: 30,
-              background: 'rgba(5,5,15,0.92)', border: '1px solid rgba(57,255,20,0.35)',
-              borderRadius: '18px', padding: '16px 20px', backdropFilter: 'blur(16px)',
-              boxShadow: '0 0 30px rgba(57,255,20,0.08)'
-            }}>
-              {/* Progress bar for this exercise */}
-              <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-                <motion.div
-                  animate={{ width: `${Math.min((thisExReps / targetRepsPerExercise) * 100, 100)}%` }}
-                  transition={{ duration: 0.3 }}
-                  style={{ height: '100%', background: 'linear-gradient(90deg, #39ff14, #00f2ff)', boxShadow: '0 0 8px rgba(57,255,20,0.5)', borderRadius: '2px' }}
-                />
-              </div>
+          {/* Position warning - sleek top-center floating banner */}
+          <AnimatePresence>
+            {positionWarning && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                style={{
+                  position: 'absolute',
+                  top: '90px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(255, 60, 0, 0.9)',
+                  border: '1.5px solid #ff4400',
+                  borderRadius: '20px',
+                  padding: '6px 18px',
+                  fontSize: '10px',
+                  fontWeight: 900,
+                  color: '#fff',
+                  zIndex: 40,
+                  textAlign: 'center',
+                  boxShadow: '0 0 15px rgba(255, 60, 0, 0.4)',
+                  letterSpacing: '0.5px',
+                  pointerEvents: 'none'
+                }}
+              >
+                ⚠ {positionWarning} — ADJUST POSITION
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* Position warning */}
-              <AnimatePresence>
-                {positionWarning && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    style={{ background: 'rgba(255,60,0,0.85)', border: '1px solid #ff4400', borderRadius: '8px', padding: '5px 10px', fontSize: '10px', fontWeight: 900, color: '#fff', marginBottom: '10px', textAlign: 'center', letterSpacing: '0.5px' }}>
-                    ⚠ {positionWarning} — ADJUST YOUR POSITION
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                {/* Exercise name + reps needed */}
-                <div>
-                  <div style={{ fontSize: '9px', opacity: 0.4, letterSpacing: '1px', fontWeight: 800, marginBottom: '2px' }}>PERFORM NOW</div>
-                  <h2 style={{ fontSize: 'clamp(16px, 4vw, 22px)', fontWeight: 900, color: '#39ff14', fontFamily: 'var(--font-gaming)', margin: 0 }}>
-                    {EXERCISE_ICONS[currentExercise]} {EXERCISE_LABELS[currentExercise]}
-                  </h2>
-                  <p style={{ fontSize: '10px', opacity: 0.5, margin: '2px 0 0', color: '#fff' }}>
-                    {targetRepsPerExercise - thisExReps} reps remaining
-                  </p>
-                </div>
-
-                {/* Big rep counter */}
-                <div style={{ textAlign: 'center', position: 'relative' }}>
-                  <div className="arcade-text" style={{ fontSize: 'clamp(40px, 10vw, 64px)', color: '#fff', lineHeight: 1 }}>{thisExReps}</div>
-                  <div style={{ fontSize: '10px', opacity: 0.4 }}>/ {targetRepsPerExercise}</div>
-
-                  {/* Floating feedback */}
-                  <AnimatePresence>
-                    {feedbackMsg && (
-                      <motion.div key={feedbackKey}
-                        initial={{ opacity: 0, y: 5, scale: 0.85 }} animate={{ opacity: 1, y: -30, scale: 1 }} exit={{ opacity: 0, y: -50 }} transition={{ duration: 0.9 }}
-                        style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', whiteSpace: 'nowrap', color: '#00f2ff', textShadow: '0 0 10px rgba(0,242,255,0.6)', fontWeight: 900, fontSize: '13px', fontFamily: 'var(--font-gaming)', pointerEvents: 'none' }}>
-                        {feedbackMsg}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Floating rep feedback animation centered high over the action space */}
+          <AnimatePresence>
+            {feedbackMsg && (
+              <motion.div
+                key={feedbackKey}
+                initial={{ opacity: 0, scale: 0.7, y: 30 }}
+                animate={{ opacity: 1, scale: 1.15, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.8 }}
+                style={{
+                  position: 'absolute',
+                  top: '30%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  color: '#00f2ff',
+                  textShadow: '0 0 15px rgba(0, 242, 255, 0.8)',
+                  fontWeight: 900,
+                  fontSize: '22px',
+                  fontFamily: 'var(--font-gaming)',
+                  pointerEvents: 'none',
+                  zIndex: 35
+                }}
+              >
+                {feedbackMsg}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
 
