@@ -1134,18 +1134,6 @@ export default function Home() {
                       </h3>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
-                      <span style={{ fontSize: '11px', color: '#39ff14', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        🔥 HIGH CALORIE BURN
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#00f2ff', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        ⚡ CARDIO ENDURANCE
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#ffd700', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        📅 30-DAY TIMELINE
-                      </span>
-                    </div>
-
                     {/* Moved Calendar Toggle Button Inside the Card */}
                     <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
                       <motion.div
