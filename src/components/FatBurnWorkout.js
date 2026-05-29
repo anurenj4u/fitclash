@@ -60,22 +60,37 @@ const RunningTrack = ({ progressPercent, activeCharacter, exerciseIndex, isRunni
       width: '100%',
       height: '100%',
       position: 'relative',
-      background: 'linear-gradient(180deg, #06060c 0%, #030308 50%, #0a0a14 100%)',
+      background: 'linear-gradient(180deg, #0088ff 0%, #66ccff 100%)', // Bright stadium sky gradient from 1v1 PvP
       overflow: 'hidden'
     }}>
-      {/* Stars */}
-      {[...Array(30)].map((_, i) => (
+      {/* Drifting Clouds (Day Sky) */}
+      {[...Array(4)].map((_, i) => (
         <div key={i} style={{
           position: 'absolute',
-          width: i % 3 === 0 ? '2px' : '1px',
-          height: i % 3 === 0 ? '2px' : '1px',
-          background: '#fff',
-          opacity: 0.2 + Math.random() * 0.4,
-          top: `${Math.random() * 45}%`,
-          left: `${Math.random() * 100}%`,
-          borderRadius: '50%'
+          background: 'rgba(255, 255, 255, 0.8)',
+          borderRadius: '20px',
+          width: i % 2 === 0 ? '90px' : '65px',
+          height: i % 2 === 0 ? '22px' : '16px',
+          top: `${10 + i * 12}%`,
+          opacity: 0.6,
+          zIndex: 3,
+          boxShadow: '0 4px 10px rgba(255, 255, 255, 0.1)',
+          animation: `cloud-drift ${25 + i * 15}s linear infinite`,
+          animationDelay: `${i * -8}s`, // Stagger cloud starts instantly
+          pointerEvents: 'none'
         }} />
       ))}
+
+      {/* Parallax Stadium Mountains */}
+      <svg style={{
+        position: 'absolute',
+        bottom: '24%', left: 0, right: 0,
+        height: '14%', width: '100%',
+        zIndex: 4,
+        pointerEvents: 'none'
+      }} viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path d="M 0 100 L 15 35 L 35 70 L 55 25 L 75 80 L 90 40 L 100 100 Z" fill="rgba(0, 95, 115, 0.35)" />
+      </svg>
 
       {/* Solid Road Track (similar to 1v1 Phaser layout) */}
       <div style={{
@@ -806,6 +821,7 @@ const FatBurnWorkout = ({
       <style>{`
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes cloud-drift { 0% { left: -100px; } 100% { left: 100%; } }
       `}</style>
     </div>
   );
