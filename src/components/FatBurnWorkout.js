@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Activity, Flame, Award, Zap, Heart } from 'lucide-react';
+import { ShieldCheck, Activity, Flame, Award, Zap, Heart, ChevronLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PositionCalibration from './PositionCalibration';
 
