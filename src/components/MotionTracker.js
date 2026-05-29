@@ -213,7 +213,7 @@ const MotionTracker = ({ mode, onReady }) => {
   }
 
   return (
-    <div style={{ 
+    <div className="motion-tracker-container" style={{ 
       position: 'fixed', 
       bottom: '10px', 
       right: '10px', 
@@ -230,7 +230,7 @@ const MotionTracker = ({ mode, onReady }) => {
       )}
 
       {/* Camera Feed Container */}
-      <div style={{ 
+      <div className="motion-tracker-feed" style={{ 
         position: 'relative', 
         width: '100%', 
         height: isMobile ? '150px' : '210px', 

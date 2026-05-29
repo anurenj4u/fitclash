@@ -298,6 +298,96 @@ h1, h2, h3, .arcade-text {
   .hud-right-card .arcade-text {
     font-size: 20px !important;
   }
+
+  /* Ready Screen Responsiveness (Landscape and Small Portrait Screens) */
+  .ready-screen-container {
+    justify-content: flex-start !important;
+    padding: 10px 10px 140px 10px !important; /* bottom padding gives space for camera overlay */
+  }
+  
+  .ready-screen-inner {
+    margin: 10px 0 !important;
+    padding-bottom: 20px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .ready-screen-shield {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 auto 10px !important;
+    box-shadow: 0 0 10px rgba(57,255,20,0.15) !important;
+  }
+  
+  .ready-screen-shield-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
+  .ready-screen-title {
+    font-size: 18px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .ready-screen-desc {
+    font-size: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .exercise-preview-grid {
+    gap: 6px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .exercise-preview-card {
+    padding: 8px 4px !important;
+    border-radius: 8px !important;
+  }
+  
+  .exercise-preview-card .exercise-icon {
+    font-size: 16px !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .exercise-preview-card .exercise-label {
+    font-size: 8px !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .exercise-preview-card .exercise-reps {
+    font-size: 11px !important;
+  }
+  
+  .exercise-preview-card .exercise-reps-unit {
+    font-size: 7px !important;
+  }
+  
+  .exercise-preview-card .exercise-dist {
+    font-size: 7px !important;
+    margin-top: 2px !important;
+  }
+  
+  .exercise-preview-card .exercise-rest {
+    font-size: 7px !important;
+    margin-top: 1px !important;
+  }
+  
+  .ready-screen-button {
+    padding: 10px 30px !important;
+    font-size: 11px !important;
+    border-radius: 20px !important;
+  }
+  
+  /* Shrink camera on small landscape / portrait mobile to save precious screen space */
+  .motion-tracker-container {
+    width: 140px !important;
+    bottom: 8px !important;
+    right: 8px !important;
+  }
+  
+  .motion-tracker-feed {
+    height: 105px !important;
+  }
 }
 
 

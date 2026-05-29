@@ -572,32 +572,33 @@ const FatBurnWorkout = ({
 
       {/* ── READY ── */}
       {phase === 'ready' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(2,2,8,0.96)', zIndex: 95, backdropFilter: 'blur(25px)', padding: '20px' }}>
+        <div className="ready-screen-container" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(2,2,8,0.96)', zIndex: 95, backdropFilter: 'blur(25px)', padding: '20px', overflowY: 'auto' }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(57,255,20,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,0.025) 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ position: 'relative', zIndex: 2, maxWidth: '480px', width: '95%', textAlign: 'center' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(57,255,20,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', border: '1px solid rgba(57,255,20,0.4)', boxShadow: '0 0 20px rgba(57,255,20,0.2)' }}>
-              <ShieldCheck size={30} color="#39ff14" />
+          <motion.div className="ready-screen-inner" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ position: 'relative', zIndex: 2, maxWidth: '480px', width: '95%', textAlign: 'center', margin: 'auto 0' }}>
+            <div className="ready-screen-shield" style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(57,255,20,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', border: '1px solid rgba(57,255,20,0.4)', boxShadow: '0 0 20px rgba(57,255,20,0.2)' }}>
+              <ShieldCheck className="ready-screen-shield-icon" size={30} color="#39ff14" />
             </div>
-            <h2 className="arcade-text" style={{ fontSize: 'clamp(22px, 5vw, 30px)', marginBottom: '8px' }}>TRACKER <span style={{ color: '#39ff14' }}>READY</span></h2>
-            <p style={{ opacity: 0.5, fontSize: '12px', marginBottom: '24px' }}>
+            <h2 className="arcade-text ready-screen-title" style={{ fontSize: 'clamp(22px, 5vw, 30px)', marginBottom: '8px' }}>TRACKER <span style={{ color: '#39ff14' }}>READY</span></h2>
+            <p className="ready-screen-desc" style={{ opacity: 0.5, fontSize: '12px', marginBottom: '24px' }}>
               {difficulty.toUpperCase()} MODE — {targetRepsPerExercise} reps × 3 exercises = {totalRepsNeeded} total reps / {totalDistanceM}m
             </p>
 
             {/* Workout plan preview */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '28px', justifyContent: 'center' }}>
+            <div className="exercise-preview-grid" style={{ display: 'flex', gap: '10px', marginBottom: '28px', justifyContent: 'center' }}>
               {EXERCISES.map((ex, i) => (
-                <div key={ex} style={{ flex: 1, background: 'rgba(57,255,20,0.06)', border: '1px solid rgba(57,255,20,0.2)', borderRadius: '12px', padding: '14px 8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '22px', marginBottom: '6px' }}>{EXERCISE_ICONS[ex]}</div>
-                  <div style={{ fontSize: '10px', color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)', marginBottom: '4px' }}>{EXERCISE_LABELS[ex]}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 900, color: '#fff' }}>{targetRepsPerExercise}</div>
-                  <div style={{ fontSize: '8px', opacity: 0.4 }}>REPS</div>
-                  <div style={{ fontSize: '8px', color: '#00f2ff', marginTop: '4px', fontWeight: 700 }}>{targetRepsPerExercise * METERS_PER_REP}M</div>
-                  {i < 2 && <div style={{ fontSize: '8px', color: '#ffd700', marginTop: '2px' }}>+ 60s REST</div>}
+                <div key={ex} className="exercise-preview-card" style={{ flex: 1, background: 'rgba(57,255,20,0.06)', border: '1px solid rgba(57,255,20,0.2)', borderRadius: '12px', padding: '14px 8px', textAlign: 'center' }}>
+                  <div className="exercise-icon" style={{ fontSize: '22px', marginBottom: '6px' }}>{EXERCISE_ICONS[ex]}</div>
+                  <div className="exercise-label" style={{ fontSize: '10px', color: '#39ff14', fontWeight: 900, fontFamily: 'var(--font-gaming)', marginBottom: '4px' }}>{EXERCISE_LABELS[ex]}</div>
+                  <div className="exercise-reps" style={{ fontSize: '13px', fontWeight: 900, color: '#fff' }}>{targetRepsPerExercise}</div>
+                  <div className="exercise-reps-unit" style={{ fontSize: '8px', opacity: 0.4 }}>REPS</div>
+                  <div className="exercise-dist" style={{ fontSize: '8px', color: '#00f2ff', marginTop: '4px', fontWeight: 700 }}>{targetRepsPerExercise * METERS_PER_REP}M</div>
+                  {i < 2 && <div className="exercise-rest" style={{ fontSize: '8px', color: '#ffd700', marginTop: '2px' }}>+ 60s REST</div>}
                 </div>
               ))}
             </div>
 
             <motion.button
+              className="ready-screen-button"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => { enterFullscreen(); setPhase('calibration'); }}
