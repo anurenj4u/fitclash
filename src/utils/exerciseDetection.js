@@ -56,6 +56,21 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
   let isActive = false;
 
   if (mode === 'squats') {
+    // Prevent pushups (lying down) from being falsely counted as squats
+    let isLyingDown = false;
+    if (leftHip && leftHip.score > MIN_CONF && leftShoulder && leftShoulder.score > MIN_CONF) {
+      if (leftHip.y - leftShoulder.y < 0.5 * shoulderWidth) {
+        isLyingDown = true;
+      }
+    } else if (rightHip && rightHip.score > MIN_CONF && rightShoulder && rightShoulder.score > MIN_CONF) {
+      if (rightHip.y - rightShoulder.y < 0.5 * shoulderWidth) {
+        isLyingDown = true;
+      }
+    }
+    if (isLyingDown) {
+      return null;
+    }
+
     // 1. Initialize Standing Baseline
     if (repStateRef.squatHighestShoulderY === undefined || repStateRef.squatHighestShoulderY === null) {
       repStateRef.squatHighestShoulderY = avgShoulderY;
@@ -91,6 +106,21 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
       repStateRef.squatFramesInDown = 0;
     }
   } else if (mode === 'pushups') {
+    // Prevent squats or jumping jacks (standing upright) from being falsely counted as pushups
+    let isStanding = false;
+    if (leftHip && leftHip.score > MIN_CONF && leftShoulder && leftShoulder.score > MIN_CONF) {
+      if (leftHip.y - leftShoulder.y > 0.9 * shoulderWidth) {
+        isStanding = true;
+      }
+    } else if (rightHip && rightHip.score > MIN_CONF && rightShoulder && rightShoulder.score > MIN_CONF) {
+      if (rightHip.y - rightShoulder.y > 0.9 * shoulderWidth) {
+        isStanding = true;
+      }
+    }
+    if (isStanding) {
+      return null;
+    }
+
     // Push-up detection uses shoulder Y drop when user goes from plank-high (arms extended)
     // to plank-low (chest near floor). Camera is usually side-on or angled from above.
     // shoulderOk was previously undefined – this is the root cause of tracking failure.

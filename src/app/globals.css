@@ -218,9 +218,9 @@ h1, h2, h3, .arcade-text {
   }
 
   .responsive-leaderboard-row {
-    grid-template-columns: 24px 1.4fr 1fr 90px !important;
+    grid-template-columns: 24px 1.3fr 1.1fr 105px !important;
     padding: 8px 12px !important;
-    gap: 8px !important;
+    gap: 6px !important;
   }
   .responsive-leaderboard-row .rank-text {
     font-size: 10px !important;
@@ -236,6 +236,7 @@ h1, h2, h3, .arcade-text {
   }
   .responsive-leaderboard-row .xp-text {
     font-size: 9px !important;
+    min-width: auto !important;
   }
 }
 
