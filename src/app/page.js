@@ -1919,7 +1919,7 @@ export default function Home() {
                   </div>
 
                   {/* Active telemetry activity */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="activity-text" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{
                       width: '6px',
                       height: '6px',
