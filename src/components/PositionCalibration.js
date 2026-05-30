@@ -14,6 +14,7 @@ const PositionCalibration = ({ mode = null, onCalibrated, onSkip }) => {
 
   useEffect(() => {
     const handleRawPose = (e) => {
+      if (mode === 'fingers') return; // Handled separately
       const pose = e.detail;
       if (!pose || !pose.keypoints) {
         setFeedback('No body detected. Step into frame.');
@@ -63,9 +64,29 @@ const PositionCalibration = ({ mode = null, onCalibrated, onSkip }) => {
       }
     };
 
+    const handleRawHand = (e) => {
+      if (mode !== 'fingers') return;
+      const fc = e.detail;
+      if (fc !== null && fc !== undefined) {
+        setFeedback('HAND DETECTED! READY...');
+        setFeedbackType('success');
+        setIsGood(true);
+        goodFramesRef.current += 1;
+      } else {
+        setFeedback('Show your hand to the camera.');
+        setFeedbackType('warning');
+        setIsGood(false);
+        goodFramesRef.current = 0;
+      }
+    };
+
     window.addEventListener('raw-pose', handleRawPose);
-    return () => window.removeEventListener('raw-pose', handleRawPose);
-  }, []);
+    window.addEventListener('raw-hand', handleRawHand);
+    return () => {
+      window.removeEventListener('raw-pose', handleRawPose);
+      window.removeEventListener('raw-hand', handleRawHand);
+    };
+  }, [mode]);
 
   // Reset demo reps if user steps out of position
   useEffect(() => {
@@ -182,7 +203,7 @@ const PositionCalibration = ({ mode = null, onCalibrated, onSkip }) => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
             <span style={{ fontSize: '14px', color: '#00f2ff', fontWeight: 900, letterSpacing: '1px' }}>
-              {demoReps >= 2 ? '🎉 TRACKING VERIFIED!' : '⚡ PERFORM 2 QUICK WARMUP REPS TO UNLOCK'}
+              {demoReps >= 2 ? '🎉 TRACKING VERIFIED!' : (mode === 'fingers' ? '⚡ SHOW 5 FINGERS, THEN FOLD FIST (2 TIMES)' : '⚡ PERFORM 2 QUICK WARMUP REPS TO UNLOCK')}
             </span>
             
             {/* Warmup Progress Bar */}

@@ -595,7 +595,7 @@ const FitnessRace = ({
           if (mode === 'jacks') distPerRep = (savedSettings.distanceJacks || 8) * 100;
           else if (mode === 'squats') distPerRep = (savedSettings.distanceSquats || 12) * 100;
           else if (mode === 'pushups') distPerRep = (savedSettings.distancePushups || 12) * 100;
-          else if (mode === 'fingers') distPerRep = 100;
+          else if (mode === 'fingers') distPerRep = 500;
           playerDistanceRef.current += distPerRep;
           trailParticles.emitParticleAt(player.x, player.y + 20, 3);
 

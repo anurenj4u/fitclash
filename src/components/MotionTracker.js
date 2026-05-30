@@ -151,6 +151,7 @@ const MotionTracker = ({ mode, onReady }) => {
 
   const handleHand = (fc) => {
     setFingerCount(fc);
+    window.dispatchEvent(new CustomEvent('raw-hand', { detail: fc }));
     const result = analyzeFingers(fc, repStateRef, repCountRef);
     if (result) {
       triggerBoostUI();
