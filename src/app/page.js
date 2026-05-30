@@ -2440,8 +2440,8 @@ export default function Home() {
                 [02] SELECT SPRINT WORKOUT TYPE
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
-                {['squats', 'pushups', 'jacks'].map(mode => {
-                  const label = mode === 'jacks' ? 'JUMPING JACKS' : mode.toUpperCase();
+                {['squats', 'pushups', 'jacks', 'fingers'].map(mode => {
+                  const label = mode === 'jacks' ? 'JUMPING JACKS' : mode === 'fingers' ? 'FINGER EXERCISE' : mode.toUpperCase();
                   const isActive = exerciseMode === mode;
                   return (
                     <button

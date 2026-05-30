@@ -349,21 +349,22 @@ export function analyzePose(pose, mode, repStateRef, repCountRef) {
  * @returns {{ reps: number, action: string } | null}
  */
 export function analyzeFingers(fingerCount, repStateRef, repCountRef) {
-  // "Active" = exactly 1 finger raised
-  const isOneFingerUp = fingerCount === 1;
+  // "Active" = exactly 5 fingers raised
+  const isFiveFingersUp = fingerCount === 5;
 
-  if (isOneFingerUp) {
+  if (isFiveFingersUp) {
     if (repStateRef.current === 'up') {
       // Transition: rest → active
       repStateRef.current = 'down';
     }
     return { action: 'active', reps: repCountRef.current };
-  } else {
-    // "Rest" = fist / 0 fingers or 2+ fingers → reset so next 1-finger counts
+  } else if (fingerCount === 0) {
+    // "Rest" = fist / 0 fingers → reset so next 5-fingers counts
     if (repStateRef.current === 'down') {
       repCountRef.current += 1;
       repStateRef.current = 'up';
     }
     return { action: 'neutral', reps: repCountRef.current };
   }
+  return { action: 'neutral', reps: repCountRef.current };
 }

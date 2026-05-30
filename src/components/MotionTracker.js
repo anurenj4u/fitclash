@@ -336,10 +336,10 @@ const MotionTracker = ({ mode, onReady }) => {
             <div style={{ marginTop: '12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', background: 'rgba(57, 255, 20, 0.05)', padding: '10px', borderRadius: '8px' }}>
               <span style={{ fontSize: '32px' }}>{['✊', '☝️', '✌️', '🤟', '🖖', '🖐️'][Math.min(fingerCount || 0, 5)]}</span>
               <div style={{ textAlign: 'left' }}>
-                <p className="hud-text" style={{ fontSize: '12px', color: fingerCount === 1 ? 'var(--accent)' : '#fff', fontWeight: 800 }}>
-                  {fingerCount === 1 ? 'LOCKED ON' : 'DETECTION REQ.'}
+                <p className="hud-text" style={{ fontSize: '12px', color: fingerCount === 5 ? 'var(--accent)' : '#fff', fontWeight: 800 }}>
+                  {fingerCount === 5 ? 'LOCKED ON' : 'DETECTION REQ.'}
                 </p>
-                <p style={{ fontSize: '9px', opacity: 0.5 }}>{fingerCount === 1 ? 'READY FOR BOOST' : 'SHOW 1 FINGER'}</p>
+                <p style={{ fontSize: '9px', opacity: 0.5 }}>{fingerCount === 5 ? 'FOLD FIST TO BOOST' : 'SHOW 5 FINGERS'}</p>
               </div>
             </div>
           )}
