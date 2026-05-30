@@ -8,6 +8,13 @@ export const generateRoomCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const withTimeout = (promise, ms) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout: Please check your internet connection or try again.")), ms))
+  ]);
+};
+
 /**
  * Creates a private multiplayer room.
  */
@@ -34,7 +41,14 @@ export const createRoom = async (user, exerciseMode, targetDistance) => {
     updatedAt: serverTimestamp()
   };
 
-  setDoc(roomRef, roomData).catch(e => console.error("Room sync error:", e));
+  try {
+    await withTimeout(setDoc(roomRef, roomData), 8000);
+  } catch (e) {
+    if (e.message.includes("offline")) {
+      throw new Error("You appear to be offline. Please check your connection.");
+    }
+    throw e;
+  }
   return roomData;
 };
 
@@ -46,7 +60,15 @@ export const joinRoom = async (user, roomCode) => {
   if (!roomCode || roomCode.length !== 6) throw new Error("Invalid room code.");
 
   const roomRef = doc(db, "sprint_rooms", roomCode);
-  const roomSnap = await getDoc(roomRef);
+  let roomSnap;
+  try {
+    roomSnap = await withTimeout(getDoc(roomRef), 8000);
+  } catch (e) {
+    if (e.message.includes("offline") || e.message.includes("timeout")) {
+      throw new Error("Network error: You appear to be offline or a firewall is blocking the connection.");
+    }
+    throw e;
+  }
 
   if (!roomSnap.exists()) {
     throw new Error("Room not found. Please double check the code.");
@@ -62,12 +84,16 @@ export const joinRoom = async (user, roomCode) => {
     throw new Error("You cannot join your own room from the same account.");
   }
 
-  await updateDoc(roomRef, {
-    guestUid: user.uid,
-    guestEmail: user.email || user.displayName || 'Friend',
-    status: 'ready',
-    updatedAt: serverTimestamp()
-  });
+  try {
+    await withTimeout(updateDoc(roomRef, {
+      guestUid: user.uid,
+      guestEmail: user.email || user.displayName || 'Friend',
+      status: 'ready',
+      updatedAt: serverTimestamp()
+    }), 8000);
+  } catch (e) {
+    throw new Error("Failed to join room: Check your internet connection.");
+  }
 
   return { ...roomData, guestUid: user.uid, guestEmail: user.email || 'Friend', status: 'ready' };
 };
@@ -89,7 +115,13 @@ export const startMatchmaking = async (user, exerciseMode, targetDistance) => {
     limit(5) // Get a few candidates
   );
 
-  const querySnapshot = await getDocs(q);
+  let querySnapshot;
+  try {
+    querySnapshot = await withTimeout(getDocs(q), 8000);
+  } catch (e) {
+    throw new Error("Matchmaking failed: Network issue or you are offline.");
+  }
+  
   let availableRoom = null;
 
   for (const docSnap of querySnapshot.docs) {
@@ -131,7 +163,11 @@ export const startMatchmaking = async (user, exerciseMode, targetDistance) => {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    await setDoc(roomRef, roomData);
+    try {
+      await withTimeout(setDoc(roomRef, roomData), 8000);
+    } catch (e) {
+      throw new Error("Failed to create online room. Please check your connection.");
+    }
     return { roomId: roomCode, role: 'host' };
   }
 };
