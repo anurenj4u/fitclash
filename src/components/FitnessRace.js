@@ -37,6 +37,7 @@ const getCalorieMultiplier = (exerciseMode) => {
   if (exerciseMode === 'squats' || exerciseMode === 'squat') return 0.5;
   if (exerciseMode === 'pushups' || exerciseMode === 'pushup') return 0.4;
   if (exerciseMode === 'jacks' || exerciseMode === 'jumping_jacks' || exerciseMode === 'jumping jack') return 0.2;
+  if (exerciseMode === 'fingers') return 0.02;
   return 0.45;
 };
 
