@@ -358,8 +358,8 @@ export function analyzeFingers(fingerCount, repStateRef, repCountRef) {
       repStateRef.current = 'down';
     }
     return { action: 'active', reps: repCountRef.current };
-  } else if (fingerCount === 0) {
-    // "Rest" = fist / 0 fingers → reset so next 5-fingers counts
+  } else if (fingerCount <= 1) {
+    // "Rest" = fist / <=1 fingers → reset so next 5-fingers counts
     if (repStateRef.current === 'down') {
       repCountRef.current += 1;
       repStateRef.current = 'up';

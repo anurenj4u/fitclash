@@ -491,7 +491,6 @@ const FitnessRace = ({
         this.anims.create({
           key: 'messi_run',
           frames: [
-            { key: 'messiRun1_clean' },
             { key: 'messiRun2_clean' },
             { key: 'messiRun3_clean' },
             { key: 'messiRun4_clean' },
@@ -505,7 +504,6 @@ const FitnessRace = ({
         this.anims.create({
           key: 'neymar_run',
           frames: [
-            { key: 'neymarRun1_clean' },
             { key: 'neymarRun2_clean' },
             { key: 'neymarRun3_clean' },
             { key: 'neymarRun4_clean' },
@@ -519,7 +517,6 @@ const FitnessRace = ({
         this.anims.create({
           key: 'ronaldo_run',
           frames: [
-            { key: 'ronaldoRun1_clean' },
             { key: 'ronaldoRun2_clean' },
             { key: 'ronaldoRun3_clean' },
             { key: 'ronaldoRun4_clean' },
