@@ -145,6 +145,14 @@ export default function Home() {
   const { user, userData } = useAuth();
   const router = useRouter();
 
+  const checkDailyLimit = () => {
+    if (!userData?.isPremium && userData?.gamesToday >= 5) {
+      setShowLimitModal(true);
+      return false;
+    }
+    return true;
+  };
+
   // Unified Progression Local Storage + Firebase state
   const [progression, setProgression] = useState({
     xp: 450,
@@ -472,11 +480,13 @@ export default function Home() {
       return;
     }
 
-    // Temporarily disabled daily limit for easier testing
-    // if (!userData?.isPremium && userData?.gamesToday >= 5) {
-    //   setShowLimitModal(true);
-    //   return;
-    // }
+    if (playMode === 'normal' && !userData?.isPremium) {
+      router.push('/premium');
+      return;
+    }
+
+    if (!checkDailyLimit()) return;
+
     setIsCameraReady(false); // Reset camera state for clean mount
     setShowOnboarding(true);
   };
@@ -488,11 +498,12 @@ export default function Home() {
       return;
     }
 
-    // Temporarily disabled daily limit for easier testing
-    // if (!userData?.isPremium && userData?.gamesToday >= 5) {
-    //   setShowLimitModal(true);
-    //   return;
-    // }
+    if (prog.id === 'fatburn' && !userData?.isPremium) {
+      router.push('/premium');
+      return;
+    }
+
+    if (!checkDailyLimit()) return;
 
     setIsCameraReady(false); // Reset camera state for clean mount
     setActiveProgram(prog);
@@ -1079,198 +1090,282 @@ export default function Home() {
           {/* FITNESS WORKOUT CUSTOMIZER (GOAL + KILOMETERS + MULTI-SELECT) */}
           {/* ============================================================ */}
           {playMode === 'normal' && (
-            <>
-              {/* UNIFIED FAT BURN & STAMINA FEATURE PANEL */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                style={{
-                  padding: '16px 20px',
-                  background: 'rgba(5, 5, 8, 0.6)',
-                  border: '1px solid rgba(57, 255, 20, 0.25)',
-                  borderRadius: '18px',
-                  textAlign: 'left',
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 16px rgba(57,255,20,0.04)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {/* Grid bg */}
-                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(rgba(57, 255, 20, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 255, 20, 0.02) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-
-                {/* Header row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', position: 'relative' }}>
-                  <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>[01] FITNESS WORKOUT</span>
-                  <div style={{ background: 'linear-gradient(90deg, rgba(57,255,20,0.12), rgba(0,242,255,0.12))', padding: '4px 10px', borderRadius: '4px', fontSize: '9px', fontWeight: 900, border: '1px solid rgba(57,255,20,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: '#39ff14' }}>🔥</span>
-                    <span style={{ color: '#fff' }}>&</span>
-                    <span style={{ color: '#00f2ff' }}>⚡</span>
-                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px' }}>30-DAY COMBINED PLAN</span>
-                  </div>
-                </div>
-
-                {/* Single merged card details */}
-                <div style={{
-                  background: 'rgba(5,5,15,0.5)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '12px',
-                  padding: '16px 20px',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '20px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  flexWrap: 'wrap'
-                }}>
-                  {/* Left content: text & badges & calendar button inside the card */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '240px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '24px' }}>🏋️</span>
-                      <h3 className="arcade-text" style={{ fontSize: '17px', fontWeight: 600, color: '#ffd700', letterSpacing: '0.5px', margin: 0, textShadow: '0 0 8px rgba(255,215,0,0.3)' }}>
-                        Fat Burn & Stamina Improvement in 30 Days
-                      </h3>
-                    </div>
-
-                    {/* Moved Calendar Toggle Button Inside the Card */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setShowFatBurnCalendar(prev => !prev)}
-                        style={{
-                          fontSize: '9px',
-                          fontWeight: 900,
-                          background: 'rgba(57,255,20,0.08)',
-                          color: '#39ff14',
-                          border: '1px solid rgba(57,255,20,0.25)',
-                          padding: '6px 14px',
-                          borderRadius: '16px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s',
-                          whiteSpace: 'nowrap',
-                          boxShadow: '0 4px 10px rgba(57,255,20,0.05)'
-                        }}
-                      >
-                        📅 {showFatBurnCalendar ? 'HIDE CALENDAR' : '30-DAY PLAN CALENDAR'}
-                      </motion.div>
-                    </div>
-                  </div>
-
-                  {/* Right content: Transformation images with arrow */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '16px',
-                    padding: '8px 16px',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                    borderRadius: '12px',
-                    minWidth: '220px'
-                  }}>
-                    {/* Fatboy character */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <img
-                        src="/fatboy.png"
-                        alt="Fatboy"
-                        style={{
-                          width: '75px',
-                          height: '95px',
-                          objectFit: 'contain',
-                          filter: 'drop-shadow(0 4px 8px rgba(255, 68, 68, 0.25))'
-                        }}
-                      />
-                      <span style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, letterSpacing: '0.5px', color: '#ff4444' }}>DAY 1</span>
-                    </div>
-
-                    {/* Transition arrow */}
-                    <motion.div
-                      animate={{ x: [0, 4, 0] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <span style={{ fontSize: '24px', color: '#39ff14', fontWeight: 'bold', filter: 'drop-shadow(0 0 6px #39ff14)' }}>➔</span>
-                    </motion.div>
-
-                    {/* Fitboy character */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <img
-                        src="/fitboy.png"
-                        alt="Fitboy"
-                        style={{
-                          width: '75px',
-                          height: '95px',
-                          objectFit: 'contain',
-                          filter: 'drop-shadow(0 4px 12px rgba(57, 255, 20, 0.35))'
-                        }}
-                      />
-                      <span style={{ fontSize: '8px', color: '#39ff14', fontWeight: 900, letterSpacing: '0.5px' }}>DAY 30</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* OUTSIDE BUTTON ROW & CALENDAR */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginTop: '16px', alignItems: 'center' }}>
-
-
-                {/* Calendar grid */}
-                {showFatBurnCalendar && (
-                  <div id="fatburn-calendar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(36px, 1fr))', gap: '5px', width: '100%', background: 'rgba(5,5,12,0.9)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(57,255,20,0.25)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>30-DAY TRANSFORMATION PROGRESS</span>
-                      <span style={{ display: 'block', fontSize: '8px', opacity: 0.5 }}>COMPLETION TRACKER & STREAK SYSTEM</span>
-                    </div>
-                    {progression.fatBurnCalendar?.map((dayObj) => {
-                      let bg = 'rgba(255,255,255,0.05)', border = '1px solid rgba(255,255,255,0.1)', color = '#fff', opacity = 1;
-                      if (dayObj.status === 'completed') { bg = 'rgba(57,255,20,0.15)'; border = '1px solid #39ff14'; color = '#39ff14'; }
-                      else if (dayObj.status === 'current') { bg = 'rgba(0,242,255,0.15)'; border = '1px solid #00f2ff'; color = '#00f2ff'; }
-                      else if (dayObj.status === 'missed') { bg = 'rgba(255,68,68,0.1)'; border = '1px solid rgba(255,68,68,0.3)'; color = '#ff4444'; opacity = 0.5; }
-                      else { opacity = 0.3; }
-                      return (
-                        <div key={dayObj.day} style={{ background: bg, border, borderRadius: '5px', padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity, position: 'relative' }}>
-                          <span style={{ fontSize: '7px', opacity: 0.6, fontWeight: 700 }}>DAY</span>
-                          <span style={{ fontSize: '11px', fontWeight: 900, color }}>{dayObj.day}</span>
-                          {dayObj.status === 'completed' && <div style={{ position: 'absolute', top: -3, right: -3, background: '#39ff14', borderRadius: '50%', width: 8, height: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={5} color="#000" /></div>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Match Setup Button: Placed at the Bottom Center below the Card */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowSetupModal(true)}
+            <div style={{ position: 'relative', width: '100%' }}>
+              <div style={{ filter: userData?.isPremium ? 'none' : 'blur(5px)', pointerEvents: userData?.isPremium ? 'auto' : 'none', opacity: userData?.isPremium ? 1 : 0.45, transition: 'all 0.3s' }}>
+                {/* UNIFIED FAT BURN & STAMINA FEATURE PANEL */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
                   style={{
-                    background: 'linear-gradient(135deg, #39ff14, #00f2ff)',
-                    color: '#000',
-                    padding: '12px 42px',
-                    borderRadius: '24px',
-                    border: 'none',
-                    fontWeight: 900,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-gaming)',
-                    boxShadow: '0 0 20px rgba(57,255,20,0.4)',
-                    transition: 'all 0.3s ease',
-                    whiteSpace: 'nowrap',
-                    marginTop: '8px'
+                    padding: '16px 20px',
+                    background: 'rgba(5, 5, 8, 0.6)',
+                    border: '1px solid rgba(57, 255, 20, 0.25)',
+                    borderRadius: '18px',
+                    textAlign: 'left',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 16px rgba(57,255,20,0.04)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.6)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.4)'; }}
                 >
-                  ⚙️ SETUP WORKOUT
-                </motion.button>
+                  {/* Grid bg */}
+                  <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(rgba(57, 255, 20, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 255, 20, 0.02) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+                  {/* Header row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', position: 'relative' }}>
+                    <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>[01] FITNESS WORKOUT</span>
+                    <div style={{ background: 'linear-gradient(90deg, rgba(57,255,20,0.12), rgba(0,242,255,0.12))', padding: '4px 10px', borderRadius: '4px', fontSize: '9px', fontWeight: 900, border: '1px solid rgba(57,255,20,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: '#39ff14' }}>🔥</span>
+                      <span style={{ color: '#fff' }}>&</span>
+                      <span style={{ color: '#00f2ff' }}>⚡</span>
+                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px' }}>30-DAY COMBINED PLAN</span>
+                    </div>
+                  </div>
+
+                  {/* Single merged card details */}
+                  <div style={{
+                    background: 'rgba(5,5,15,0.5)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '12px',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '20px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    flexWrap: 'wrap'
+                  }}>
+                    {/* Left content: text & badges & calendar button inside the card */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '240px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '24px' }}>🏋️</span>
+                        <h3 className="arcade-text" style={{ fontSize: '17px', fontWeight: 600, color: '#ffd700', letterSpacing: '0.5px', margin: 0, textShadow: '0 0 8px rgba(255,215,0,0.3)' }}>
+                          Fat Burn & Stamina Improvement in 30 Days
+                        </h3>
+                      </div>
+
+                      {/* Moved Calendar Toggle Button Inside the Card */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setShowFatBurnCalendar(prev => !prev)}
+                          style={{
+                            fontSize: '9px',
+                            fontWeight: 900,
+                            background: 'rgba(57,255,20,0.08)',
+                            color: '#39ff14',
+                            border: '1px solid rgba(57,255,20,0.25)',
+                            padding: '6px 14px',
+                            borderRadius: '16px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 4px 10px rgba(57,255,20,0.05)'
+                          }}
+                        >
+                          📅 {showFatBurnCalendar ? 'HIDE CALENDAR' : '30-DAY PLAN CALENDAR'}
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    {/* Right content: Transformation images with arrow */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '16px',
+                      padding: '8px 16px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      minWidth: '220px'
+                    }}>
+                      {/* Fatboy character */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <img
+                          src="/fatboy.png"
+                          alt="Fatboy"
+                          style={{
+                            width: '75px',
+                            height: '95px',
+                            objectFit: 'contain',
+                            filter: 'drop-shadow(0 4px 8px rgba(255, 68, 68, 0.25))'
+                          }}
+                        />
+                        <span style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, letterSpacing: '0.5px', color: '#ff4444' }}>DAY 1</span>
+                      </div>
+
+                      {/* Transition arrow */}
+                      <motion.div
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <span style={{ fontSize: '24px', color: '#39ff14', fontWeight: 'bold', filter: 'drop-shadow(0 0 6px #39ff14)' }}>➔</span>
+                      </motion.div>
+
+                      {/* Fitboy character */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <img
+                          src="/fitboy.png"
+                          alt="Fitboy"
+                          style={{
+                            width: '75px',
+                            height: '95px',
+                            objectFit: 'contain',
+                            filter: 'drop-shadow(0 4px 12px rgba(57, 255, 20, 0.35))'
+                          }}
+                        />
+                        <span style={{ fontSize: '8px', color: '#39ff14', fontWeight: 900, letterSpacing: '0.5px' }}>DAY 30</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* OUTSIDE BUTTON ROW & CALENDAR */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginTop: '16px', alignItems: 'center' }}>
+
+
+                  {/* Calendar grid */}
+                  {showFatBurnCalendar && (
+                    <div id="fatburn-calendar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(36px, 1fr))', gap: '5px', width: '100%', background: 'rgba(5,5,12,0.9)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(57,255,20,0.25)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
+                      <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 900, color: '#39ff14', letterSpacing: '1px' }}>30-DAY TRANSFORMATION PROGRESS</span>
+                        <span style={{ display: 'block', fontSize: '8px', opacity: 0.5 }}>COMPLETION TRACKER & STREAK SYSTEM</span>
+                      </div>
+                      {progression.fatBurnCalendar?.map((dayObj) => {
+                        let bg = 'rgba(255,255,255,0.05)', border = '1px solid rgba(255,255,255,0.1)', color = '#fff', opacity = 1;
+                        if (dayObj.status === 'completed') { bg = 'rgba(57,255,20,0.15)'; border = '1px solid #39ff14'; color = '#39ff14'; }
+                        else if (dayObj.status === 'current') { bg = 'rgba(0,242,255,0.15)'; border = '1px solid #00f2ff'; color = '#00f2ff'; }
+                        else if (dayObj.status === 'missed') { bg = 'rgba(255,68,68,0.1)'; border = '1px solid rgba(255,68,68,0.3)'; color = '#ff4444'; opacity = 0.5; }
+                        else { opacity = 0.3; }
+                        return (
+                          <div key={dayObj.day} style={{ background: bg, border, borderRadius: '5px', padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity, position: 'relative' }}>
+                            <span style={{ fontSize: '7px', opacity: 0.6, fontWeight: 700 }}>DAY</span>
+                            <span style={{ fontSize: '11px', fontWeight: 900, color }}>{dayObj.day}</span>
+                            {dayObj.status === 'completed' && <div style={{ position: 'absolute', top: -3, right: -3, background: '#39ff14', borderRadius: '50%', width: 8, height: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={5} color="#000" /></div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Match Setup Button: Placed at the Bottom Center below the Card */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowSetupModal(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #39ff14, #00f2ff)',
+                      color: '#000',
+                      padding: '12px 42px',
+                      borderRadius: '24px',
+                      border: 'none',
+                      fontWeight: 900,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-gaming)',
+                      boxShadow: '0 0 20px rgba(57,255,20,0.4)',
+                      transition: 'all 0.3s ease',
+                      whiteSpace: 'nowrap',
+                      marginTop: '8px'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.6)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.4)'; }}
+                  >
+                    ⚙️ SETUP WORKOUT
+                  </motion.button>
+                </div>
               </div>
-            </>
+
+              {!userData?.isPremium && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(5, 5, 8, 0.72)',
+                  backdropFilter: 'blur(12px)',
+                  borderRadius: '24px',
+                  border: '1.5px solid rgba(255, 215, 0, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '50px 24px',
+                  zIndex: 20,
+                  textAlign: 'center',
+                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(255, 215, 0, 0.05)'
+                }}>
+                  {/* Gold Crown / Lock Icon with breathing/pulsing animation */}
+                  <motion.div
+                    animate={{ scale: [1, 1.08, 1], filter: ['drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))', 'drop-shadow(0 0 25px rgba(255, 215, 0, 0.6))', 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))'] }}
+                    transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+                    style={{
+                      background: 'rgba(255, 215, 0, 0.1)',
+                      border: '2px solid #ffd700',
+                      padding: '24px',
+                      borderRadius: '50%',
+                      marginBottom: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Crown size={48} color="#ffd700" fill="#ffd700" />
+                  </motion.div>
+                  
+                  <h3 className="arcade-text" style={{ fontSize: '20px', color: '#ffd700', marginBottom: '12px', letterSpacing: '1px', textShadow: '0 0 10px rgba(255,215,0,0.2)' }}>
+                    30-DAY FAT BURN PROGRAM
+                  </h3>
+                  
+                  <div style={{
+                    fontSize: '9px',
+                    fontWeight: 900,
+                    background: 'rgba(255, 215, 0, 0.15)',
+                    color: '#ffd700',
+                    padding: '5px 14px',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(255, 215, 0, 0.4)',
+                    marginBottom: '20px',
+                    letterSpacing: '2px',
+                    fontFamily: 'var(--font-gaming)'
+                  }}>
+                    👑 ELITE PREMIUM ONLY
+                  </div>
+                  
+                  <p style={{ opacity: 0.8, fontSize: '13px', maxWidth: '460px', lineHeight: 1.7, marginBottom: '32px', color: 'rgba(255,255,255,0.9)' }}>
+                    Unlock our signature 30-Day cardio transformation program, customized calibration routines, full daily streak analytics, and elite stadium skins!
+                  </p>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(255, 215, 0, 0.6)' }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => router.push('/premium')}
+                    style={{
+                      background: 'linear-gradient(135deg, #ffd700 0%, #ffa500 100%)',
+                      color: '#000000',
+                      padding: '16px 48px',
+                      borderRadius: '30px',
+                      border: 'none',
+                      fontWeight: 900,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-gaming)',
+                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.35)',
+                      transition: 'all 0.3s ease',
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    UPGRADE TO PREMIUM ⚡
+                  </motion.button>
+                </div>
+              )}
+            </div>
           )}
 
           {/* ============================================================ */}
@@ -1617,6 +1712,7 @@ export default function Home() {
                         whileHover={{ scale: 1.02, translateY: -1 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={async () => {
+                          if (!checkDailyLimit()) return;
                           try {
                             const room = await createRoom(user, exerciseMode, targetDistance);
                             setMultiplayerRoomId(room.roomId);
@@ -1670,6 +1766,7 @@ export default function Home() {
                           whileHover={{ scale: 1.02, translateY: -1 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={async () => {
+                            if (!checkDailyLimit()) return;
                             if (roomCodeInput.length !== 6) {
                               alert("Please enter a valid 6-digit room code.");
                               return;
@@ -1772,6 +1869,7 @@ export default function Home() {
                         }
                       }}
                       onClick={() => {
+                        if (!checkDailyLimit()) return;
                         setMatchmakerSearching(true);
                         setMatchmakerError(null);
                         setMatchedOpponent(null);
@@ -1861,7 +1959,7 @@ export default function Home() {
               <div>
                 <span style={{ fontSize: '9px', opacity: 0.5, fontWeight: 900, letterSpacing: '1.5px', display: 'block', color: '#fff' }}>GLOBAL CARDIO TIERS</span>
                 <span className="arcade-text" style={{ fontSize: '18px', color: '#fff', fontWeight: 900 }}>
-                  ESPORTS FITNESS LEADERBOARD
+                FITNESS LEADERBOARD
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(57, 255, 20, 0.05)', border: '1px solid rgba(57, 255, 20, 0.2)', padding: '4px 10px', borderRadius: '20px', marginBottom: '4px' }}>
