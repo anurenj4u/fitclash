@@ -1431,7 +1431,8 @@ export default function Home() {
                     {[
                       { id: 'squats', label: 'SQUATS', emoji: '🦵' },
                       { id: 'pushups', label: 'PUSHUPS', emoji: '💪' },
-                      { id: 'jacks', label: 'JUMPING JACKS', emoji: '🏃' }
+                      { id: 'jacks', label: 'JUMPING JACKS', emoji: '🏃' },
+                      { id: 'fingers', label: 'FINGER EXERCISE', emoji: '🖐️' }
                     ].map(m => {
                       const isActive = exerciseMode === m.id;
                       return (
