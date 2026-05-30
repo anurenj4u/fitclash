@@ -34,7 +34,7 @@ export const createRoom = async (user, exerciseMode, targetDistance) => {
     updatedAt: serverTimestamp()
   };
 
-  await setDoc(roomRef, roomData);
+  setDoc(roomRef, roomData).catch(e => console.error("Room sync error:", e));
   return roomData;
 };
 

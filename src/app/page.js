@@ -1755,12 +1755,13 @@ export default function Home() {
                           if (!checkDailyLimit()) return;
                           try {
                             const room = await createRoom(user, exerciseMode, targetDistance);
+                            alert("ROOM CREATED SUCCESSFULY! \n\nYour Room Code is: " + room.roomId + "\n\nShare this 6-digit code with your friend so they can join.");
                             setMultiplayerRoomId(room.roomId);
                             setMultiplayerRole('host');
                             setIsLobbyCreator(true);
                             setShowLobbyModal(true);
                           } catch (e) {
-                            alert(e.message);
+                            alert("Failed to create room: " + e.message);
                           }
                         }}
                         style={{
