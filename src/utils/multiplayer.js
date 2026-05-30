@@ -42,7 +42,7 @@ export const createRoom = async (user, exerciseMode, targetDistance) => {
   };
 
   try {
-    await withTimeout(setDoc(roomRef, roomData), 8000);
+    await withTimeout(setDoc(roomRef, roomData), 15000);
   } catch (e) {
     if (e.message.includes("offline")) {
       throw new Error("You appear to be offline. Please check your connection.");
@@ -62,7 +62,7 @@ export const joinRoom = async (user, roomCode) => {
   const roomRef = doc(db, "sprint_rooms", roomCode);
   let roomSnap;
   try {
-    roomSnap = await withTimeout(getDoc(roomRef), 8000);
+    roomSnap = await withTimeout(getDoc(roomRef), 15000);
   } catch (e) {
     if (e.message.includes("offline") || e.message.includes("timeout")) {
       throw new Error("Network error: You appear to be offline or a firewall is blocking the connection.");
@@ -90,7 +90,7 @@ export const joinRoom = async (user, roomCode) => {
       guestEmail: user.email || user.displayName || 'Friend',
       status: 'ready',
       updatedAt: serverTimestamp()
-    }), 8000);
+    }), 15000);
   } catch (e) {
     throw new Error("Failed to join room: Check your internet connection.");
   }
@@ -117,7 +117,7 @@ export const startMatchmaking = async (user, exerciseMode, targetDistance) => {
 
   let querySnapshot;
   try {
-    querySnapshot = await withTimeout(getDocs(q), 8000);
+    querySnapshot = await withTimeout(getDocs(q), 15000);
   } catch (e) {
     throw new Error("Matchmaking failed: Network issue or you are offline.");
   }
@@ -164,7 +164,7 @@ export const startMatchmaking = async (user, exerciseMode, targetDistance) => {
       updatedAt: serverTimestamp()
     };
     try {
-      await withTimeout(setDoc(roomRef, roomData), 8000);
+      await withTimeout(setDoc(roomRef, roomData), 15000);
     } catch (e) {
       throw new Error("Failed to create online room. Please check your connection.");
     }

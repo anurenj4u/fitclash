@@ -86,6 +86,7 @@ export default function Home() {
   const [multiplayerRole, setMultiplayerRole] = useState(null); // 'host' | 'guest'
   const [lobbyDetails, setLobbyDetails] = useState(null);
   const [showLobbyModal, setShowLobbyModal] = useState(false);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [matchmakerSearching, setMatchmakerSearching] = useState(false);
   const [matchmakerError, setMatchmakerError] = useState(null);
   const [roomCodeInput, setRoomCodeInput] = useState('');
@@ -1753,6 +1754,7 @@ export default function Home() {
                             return;
                           }
                           if (!checkDailyLimit()) return;
+                          setIsCreatingRoom(true);
                           try {
                             const room = await createRoom(user, exerciseMode, targetDistance);
                             alert("ROOM CREATED SUCCESSFULY! \n\nYour Room Code is: " + room.roomId + "\n\nShare this 6-digit code with your friend so they can join.");
@@ -1762,25 +1764,28 @@ export default function Home() {
                             setShowLobbyModal(true);
                           } catch (e) {
                             alert("Failed to create room: " + e.message);
+                          } finally {
+                            setIsCreatingRoom(false);
                           }
                         }}
+                        disabled={isCreatingRoom}
                         style={{
                           flex: 1,
                           padding: '12px',
                           borderRadius: '8px',
-                          background: '#39ff14',
+                          background: isCreatingRoom ? 'rgba(57, 255, 20, 0.5)' : '#39ff14',
                           color: '#000000',
                           border: 'none',
                           fontWeight: 800,
                           fontSize: '11px',
-                          cursor: 'pointer',
+                          cursor: isCreatingRoom ? 'not-allowed' : 'pointer',
                           fontFamily: 'var(--font-gaming)',
                           textAlign: 'center',
                           transition: 'all 0.2s',
                           boxShadow: '0 6px 16px rgba(57, 255, 20, 0.2)'
                         }}
                       >
-                        CREATE ROOM
+                        {isCreatingRoom ? 'CREATING...' : 'CREATE ROOM'}
                       </motion.button>
 
                       <div style={{ display: 'flex', flex: 1, gap: '5px' }}>
