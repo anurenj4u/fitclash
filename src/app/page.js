@@ -1288,38 +1288,73 @@ export default function Home() {
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'rgba(5, 5, 8, 0.72)',
-                  backdropFilter: 'blur(12px)',
+                  background: 'rgba(5, 5, 8, 0.82)',
+                  backdropFilter: 'blur(16px)',
                   borderRadius: '24px',
-                  border: '1.5px solid rgba(255, 215, 0, 0.25)',
+                  border: '2px solid rgba(255, 215, 0, 0.35)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '50px 24px',
+                  padding: '30px 24px',
                   zIndex: 20,
                   textAlign: 'center',
-                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(255, 215, 0, 0.05)'
+                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(255, 215, 0, 0.08)'
                 }}>
-                  {/* Gold Crown / Lock Icon with breathing/pulsing animation */}
-                  <motion.div
-                    animate={{ scale: [1, 1.08, 1], filter: ['drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))', 'drop-shadow(0 0 25px rgba(255, 215, 0, 0.6))', 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))'] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                    style={{
-                      background: 'rgba(255, 215, 0, 0.1)',
-                      border: '2px solid #ffd700',
-                      padding: '24px',
-                      borderRadius: '50%',
-                      marginBottom: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Crown size={48} color="#ffd700" fill="#ffd700" />
-                  </motion.div>
+                  {/* Transformation Showcase */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '24px',
+                    padding: '12px 28px',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    border: '1.5px solid rgba(255, 215, 0, 0.25)',
+                    borderRadius: '16px',
+                    marginBottom: '20px',
+                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.1)'
+                  }}>
+                    {/* Fatboy character */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <img
+                        src="/fatboy.png"
+                        alt="Fatboy"
+                        style={{
+                          width: '70px',
+                          height: '90px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 4px 8px rgba(255, 68, 68, 0.3))'
+                        }}
+                      />
+                      <span style={{ fontSize: '8px', opacity: 0.7, fontWeight: 900, letterSpacing: '1px', color: '#ff4444' }}>DAY 1</span>
+                    </div>
+
+                    {/* Transition arrow */}
+                    <motion.div
+                      animate={{ x: [0, 6, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <span style={{ fontSize: '28px', color: '#ffd700', fontWeight: 'bold', filter: 'drop-shadow(0 0 8px #ffd700)' }}>➔</span>
+                    </motion.div>
+
+                    {/* Fitboy character */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <img
+                        src="/fitboy.png"
+                        alt="Fitboy"
+                        style={{
+                          width: '70px',
+                          height: '90px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 4px 12px rgba(57, 255, 20, 0.45))'
+                        }}
+                      />
+                      <span style={{ fontSize: '8px', color: '#39ff14', fontWeight: 900, letterSpacing: '1px' }}>DAY 30</span>
+                    </div>
+                  </div>
                   
-                  <h3 className="arcade-text" style={{ fontSize: '20px', color: '#ffd700', marginBottom: '12px', letterSpacing: '1px', textShadow: '0 0 10px rgba(255,215,0,0.2)' }}>
+                  <h3 className="arcade-text" style={{ fontSize: '18px', color: '#ffd700', marginBottom: '10px', letterSpacing: '1px', textShadow: '0 0 10px rgba(255,215,0,0.2)' }}>
                     30-DAY FAT BURN PROGRAM
                   </h3>
                   
@@ -1331,14 +1366,14 @@ export default function Home() {
                     padding: '5px 14px',
                     borderRadius: '20px',
                     border: '1px solid rgba(255, 215, 0, 0.4)',
-                    marginBottom: '20px',
+                    marginBottom: '16px',
                     letterSpacing: '2px',
                     fontFamily: 'var(--font-gaming)'
                   }}>
                     👑 ELITE PREMIUM ONLY
                   </div>
                   
-                  <p style={{ opacity: 0.8, fontSize: '13px', maxWidth: '460px', lineHeight: 1.7, marginBottom: '32px', color: 'rgba(255,255,255,0.9)' }}>
+                  <p style={{ opacity: 0.8, fontSize: '12px', maxWidth: '440px', lineHeight: 1.6, marginBottom: '24px', color: 'rgba(255,255,255,0.9)' }}>
                     Unlock our signature 30-Day cardio transformation program, customized calibration routines, full daily streak analytics, and elite stadium skins!
                   </p>
                   
@@ -1349,11 +1384,11 @@ export default function Home() {
                     style={{
                       background: 'linear-gradient(135deg, #ffd700 0%, #ffa500 100%)',
                       color: '#000000',
-                      padding: '16px 48px',
+                      padding: '14px 44px',
                       borderRadius: '30px',
                       border: 'none',
                       fontWeight: 900,
-                      fontSize: '13px',
+                      fontSize: '12px',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-gaming)',
                       boxShadow: '0 0 20px rgba(255, 215, 0, 0.35)',

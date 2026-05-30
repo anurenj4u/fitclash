@@ -78,9 +78,7 @@ export default function Navbar() {
           className="arcade-text" 
           style={{ fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          <div style={{ width: '30px', height: '30px', background: '#39ff14', borderRadius: '6px', transform: 'rotate(45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px rgba(57, 255, 20, 0.3)' }}>
-            <div style={{ transform: 'rotate(-45deg)', color: '#000', fontWeight: 900, fontSize: '16px' }}>C</div>
-          </div>
+          <img src="/coclogo.png" alt="C" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
           <span style={{ letterSpacing: '1.5px', color: '#fff', fontWeight: 800 }}>CLASH<span style={{ color: '#39ff14' }}>OFCARDIO</span></span>
         </motion.div>
       </Link>
