@@ -1748,6 +1748,10 @@ export default function Home() {
                         whileHover={{ scale: 1.02, translateY: -1 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={async () => {
+                          if (!user) {
+                            router.push('/login');
+                            return;
+                          }
                           if (!checkDailyLimit()) return;
                           try {
                             const room = await createRoom(user, exerciseMode, targetDistance);
@@ -1802,6 +1806,10 @@ export default function Home() {
                           whileHover={{ scale: 1.02, translateY: -1 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={async () => {
+                            if (!user) {
+                              router.push('/login');
+                              return;
+                            }
                             if (!checkDailyLimit()) return;
                             if (roomCodeInput.length !== 6) {
                               alert("Please enter a valid 6-digit room code.");
