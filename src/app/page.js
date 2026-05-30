@@ -41,7 +41,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [exerciseMode, setExerciseMode] = useState('squats');
-  const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'worldcup'
+  const [playMode, setPlayMode] = useState('worldcup'); // 'normal' | 'worldcup'
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [targetDistance, setTargetDistance] = useState(1); // 1, 2, or 3 KM
