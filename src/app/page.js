@@ -98,6 +98,9 @@ export default function Home() {
   const [activeMockOpponent, setActiveMockOpponent] = useState(null);
   const [showPRNotification, setShowPRNotification] = useState(false);
 
+  const { user, userData } = useAuth();
+  const router = useRouter();
+
   useEffect(() => {
     if (showFatBurnCalendar) {
       setTimeout(() => {
@@ -142,9 +145,6 @@ export default function Home() {
     { name: "Morgan", avatar: "🔥", flag: "🇩🇪", character: "Neymar" }
   ];
 
-
-  const { user, userData } = useAuth();
-  const router = useRouter();
 
   const checkDailyLimit = () => {
     if (!userData?.isPremium && userData?.gamesToday >= 5) {
