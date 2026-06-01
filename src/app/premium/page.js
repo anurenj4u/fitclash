@@ -73,21 +73,33 @@ export default function PremiumPage() {
         order_id: data.id,
         handler: async function (response) {
           try {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, { isPremium: true });
+            // Get Firebase ID token to authenticate server request
+            const idToken = await user.getIdToken();
+
+            // Call server-side verify API — uses Firebase Admin, bypasses Firestore rules
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                idToken,
+                planId: plan.id,
+              }),
+            });
+
+            if (!verifyRes.ok) {
+              const errData = await verifyRes.json();
+              throw new Error(errData.error || 'Payment verification failed');
+            }
+
             alert("Payment Successful! Your account has been upgraded to Premium.");
             router.push('/?status=success');
           } catch (err) {
-            console.error("Error upgrading user in Firestore:", err);
-            try {
-              const userDocRef = doc(db, "users", user.uid);
-              await setDoc(userDocRef, { isPremium: true, email: user.email, gamesToday: 0 }, { merge: true });
-              alert("Payment Successful! Your account has been upgraded to Premium.");
-              router.push('/?status=success');
-            } catch (err2) {
-              alert("Payment Successful, but profile update failed. Please contact support.");
-              router.push('/?status=success');
-            }
+            console.error("Error verifying payment:", err);
+            alert(`Payment received but activation failed: ${err.message}. Please contact support with your payment ID.`);
+            router.push('/?status=success');
           }
         },
         prefill: {
