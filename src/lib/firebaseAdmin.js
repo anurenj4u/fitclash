@@ -11,6 +11,7 @@ if (!admin.apps.length) {
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
+      projectId: process.env.FIREBASE_PROJECT_ID, // Explicitly pass projectId here
     });
   } else {
     // Initialize without credentials so build doesn't crash; it will fail at runtime if actually used.
