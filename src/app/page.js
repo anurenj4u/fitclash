@@ -110,15 +110,15 @@ export default function Home() {
   }, [showFatBurnCalendar]);
 
   useEffect(() => {
-    // Show PR recommendation notification after a short delay
+    // Show PR recommendation notification after a short delay, only if user is logged in
     const hasSeenPR = sessionStorage.getItem("fitclash_seen_pr_recommendation_v1");
-    if (!hasSeenPR) {
+    if (!hasSeenPR && user) {
       const timer = setTimeout(() => {
         setShowPRNotification(true);
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user]);
 
   const handlePRChallengeClick = () => {
     sessionStorage.setItem("fitclash_seen_pr_recommendation_v1", "true");
