@@ -1,8 +1,11 @@
 import admin from 'firebase-admin';
 
-if (!admin.apps.length) {
-  // Try to initialize only if we have the required project ID, to prevent build-time crashes
-  if (process.env.FIREBASE_PROJECT_ID) {
+export function getFirebaseAdmin() {
+  if (!admin.apps.length) {
+    if (!process.env.FIREBASE_PROJECT_ID) {
+      throw new Error('FIREBASE_PROJECT_ID is missing in environment variables');
+    }
+
     const serviceAccount = {
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -11,15 +14,12 @@ if (!admin.apps.length) {
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID, // Explicitly pass projectId here
+      projectId: process.env.FIREBASE_PROJECT_ID,
     });
-  } else {
-    // Initialize without credentials so build doesn't crash; it will fail at runtime if actually used.
-    admin.initializeApp();
   }
+
+  return {
+    adminDb: admin.firestore(),
+    adminAuth: admin.auth(),
+  };
 }
-
-const adminDb = admin.firestore();
-const adminAuth = admin.auth();
-
-export { adminDb, adminAuth };

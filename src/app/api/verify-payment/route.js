@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
+import { getFirebaseAdmin } from '@/lib/firebaseAdmin';
 
 export async function POST(req) {
   try {
+    const { adminDb, adminAuth } = getFirebaseAdmin();
     const {
       razorpay_payment_id,
       razorpay_order_id,
