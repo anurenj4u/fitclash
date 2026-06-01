@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }) => {
               calories: data.calories || 0
             });
           } else {
+            // Use merge:true so we never overwrite existing fields (especially isPremium)
             setDoc(userDocRef, { 
               isPremium: false, 
               gamesToday: 0, 
@@ -51,7 +52,7 @@ export const AuthProvider = ({ children }) => {
               calories: 0,
               lastPlayed: new Date(),
               email: user.email 
-            });
+            }, { merge: true });
           }
           setLoading(false);
         });

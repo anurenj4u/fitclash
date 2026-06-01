@@ -14,7 +14,7 @@ const plans = [
   {
     id: 'weekly',
     name: 'ELITE WEEKLY',
-    price: '99',
+    price: '1',
     period: 'week',
     color: 'var(--secondary)',
     features: ['Unlimited Games', 'Ad-Free Experience', 'Premium Trail Effects', 'Weekly Leaderboards']
