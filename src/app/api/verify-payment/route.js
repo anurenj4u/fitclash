@@ -47,6 +47,13 @@ export async function POST(req) {
     return NextResponse.json({ success: true, uid });
   } catch (error) {
     console.error('Verify payment error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    // Check if project ID has trailing spaces or is missing
+    const rawProjectId = process.env.FIREBASE_PROJECT_ID || 'MISSING';
+    const cleanProjectId = rawProjectId.trim();
+    
+    return NextResponse.json({ 
+      error: `${error.message} (Project: '${rawProjectId}', Cleaned: '${cleanProjectId}')`
+    }, { status: 500 });
   }
 }

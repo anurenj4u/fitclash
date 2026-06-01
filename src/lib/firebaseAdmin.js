@@ -6,15 +6,16 @@ export function getFirebaseAdmin() {
       throw new Error('FIREBASE_PROJECT_ID is missing in environment variables');
     }
 
+    const projectId = process.env.FIREBASE_PROJECT_ID.trim();
     const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      projectId: projectId,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL.trim(),
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n').trim(),
     };
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID,
+      projectId: projectId,
     });
   }
 
