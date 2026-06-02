@@ -54,6 +54,7 @@ export default function Home() {
   // New Fitness custom configuration state
   const [selectedGoal, setSelectedGoal] = useState('FAT BURN & STAMINA');
   const [showFatBurnCalendar, setShowFatBurnCalendar] = useState(false);
+  const [showOneVsOneCalendar, setShowOneVsOneCalendar] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState(['squats', 'pushups', 'jacks']);
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
   const [restDuration, setRestDuration] = useState(120); // default 120s / 2 minutes rest time
@@ -111,6 +112,17 @@ export default function Home() {
       }, 150);
     }
   }, [showFatBurnCalendar]);
+
+  useEffect(() => {
+    if (showOneVsOneCalendar) {
+      setTimeout(() => {
+        const cal = document.getElementById("onevsone-calendar");
+        if (cal) {
+          cal.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+    }
+  }, [showOneVsOneCalendar]);
 
   useEffect(() => {
     // Show PR recommendation notification after a short delay, only if user is logged in
@@ -184,6 +196,15 @@ export default function Home() {
       accuracy: 0,
       duration: 0
     })),
+    oneVsOneCalendar: Array.from({ length: 30 }).map((_, i) => ({
+      day: i + 1,
+      status: i === 0 ? 'current' : 'locked', // 'locked', 'current', 'completed', 'missed'
+      reps: 0,
+      calories: 0,
+      result: null, // 'win' | 'lose' | null
+      accuracy: 0,
+      duration: 0
+    })),
     staminaData: {
       isCalibrated: false,
       baseline: {},
@@ -192,36 +213,52 @@ export default function Home() {
     }
   });
 
-  const highestReps = useMemo(() => {
+  const highestPRDetail = useMemo(() => {
     let maxReps = 34; // default fallback as requested by user
+    let maxExercise = 'squats';
+
     if (progression?.fatBurnCalendar) {
       progression.fatBurnCalendar.forEach(day => {
         if (day.status === 'completed' && day.reps > maxReps) {
           maxReps = day.reps;
+          maxExercise = 'squats';
         }
       });
     }
+
     if (typeof window !== 'undefined') {
       try {
         const highestObj = JSON.parse(localStorage.getItem("fitclash_highest_pr") || "{}");
-        Object.values(highestObj).forEach(val => {
+        Object.entries(highestObj).forEach(([key, val]) => {
           const num = Number(val);
           if (!isNaN(num) && num > maxReps) {
             maxReps = num;
+            maxExercise = key;
           }
         });
         const prevRepsObj = JSON.parse(localStorage.getItem("fitclash_previous_reps") || "{}");
-        Object.values(prevRepsObj).forEach(val => {
+        Object.entries(prevRepsObj).forEach(([key, val]) => {
           const num = Number(val);
           if (!isNaN(num) && num > maxReps) {
             maxReps = num;
+            maxExercise = key;
           }
         });
       } catch (e) {
-        console.error("Error reading PRs inside highestReps:", e);
+        console.error("Error reading PRs inside highestPRDetail:", e);
       }
     }
-    return maxReps;
+
+    // Map raw key to user-friendly name
+    let exerciseName = "Squats";
+    if (maxExercise === 'pushups' || maxExercise === 'pushup') exerciseName = "Pushups";
+    else if (maxExercise === 'jacks' || maxExercise === 'jumping_jacks' || maxExercise === 'jumping jack') exerciseName = "Jumping Jacks";
+    else if (maxExercise === 'squats' || maxExercise === 'squat') exerciseName = "Squats";
+    else if (maxExercise) {
+      exerciseName = maxExercise.charAt(0).toUpperCase() + maxExercise.slice(1);
+    }
+
+    return { reps: maxReps, exercise: exerciseName };
   }, [progression, gameStarted]);
 
   // Dynamic Esports Leaderboard State (Ranked by Calories Today)
@@ -301,6 +338,7 @@ export default function Home() {
             ...parsed,
             dailyMissions: parsed.dailyMissions || prev.dailyMissions,
             fatBurnCalendar: parsed.fatBurnCalendar || prev.fatBurnCalendar,
+            oneVsOneCalendar: parsed.oneVsOneCalendar || prev.oneVsOneCalendar,
             calorieGoal: parsed.calorieGoal !== undefined ? parsed.calorieGoal : prev.calorieGoal,
             staminaData: {
               ...prev.staminaData,
@@ -590,6 +628,32 @@ export default function Home() {
         }
       }
 
+      const newOneVsOneCalendar = [...(prev.oneVsOneCalendar || Array.from({ length: 30 }).map((_, i) => ({
+        day: i + 1,
+        status: i === 0 ? 'current' : 'locked',
+        reps: 0,
+        calories: 0,
+        result: null,
+        accuracy: 0,
+        duration: 0
+      })))];
+      if (results.isSprint) {
+        const currentDayIndex = newOneVsOneCalendar.findIndex(d => d.status === 'current');
+        if (currentDayIndex !== -1) {
+          newOneVsOneCalendar[currentDayIndex] = {
+            ...newOneVsOneCalendar[currentDayIndex],
+            status: 'completed',
+            reps: results.reps || 0,
+            calories: results.caloriesBurned || 0,
+            result: results.result || 'win',
+            duration: results.duration || 0
+          };
+          if (currentDayIndex + 1 < newOneVsOneCalendar.length) {
+            newOneVsOneCalendar[currentDayIndex + 1] = { ...newOneVsOneCalendar[currentDayIndex + 1], status: 'current' };
+          }
+        }
+      }
+
       // Self-heal NaN state corruptions
       const safePrevCaloriesToday = Number.isNaN(Number(prev.caloriesToday)) ? 0 : Number(prev.caloriesToday);
       const safePrevCalories = Number.isNaN(Number(prev.calories)) ? 0 : Number(prev.calories);
@@ -609,6 +673,7 @@ export default function Home() {
         unlockedStadiums: newUnlockedStadiums,
         unlockedCharacters: newUnlockedCharacters,
         ...(results.isFatBurn ? { fatBurnCalendar: newFatBurnCalendar } : {}),
+        ...(results.isSprint ? { oneVsOneCalendar: newOneVsOneCalendar } : {}),
         dailyMissions: prev.dailyMissions.map(m => {
           if (m.id === 1) return { ...m, completed: true };
           if (m.id === 2 && updatedCaloriesToday >= (prev.calorieGoal || 100)) return { ...m, completed: true };
@@ -753,7 +818,9 @@ export default function Home() {
                 handleWorkoutComplete({ 
                   reps: stats.reps || 0, 
                   caloriesBurned: scaledCalories, 
-                  xpGained: stats.xp || 0 
+                  xpGained: stats.xp || 0,
+                  isSprint: true,
+                  result: stats.result
                 });
               }}
               onComplete={(stats) => {
@@ -1971,6 +2038,131 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+
+                {/* Calendar Toggle Button */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%' }}>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowOneVsOneCalendar(prev => !prev)}
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      background: 'rgba(0, 242, 255, 0.08)',
+                      color: '#00f2ff',
+                      border: '1px solid rgba(0, 242, 255, 0.25)',
+                      padding: '8px 18px',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 10px rgba(0, 242, 255, 0.05)',
+                      fontFamily: 'var(--font-gaming)',
+                    }}
+                  >
+                    📅 {showOneVsOneCalendar ? 'HIDE 1VS1 CALENDAR' : '30-DAY 1VS1 CHALLENGE CALENDAR'}
+                  </motion.div>
+                </div>
+
+                {/* Calendar grid */}
+                {showOneVsOneCalendar && (
+                  <div
+                    id="onevsone-calendar"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(76px, 1fr))',
+                      gap: '6px',
+                      width: '100%',
+                      background: 'rgba(5, 5, 12, 0.95)',
+                      padding: '16px',
+                      borderRadius: '18px',
+                      border: '1px solid rgba(0, 242, 255, 0.25)',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.65), 0 0 15px rgba(0, 242, 255, 0.05)',
+                      marginTop: '20px'
+                    }}
+                  >
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 900, color: '#00f2ff', letterSpacing: '1px', fontFamily: 'var(--font-gaming)' }}>
+                        30-DAY 1VS1 CHAMPIONSHIP PROGRESS
+                      </span>
+                      <span style={{ display: 'block', fontSize: '8px', opacity: 0.5, fontFamily: 'var(--font-gaming)', marginTop: '2px' }}>
+                        TRACK CALORIES BURNED & CHAMPIONSHIP WINS
+                      </span>
+                    </div>
+
+                    {progression.oneVsOneCalendar?.map((dayObj) => {
+                      let bg = 'rgba(255,255,255,0.02)';
+                      let border = '1px solid rgba(255,255,255,0.06)';
+                      let color = '#fff';
+                      let opacity = 1;
+                      let statusText = '';
+                      
+                      if (dayObj.status === 'completed') {
+                        const isWin = dayObj.result === 'win';
+                        bg = isWin ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255, 68, 68, 0.06)';
+                        border = isWin ? '1px solid rgba(57, 255, 20, 0.4)' : '1px solid rgba(255, 68, 68, 0.3)';
+                        color = isWin ? '#39ff14' : '#ff4444';
+                        statusText = isWin ? '🏆 WIN' : '💀 LOSS';
+                      } else if (dayObj.status === 'current') {
+                        bg = 'rgba(0, 242, 255, 0.1)';
+                        border = '1px solid #00f2ff';
+                        color = '#00f2ff';
+                        statusText = 'READY';
+                      } else {
+                        opacity = 0.35;
+                        statusText = 'LOCKED';
+                      }
+
+                      return (
+                        <div
+                          key={dayObj.day}
+                          style={{
+                            background: bg,
+                            border,
+                            borderRadius: '8px',
+                            padding: '10px 4px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity,
+                            position: 'relative',
+                            transition: 'all 0.2s ease',
+                            cursor: dayObj.status === 'completed' ? 'pointer' : 'default',
+                            boxShadow: dayObj.status === 'current' ? '0 0 10px rgba(0, 242, 255, 0.2)' : 'none'
+                          }}
+                          title={dayObj.status === 'completed' ? `Day ${dayObj.day} Summary: ${dayObj.reps} reps, ${dayObj.calories} kcal burnt` : ''}
+                        >
+                          <span style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, fontFamily: 'var(--font-gaming)', letterSpacing: '0.5px' }}>
+                            DAY
+                          </span>
+                          <span style={{ fontSize: '13px', fontWeight: 900, color, fontFamily: 'var(--font-gaming)' }}>
+                            {dayObj.day < 10 ? `0${dayObj.day}` : dayObj.day}
+                          </span>
+                          
+                          {dayObj.status === 'completed' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '4px', gap: '2px' }}>
+                              <span style={{ fontSize: '8px', color: '#fff', fontWeight: 600 }}>
+                                🔥 {dayObj.calories} kcal
+                              </span>
+                              <span style={{ fontSize: '8px', fontWeight: 900, color, letterSpacing: '0.5px', fontFamily: 'var(--font-gaming)' }}>
+                                {statusText}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '7px', opacity: 0.5, fontWeight: 700, marginTop: '4px', letterSpacing: '0.5px', color: dayObj.status === 'current' ? '#00f2ff' : 'inherit' }}>
+                              {statusText}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
               </div>
             </>
           )}
@@ -3664,7 +3856,7 @@ export default function Home() {
 
             {/* Message Body */}
             <p style={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: '#fff', opacity: 0.95, lineHeight: 1.5, margin: '2px 0 4px 0', fontWeight: 700 }}>
-              Your highest PR is <strong style={{ color: '#39ff14' }}>{highestReps} reps</strong>. Beat it today! ⚡
+              Your highest PR is <strong style={{ color: '#39ff14' }}>{highestPRDetail.reps} reps</strong> in <strong style={{ color: '#00f2ff' }}>{highestPRDetail.exercise}</strong>. Beat it today! ⚡
             </p>
 
             {/* CTA action button */}

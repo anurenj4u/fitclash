@@ -177,10 +177,13 @@ const FitnessRace = ({
       const finalCalories = finalReps * getCalorieMultiplier(mode) + (isQuit ? 0 : targetKm * 10);
       const finalXp = finalReps * 6 + (isQuit ? 0 : targetKm * 50);
       if (onSaveStats) {
+        const isWin = !isQuit && (winnerRef.current === 'PLAYER' || (role && winnerRef.current === role));
         onSaveStats({
           reps: finalReps,
           calories: finalCalories,
-          xp: finalXp
+          xp: finalXp,
+          isSprint: true,
+          result: isWin ? 'win' : 'lose'
         });
       }
     }
