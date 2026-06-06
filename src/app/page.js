@@ -275,27 +275,52 @@ export default function Home() {
 
   // Sync self state & simulate live other players calorie updates
   useEffect(() => {
-    // Initial sync
-    setLeaderboard(prev => {
-      const nextList = prev.map(p => {
-        if (p.isSelf) {
-          const selfCalories = Math.round(Number(progression.caloriesToday) || 0);
-          return { ...p, level: progression.level, calories: selfCalories };
+    const updateLeaderboard = (prevList) => {
+      const nextList = prevList.map(player => {
+        if (player.isSelf) {
+          const selfCalories = user ? Math.round(Number(progression.caloriesToday) || 0) : 0;
+          return { ...player, level: progression.level || 1, calories: selfCalories };
         }
-        return p;
+        return player;
       });
-      return [...nextList].sort((a, b) => b.calories - a.calories).map((p, idx) => ({ ...p, rank: idx + 1 }));
-    });
+
+      const others = nextList.filter(p => !p.isSelf).sort((a, b) => b.calories - a.calories);
+      const selfPlayer = nextList.find(p => p.isSelf);
+      
+      let finalBoard = [];
+      let selfRank;
+
+      if (selfPlayer.calories === 0) {
+        selfRank = "UNRANKED";
+        others.forEach((p, i) => finalBoard.push({ ...p, rank: i + 1 }));
+        finalBoard.push({ ...selfPlayer, rank: selfRank });
+      } else {
+        let inserted = false;
+        let currentRank = 1;
+        for (let i = 0; i < others.length; i++) {
+          if (!inserted && selfPlayer.calories >= others[i].calories) {
+            finalBoard.push({ ...selfPlayer, rank: currentRank });
+            inserted = true;
+            currentRank++;
+          }
+          finalBoard.push({ ...others[i], rank: currentRank });
+          currentRank++;
+        }
+        
+        if (!inserted) {
+          selfRank = Math.max(5, Math.floor(25000 - (selfPlayer.calories * 100)));
+          finalBoard.push({ ...selfPlayer, rank: selfRank });
+        }
+      }
+      return finalBoard;
+    };
+
+    setLeaderboard(prev => updateLeaderboard(prev));
 
     const interval = setInterval(() => {
       setLeaderboard(prev => {
         const nextList = prev.map(player => {
-          if (player.isSelf) {
-            const selfCalories = Math.round(Number(progression.caloriesToday) || 0);
-            return { ...player, level: progression.level, calories: selfCalories };
-          }
-          // Randomly update active other players
-          if (player.activeStatus.includes("LIVE") && Math.random() > 0.4) {
+          if (!player.isSelf && player.activeStatus.includes("LIVE") && Math.random() > 0.4) {
             const addedCalories = Math.floor(Math.random() * 3) + 1; // +1 to +3 Calories
             return {
               ...player,
@@ -306,19 +331,16 @@ export default function Home() {
           return player;
         });
 
-        // Dynamic sort by calories today
-        const sorted = [...nextList].sort((a, b) => b.calories - a.calories);
-        return sorted.map((p, idx) => ({ ...p, rank: idx + 1 }));
+        return updateLeaderboard(nextList);
       });
 
-      // Clear dynamic gains after 2.5 seconds
       setTimeout(() => {
         setLeaderboard(prev => prev.map(p => ({ ...p, justGained: null })));
       }, 2500);
-    }, 11000); // Check/update every 11 seconds
+    }, 11000);
 
     return () => clearInterval(interval);
-  }, [progression]);
+  }, [progression, user]);
 
   // Load progression state on mount
   useEffect(() => {
@@ -2267,28 +2289,36 @@ export default function Home() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {leaderboard.map(leader => (
-                <div 
-                  key={leader.name} 
-                  className="responsive-leaderboard-row"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '40px 1.8fr 1.2fr 0.8fr 110px',
-                    alignItems: 'center',
-                    background: leader.isSelf ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255, 255, 255, 0.01)',
-                    border: `1.5px solid ${leader.isSelf ? '#39ff14' : 'rgba(255, 255, 255, 0.04)'}`,
-                    borderRadius: '12px',
-                    padding: '10px 16px',
-                    boxShadow: 'none',
-                    position: 'relative'
-                  }}
-                >
-                  <span className="arcade-text rank-text" style={{ fontSize: '12px', fontWeight: 900, color: leader.rank === 1 ? '#ffd700' : leader.rank === 2 ? '#c0c0c0' : leader.isSelf ? '#39ff14' : '#fff' }}>
-                    #{leader.rank}
-                  </span>
-                  
-                  {/* Flag, Avatar & Name stacked with Level */}
-                  <div className="name-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {leaderboard.map((leader, index) => {
+                const isDisconnected = leader.isSelf && (leader.rank === 'UNRANKED' || leader.rank > 5);
+                
+                return (
+                  <React.Fragment key={leader.name}>
+                    {isDisconnected && index > 0 && (
+                      <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: '2px 0', fontSize: '14px', letterSpacing: '8px', opacity: 0.6 }}>
+                        ••••
+                      </div>
+                    )}
+                    <div 
+                      className="responsive-leaderboard-row"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '40px 1.8fr 1.2fr 0.8fr 110px',
+                        alignItems: 'center',
+                        background: leader.isSelf ? 'rgba(57, 255, 20, 0.08)' : 'rgba(255, 255, 255, 0.01)',
+                        border: `1.5px solid ${leader.isSelf ? '#39ff14' : 'rgba(255, 255, 255, 0.04)'}`,
+                        borderRadius: '12px',
+                        padding: '10px 16px',
+                        boxShadow: 'none',
+                        position: 'relative'
+                      }}
+                    >
+                      <span className="arcade-text rank-text" style={{ fontSize: '12px', fontWeight: 900, color: leader.rank === 1 ? '#ffd700' : leader.rank === 2 ? '#c0c0c0' : leader.isSelf ? '#39ff14' : '#fff' }}>
+                        {leader.rank === 'UNRANKED' ? '-' : `#${leader.rank}`}
+                      </span>
+                      
+                      {/* Flag, Avatar & Name stacked with Level */}
+                      <div className="name-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '13px' }}>{leader.flag}</span>
                     <span style={{
                       width: '24px',
@@ -2362,7 +2392,9 @@ export default function Home() {
                     </AnimatePresence>
                   </div>
                 </div>
-              ))}
+                </React.Fragment>
+              );
+            })}
             </div>
           </div>
         </div>
