@@ -332,6 +332,8 @@ export default function Home() {
 
     // Load local storage values
     const saved = localStorage.getItem("clashOfCardioProgression");
+    const todayStr = new Date().toDateString();
+    
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -348,12 +350,23 @@ export default function Home() {
               ...(parsed.staminaData || {})
             }
           };
+          
+          if (merged.lastActiveDate && merged.lastActiveDate !== todayStr) {
+             merged.caloriesToday = 0;
+             merged.gamesToday = 0;
+          }
+          merged.lastActiveDate = todayStr;
+
           localStorage.setItem("clashOfCardioProgression", JSON.stringify(merged));
           return merged;
         });
       } catch (e) { }
     } else {
-      localStorage.setItem("clashOfCardioProgression", JSON.stringify(progression));
+      setProgression(prev => {
+        const initial = { ...prev, lastActiveDate: todayStr };
+        localStorage.setItem("clashOfCardioProgression", JSON.stringify(initial));
+        return initial;
+      });
     }
 
     // Floating subtle ambient particles
@@ -391,17 +404,46 @@ export default function Home() {
         let changed = false;
         const updated = { ...prev };
 
+        const todayStr = new Date().toDateString();
+        if (updated.lastActiveDate && updated.lastActiveDate !== todayStr) {
+          updated.caloriesToday = 0;
+          updated.gamesToday = 0;
+          updated.lastActiveDate = todayStr;
+          changed = true;
+          
+          if (user) {
+            updateDoc(doc(db, "users", user.uid), {
+               caloriesToday: 0,
+               gamesToday: 0
+            }).catch(() => {});
+          }
+        } else if (!updated.lastActiveDate) {
+          updated.lastActiveDate = todayStr;
+          changed = true;
+        }
+
         if (userData.calories !== undefined && userData.calories > prev.calories) {
           updated.calories = userData.calories;
           changed = true;
         }
-        if (userData.caloriesToday !== undefined && userData.caloriesToday > prev.caloriesToday) {
-          updated.caloriesToday = userData.caloriesToday;
-          changed = true;
+        
+        let firebaseIsToday = false;
+        if (userData.lastPlayed) {
+           try {
+             const d = userData.lastPlayed.toDate ? userData.lastPlayed.toDate() : new Date(userData.lastPlayed);
+             if (d.toDateString() === todayStr) firebaseIsToday = true;
+           } catch(e) {}
         }
-        if (userData.gamesToday !== undefined && userData.gamesToday > prev.gamesToday) {
-          updated.gamesToday = userData.gamesToday;
-          changed = true;
+        
+        if (firebaseIsToday || !userData.lastPlayed) {
+          if (userData.caloriesToday !== undefined && userData.caloriesToday > updated.caloriesToday) {
+            updated.caloriesToday = userData.caloriesToday;
+            changed = true;
+          }
+          if (userData.gamesToday !== undefined && userData.gamesToday > updated.gamesToday) {
+            updated.gamesToday = userData.gamesToday;
+            changed = true;
+          }
         }
         if (userData.calorieGoal !== undefined && userData.calorieGoal !== prev.calorieGoal) {
           updated.calorieGoal = userData.calorieGoal;
