@@ -59,6 +59,9 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
   const [restDuration, setRestDuration] = useState(120); // default 120s / 2 minutes rest time
   const [showSetupModal, setShowSetupModal] = useState(false);
+  const [onboardingSequenceStep, setOnboardingSequenceStep] = useState(0);
+  const [raceGameMode, setRaceGameMode] = useState('distance');
+  const [raceTimeLimit, setRaceTimeLimit] = useState(60);
 
   // Tracks which exercise is currently active inside NormalWorkout for the MotionTracker mode
   const [activeWorkoutExerciseIndex, setActiveWorkoutExerciseIndex] = useState(0);
@@ -368,6 +371,15 @@ export default function Home() {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  useEffect(() => {
+    if (mounted && user === null) {
+      const hasSeenNewOnboarding = localStorage.getItem("fitclash_time_onboarding_v1");
+      if (!hasSeenNewOnboarding) {
+        setOnboardingSequenceStep(1);
+      }
+    }
+  }, [mounted, user]);
 
   // Sync progression state from Firebase to local state when available (prevent older server stats from reverting fresh local sessions)
   useEffect(() => {
@@ -812,6 +824,8 @@ export default function Home() {
               role={multiplayerRole}
               sprintMatchType={sprintMatchType}
               opponentName={matchedOpponent ? matchedOpponent.name : null}
+              gameMode={raceGameMode}
+              timeLimit={raceTimeLimit}
               onSaveStats={(stats) => {
                 const userWeight = userData?.weight || 70;
                 const scaledCalories = Math.round((stats.calories || 0) * (userWeight / 70));
@@ -3406,6 +3420,90 @@ export default function Home() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {!user && onboardingSequenceStep > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            style={{
+              position: 'fixed',
+              bottom: '40px',
+              left: '40px',
+              background: 'rgba(5, 5, 10, 0.95)',
+              border: '2px solid #ffaa00',
+              borderRadius: '20px',
+              padding: '24px 30px',
+              maxWidth: '400px',
+              zIndex: 9999,
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 170, 0, 0.3)',
+              backdropFilter: 'blur(16px)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255, 170, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #ffaa00' }}>
+                  <span style={{ fontSize: '20px' }}>⚡</span>
+                </div>
+                <div>
+                  <h3 className="arcade-text" style={{ fontSize: '18px', color: '#ffaa00', margin: 0 }}>CHALLENGE</h3>
+                  <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 900, letterSpacing: '1px' }}>BEAT THE AVERAGE</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  localStorage.setItem("fitclash_time_onboarding_v1", "true");
+                  setOnboardingSequenceStep(0);
+                }}
+                style={{ background: 'transparent', border: 'none', color: '#ffaa00', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p style={{ fontSize: '15px', lineHeight: 1.6, marginBottom: '24px', fontWeight: 600 }}>
+              {onboardingSequenceStep === 1 && "Average push ups a man can do is 30 push-ups in 90 seconds. Can you beat that?"}
+              {onboardingSequenceStep === 2 && "Average jumping jacks a man can do is 60 in 60 seconds. Can you beat that?"}
+              {onboardingSequenceStep === 3 && "Average squats a man can do is 40 squats in 60 seconds. Can you beat that?"}
+            </p>
+
+            <button
+              onClick={() => {
+                if (onboardingSequenceStep === 3) {
+                  localStorage.setItem("fitclash_time_onboarding_v1", "true");
+                  setOnboardingSequenceStep(0);
+                  setPlayMode('worldcup');
+                  setExerciseMode('squats');
+                  setRaceGameMode('time');
+                  setRaceTimeLimit(60);
+                  setGameStarted(true);
+                } else {
+                  setOnboardingSequenceStep(prev => prev + 1);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#ffaa00',
+                color: '#000',
+                border: 'none',
+                borderRadius: '12px',
+                fontWeight: 900,
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-gaming)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {onboardingSequenceStep === 3 ? "START CHALLENGE" : "START"} <ChevronRight size={18} strokeWidth={3} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showWelcomeOnboarding && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -3793,7 +3891,7 @@ export default function Home() {
 
       {/* Floating Personal Record (PR) / 1vs1 Challenge recommendation chat box */}
       <AnimatePresence>
-        {showPRNotification && (
+        {user && showPRNotification && (
           <motion.div
             initial={{ opacity: 0, x: 100, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}

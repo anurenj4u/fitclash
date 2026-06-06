@@ -52,6 +52,8 @@ const FitnessRace = ({
   role = null,
   sprintMatchType = 'ai',
   opponentName = null,
+  gameMode = 'distance',
+  timeLimit = 60,
   onComplete,
   onQuit,
   onSaveStats
@@ -68,6 +70,7 @@ const FitnessRace = ({
   const [combo, setCombo] = useState(0);
   const [repsCount, setRepsCount] = useState(0);
   const [remainingDist, setRemainingDist] = useState(targetKm * 1000);
+  const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [activeOverlayModal, setActiveOverlayModal] = useState(null); // null, 'quit_confirm', 'performance_summary'
   const [motivationMessage, setMotivationMessage] = useState("");
   const [motivationKey, setMotivationKey] = useState(0);
@@ -210,6 +213,26 @@ const FitnessRace = ({
       handleMatchEnd(previousRepsRef.current, false);
     }
   }, [gameStateDisplay]);
+
+  // Timer countdown for time-based mode
+  useEffect(() => {
+    let interval;
+    if (gameStateRef.current === 'playing' && !winnerRef.current && gameMode === 'time') {
+      interval = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            winnerRef.current = 'PLAYER';
+            setWinnerState('TIME_UP');
+            setGameStateDisplay('finished');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [gameStateDisplay, winnerState, gameMode]);
 
   // Sync lobby state from Firestore in real-time
   useEffect(() => {
@@ -629,6 +652,7 @@ const FitnessRace = ({
           setGameStateDisplay('ready');
           last100mThresholdRef.current = 0;
           lastDistanceMilestoneRef.current = null;
+          setTimeLeft(timeLimit);
           setMotivationMessage("");
 
           if (ai && ai.anims) {
@@ -739,25 +763,27 @@ const FitnessRace = ({
           aiDistanceUITextRef.current.innerText = Math.floor(aiDistanceRef.current / 100);
 
         // Win coordination
-        if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
-          winnerRef.current = 'PLAYER';
-          setWinnerState('PLAYER');
-          setGameStateDisplay('finished');
-          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#39ff14', '#ffffff', '#00f2ff'] });
+        if (gameMode !== 'time') {
+          if (playerDistanceRef.current >= finishLineDistance && !winnerRef.current) {
+            winnerRef.current = 'PLAYER';
+            setWinnerState('PLAYER');
+            setGameStateDisplay('finished');
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#39ff14', '#ffffff', '#00f2ff'] });
 
-          if (roomId) {
-            const roomRef = doc(db, "sprint_rooms", roomId);
-            updateDoc(roomRef, {
-              status: 'finished',
-              winner: role,
-              updatedAt: serverTimestamp()
-            });
+            if (roomId) {
+              const roomRef = doc(db, "sprint_rooms", roomId);
+              updateDoc(roomRef, {
+                status: 'finished',
+                winner: role,
+                updatedAt: serverTimestamp()
+              });
+            }
+          } else if (aiDistanceRef.current >= finishLineDistance && !winnerRef.current) {
+            // In single player, AI reaches finish. In multiplayer, handled by snapshot but fallback here is fine.
+            winnerRef.current = 'AI';
+            setWinnerState('AI');
+            setGameStateDisplay('finished');
           }
-        } else if (aiDistanceRef.current >= finishLineDistance && !winnerRef.current) {
-          // In single player, AI reaches finish. In multiplayer, handled by snapshot but fallback here is fine.
-          winnerRef.current = 'AI';
-          setWinnerState('AI');
-          setGameStateDisplay('finished');
         }
       }
 
@@ -1004,37 +1030,61 @@ const FitnessRace = ({
         </motion.button>
       )}
 
-      {/* HUD: Distance counters */}
-      <div style={{
-        position: 'absolute',
-        top: 'clamp(8px, 3.5vh, 30px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        gap: 'clamp(15px, 4vw, 40px)',
-        zIndex: 10,
-        padding: 'clamp(8px, 2vh, 16px) clamp(16px, 4vw, 40px)',
-        background: 'rgba(0,0,0,0.8)',
-        borderRadius: '16px',
-        border: '1px solid var(--accent)',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>{localPlayerLabel}</p>
-          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--accent)' }}>
-            <span ref={playerDistanceUITextRef}>0</span>
-            <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
+      {/* HUD: Distance counters or Timer */}
+      {gameMode === 'time' ? (
+        <div style={{
+          position: 'absolute',
+          top: 'clamp(8px, 3.5vh, 30px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          zIndex: 10,
+          padding: 'clamp(8px, 2vh, 16px) clamp(16px, 4vw, 40px)',
+          background: 'rgba(0,0,0,0.8)',
+          borderRadius: '16px',
+          border: '1px solid var(--accent)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <span style={{ fontSize: '10px', opacity: 0.6, fontWeight: 800, letterSpacing: '2px' }}>TIME REMAINING</span>
+          <div className="arcade-text" style={{ fontSize: 'clamp(24px, 4vw, 36px)', color: '#39ff14', textShadow: '0 0 10px rgba(57,255,20,0.5)' }}>
+            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
           </div>
         </div>
-        <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
-        <div style={{ textAlign: 'center' }}>
-          <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>{opponentPlayerLabel}</p>
-          <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}>
-            <span ref={aiDistanceUITextRef}>0</span>
-            <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
+      ) : (
+        <div style={{
+          position: 'absolute',
+          top: 'clamp(8px, 3.5vh, 30px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: 'clamp(15px, 4vw, 40px)',
+          zIndex: 10,
+          padding: 'clamp(8px, 2vh, 16px) clamp(16px, 4vw, 40px)',
+          background: 'rgba(0,0,0,0.8)',
+          borderRadius: '16px',
+          border: '1px solid var(--accent)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>{localPlayerLabel}</p>
+            <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--accent)' }}>
+              <span ref={playerDistanceUITextRef}>0</span>
+              <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
+            </div>
+          </div>
+          <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ textAlign: 'center' }}>
+            <p className="hud-text" style={{ opacity: 0.5, fontSize: 'clamp(8px, 1.5vw, 10px)' }}>{opponentPlayerLabel}</p>
+            <div className="arcade-text" style={{ fontSize: 'clamp(16px, 3vw, 24px)', color: 'var(--danger)' }}>
+              <span ref={aiDistanceUITextRef}>0</span>
+              <span style={{ fontSize: 'clamp(10px, 2vw, 14px)' }}>M</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Live Gameplay HUD overlays */}
       {gameStateDisplay === 'playing' && (
