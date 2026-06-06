@@ -5,6 +5,7 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from 'next/script';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import GlobalRefreshAlert from "@/components/GlobalRefreshAlert";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,6 +78,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
           <PerformanceMonitor />
+          <GlobalRefreshAlert />
           <Navbar />
           <main style={{ flex: 1, paddingTop: '70px' }}>
             {children}
