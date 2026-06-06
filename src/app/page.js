@@ -1078,7 +1078,7 @@ export default function Home() {
                 strokeWidth="3"
                 fill="transparent"
                 strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - Math.min((progression.calorieGoal || 100), (Number(progression.caloriesToday) || 0)) / (progression.calorieGoal || 100))}`}
+                strokeDashoffset={`${2 * Math.PI * 20 * (1 - Math.min((progression.calorieGoal || 100), (user ? Number(progression.caloriesToday) || 0 : 0)) / (progression.calorieGoal || 100))}`}
                 style={{
                   filter: 'drop-shadow(0 0 2px #39ff14)',
                   transition: 'stroke-dashoffset 1s ease'
@@ -1096,11 +1096,11 @@ export default function Home() {
               <span style={{ fontSize: '8px', opacity: 0.6, fontWeight: 900, letterSpacing: '1.5px', color: '#fff' }}>LIVE CORE TELEMETRY</span>
             </div>
             <span className="arcade-text" style={{ fontSize: '22px', color: '#ffffff', fontWeight: 900, display: 'flex', alignItems: 'baseline', gap: '4px', lineHeight: 1.1 }}>
-              <span style={{ color: '#39ff14' }}>{Number(progression.caloriesToday) || 0}</span> 
+              <span style={{ color: '#39ff14' }}>{user ? (Number(progression.caloriesToday) || 0) : 0}</span> 
               <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 800 }}>KCAL Today</span>
             </span>
             <div style={{ fontSize: '8px', opacity: 0.4, fontWeight: 700, letterSpacing: '0.5px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>DAILY TARGET: {progression.calorieGoal || 100} KCAL ({Math.min(100, Math.round(((Number(progression.caloriesToday) || 0) / (progression.calorieGoal || 100)) * 100))}% COMPLETED)</span>
+              <span>DAILY TARGET: {progression.calorieGoal || 100} KCAL ({Math.min(100, Math.round(((user ? Number(progression.caloriesToday) || 0 : 0) / (progression.calorieGoal || 100)) * 100))}% COMPLETED)</span>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
