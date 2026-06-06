@@ -143,6 +143,12 @@ export default function Home() {
     setShowPRNotification(false);
     setPlayMode('worldcup'); // switch to 1vs1 challenge
     
+    if (highestPRDetail.reps === 0) {
+      setExerciseMode('pushups');
+    } else {
+      setExerciseMode(highestPRDetail.exercise.toLowerCase());
+    }
+    
     // Smooth scroll down to the Sprint Workout Customizer section
     setTimeout(() => {
       const el = document.getElementById("worldcup-section");
@@ -426,6 +432,27 @@ export default function Home() {
         let changed = false;
         const updated = { ...prev };
 
+        // Account Switch / New Account strict sync
+        if (user && updated.lastUid !== user.uid) {
+          updated.calories = userData.calories || 0;
+          updated.caloriesToday = userData.caloriesToday || 0;
+          updated.gamesToday = userData.gamesToday || 0;
+          updated.totalWorkouts = userData.totalWorkouts || 0;
+          updated.calorieGoal = userData.calorieGoal || 100;
+          updated.staminaData = userData.staminaData || {
+            pushups: { maxReps: 0, history: [] },
+            squats: { maxReps: 0, history: [] },
+            jacks: { maxReps: 0, history: [] }
+          };
+          updated.lastUid = user.uid;
+          changed = true;
+        }
+
+        if (user === null && updated.lastUid !== null) {
+          updated.lastUid = null;
+          changed = true;
+        }
+
         const todayStr = new Date().toDateString();
         if (updated.lastActiveDate && updated.lastActiveDate !== todayStr) {
           updated.caloriesToday = 0;
@@ -444,32 +471,35 @@ export default function Home() {
           changed = true;
         }
 
-        if (userData.calories !== undefined && userData.calories > prev.calories) {
-          updated.calories = userData.calories;
-          changed = true;
-        }
-        
-        let firebaseIsToday = false;
-        if (userData.lastPlayed) {
-           try {
-             const d = userData.lastPlayed.toDate ? userData.lastPlayed.toDate() : new Date(userData.lastPlayed);
-             if (d.toDateString() === todayStr) firebaseIsToday = true;
-           } catch(e) {}
-        }
-        
-        if (firebaseIsToday || !userData.lastPlayed) {
-          if (userData.caloriesToday !== undefined && userData.caloriesToday > updated.caloriesToday) {
-            updated.caloriesToday = userData.caloriesToday;
+        // Only apply "greater than" local merges if we didn't just switch accounts
+        if (!changed || updated.lastUid === prev.lastUid) {
+          if (userData.calories !== undefined && userData.calories > prev.calories) {
+            updated.calories = userData.calories;
             changed = true;
           }
-          if (userData.gamesToday !== undefined && userData.gamesToday > updated.gamesToday) {
-            updated.gamesToday = userData.gamesToday;
+          
+          let firebaseIsToday = false;
+          if (userData.lastPlayed) {
+             try {
+               const d = userData.lastPlayed.toDate ? userData.lastPlayed.toDate() : new Date(userData.lastPlayed);
+               if (d.toDateString() === todayStr) firebaseIsToday = true;
+             } catch(e) {}
+          }
+          
+          if (firebaseIsToday || !userData.lastPlayed) {
+            if (userData.caloriesToday !== undefined && userData.caloriesToday > updated.caloriesToday) {
+              updated.caloriesToday = userData.caloriesToday;
+              changed = true;
+            }
+            if (userData.gamesToday !== undefined && userData.gamesToday > updated.gamesToday) {
+              updated.gamesToday = userData.gamesToday;
+              changed = true;
+            }
+          }
+          if (userData.calorieGoal !== undefined && userData.calorieGoal !== prev.calorieGoal) {
+            updated.calorieGoal = userData.calorieGoal;
             changed = true;
           }
-        }
-        if (userData.calorieGoal !== undefined && userData.calorieGoal !== prev.calorieGoal) {
-          updated.calorieGoal = userData.calorieGoal;
-          changed = true;
         }
 
         if (changed) {
@@ -4028,7 +4058,15 @@ export default function Home() {
 
             {/* Message Body */}
             <p style={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: '#fff', opacity: 0.95, lineHeight: 1.5, margin: '2px 0 4px 0', fontWeight: 700 }}>
-              Your highest PR is <strong style={{ color: '#39ff14' }}>{highestPRDetail.reps} reps</strong> in <strong style={{ color: '#00f2ff' }}>{highestPRDetail.exercise}</strong>. Beat it today! ⚡
+              {highestPRDetail.reps === 0 ? (
+                <>
+                  <strong style={{ color: '#ff4444' }}>Alex</strong> has challenged you to a <strong style={{ color: '#00f2ff' }}>Pushups</strong> match! Can you beat him? 🥊
+                </>
+              ) : (
+                <>
+                  Your highest PR is <strong style={{ color: '#39ff14' }}>{highestPRDetail.reps} reps</strong> in <strong style={{ color: '#00f2ff' }}>{highestPRDetail.exercise}</strong>. Beat it today! ⚡
+                </>
+              )}
             </p>
 
             {/* CTA action button */}
